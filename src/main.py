@@ -6,6 +6,8 @@ import shutil
 
 import numpy as np
 import scanpy as sc
+import torch
+import torch.distributed as dist
 
 from custom_parser import get_argparser, get_configparser
 from factory import get_factory
@@ -23,6 +25,14 @@ if __name__ == "__main__":
 
     cfg_parser = get_configparser()
     cfg_parser.read(args.config)
+
+    # Initialize distributed training if FSDP is enabled
+    use_fsdp = cfg_parser.getboolean("Model", "use fsdp", fallback=False)
+    if use_fsdp and args.train:
+        # Initialize the process group for distributed training
+        if not dist.is_initialized():
+            dist.init_process_group(backend="nccl")
+            torch.cuda.set_device(int(os.environ.get("LOCAL_RANK", 0)))
 
     # copy the config file to the output dir
     output_dir = cfg_parser.get("EXPERIMENT", "output directory")
@@ -75,3 +85,7 @@ if __name__ == "__main__":
 
     if args.perturb: 
         perturbation.perturb(cfg_parser)
+
+    # Cleanup distributed training
+    if use_fsdp and args.train and dist.is_initialized():
+        dist.destroy_process_group()

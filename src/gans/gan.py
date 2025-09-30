@@ -285,8 +285,8 @@ class GAN:
         torch.save(
             {
                 "step": self.step,
-                "generator_state_dict": self.gen.module.state_dict(),
-                "critic_state_dict": self.crit.module.state_dict(),
+                "generator_state_dict": self.gen.state_dict(),
+                "critic_state_dict": self.crit.state_dict(),
                 "generator_optimizer_state_dict": self.gen_opt.state_dict(),
                 "critic_optimizer_state_dict": self.crit_opt.state_dict(),
                 "generator_lr_scheduler": self.gen_lr_scheduler.state_dict(),
@@ -664,8 +664,6 @@ class GAN:
 
         # We only accept training on GPU since training on CPU is impractical.
         self.device = "cuda"
-        self.gen = torch.nn.DataParallel(self.gen)
-        self.crit = torch.nn.DataParallel(self.crit)
 
         # Main training loop
         generator_losses, critic_losses = [], []

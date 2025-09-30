@@ -5,6 +5,7 @@ import torch
 from layers.lsn import LSN
 from layers.masked_linear import MaskedLinear
 from torch import nn
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.nn.modules.activation import ReLU
 
 
@@ -19,6 +20,7 @@ class CausalGenerator(nn.Module):
         causal_graph: typing.Dict[int, typing.Set[int]],
         library_size: typing.Optional[typing.Union[int, None]] = None,
         device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
+        use_fsdp: typing.Optional[bool] = False,
     ) -> None:
         """
         Causal Generator's constructor.
@@ -55,6 +57,8 @@ class CausalGenerator(nn.Module):
         device : typing.Optional[str], optional
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
+        use_fsdp : typing.Optional[bool], optional
+            Whether to use FSDP (Fully Sharded Data Parallel) for sharding generator modules, by default False.
         """
         super().__init__()
         self.z_input = z_input
@@ -64,6 +68,7 @@ class CausalGenerator(nn.Module):
         self.causal_graph = causal_graph
         self.library_size = library_size
         self.device = device
+        self.use_fsdp = use_fsdp
         self._causal_controller = causal_controller
         self._generator = None
 
@@ -125,9 +130,7 @@ class CausalGenerator(nn.Module):
 
         # create placeholder for cells
         cells = torch.zeros(batch_size, self.num_tfs + self.num_genes).to(self.device)
-        cells = cells.index_add_(
-            1, torch.tensor(self.tfs).to(self.device), tf_expressions
-        )
+        cells = cells.index_add_(1, torch.tensor(self.tfs).to(self.device), tf_expressions)
 
         # lazy way of avoiding a circular dependency
         # FIXME: circular dependency
@@ -144,9 +147,7 @@ class CausalGenerator(nn.Module):
         regulators = torch.cat([tf_expressions, noise], dim=1)
         gene_expression = self._generator(regulators)
 
-        cells = cells.index_add_(
-            1, torch.tensor(self.genes).to(self.device), gene_expression
-        )
+        cells = cells.index_add_(1, torch.tensor(self.genes).to(self.device), gene_expression)
         if self.library_size is not None:
             # reuse previous LSN scale in perturbation mode
             cells = self._lsn(cells, reuse_scale=self.pert_mode)
@@ -168,9 +169,7 @@ class CausalGenerator(nn.Module):
 
         The MaskedLinear module is used to mask weights and gradients in linear layers.
         """
-        hidden_dims = (
-            len(self.regulators) + self.num_noises
-        ) * self.width_scale_per_gene
+        hidden_dims = (len(self.regulators) + self.num_noises) * self.width_scale_per_gene
 
         # noise mask will be added to TF mask
         input_mask = torch.zeros(self.num_tfs, hidden_dims).to(self.device)
@@ -180,24 +179,19 @@ class CausalGenerator(nn.Module):
         prev_gene_hidden_dims = 0
         for gene, gene_regulators in self.causal_graph.items():
             gene_idx = self.genes.index(gene)
-            curr_gene_hidden_dims = self.width_scale_per_gene * (
-                len(gene_regulators) + self.noise_per_gene
-            )
+            curr_gene_hidden_dims = self.width_scale_per_gene * (len(gene_regulators) + self.noise_per_gene)
             for gene_regulator in gene_regulators:
                 gene_regulator_idx = self.tfs.index(gene_regulator)
 
                 # mask for the tfs
                 input_mask[
                     gene_regulator_idx,
-                    prev_gene_hidden_dims : prev_gene_hidden_dims
-                    + curr_gene_hidden_dims,
+                    prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
                 ] = 1
 
             # mask for the noises
             noise_mask = torch.zeros(self.noise_per_gene, hidden_dims).to(self.device)
-            noise_mask[
-                :, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims
-            ] = 1
+            noise_mask[:, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims] = 1
             input_mask = torch.cat([input_mask, noise_mask])
 
             # mask for hidden layer
@@ -217,16 +211,23 @@ class CausalGenerator(nn.Module):
         generator_layers = nn.ModuleList()
 
         # input block
-        generator_layers.append(self._create_generator_block(input_mask))
+        input_block = self._create_generator_block(input_mask)
+        if self.use_fsdp:
+            input_block = FSDP(input_block)
+        generator_layers.append(input_block)
 
         # hidden block
         for _ in range(self.depth_per_gene):
-            generator_layers.append(self._create_generator_block(hidden_mask))
+            hidden_block = self._create_generator_block(hidden_mask)
+            if self.use_fsdp:
+                hidden_block = FSDP(hidden_block)
+            generator_layers.append(hidden_block)
 
         # output block
-        generator_layers.append(
-            self._create_generator_block(output_mask, final_layer=True)
-        )
+        output_block = self._create_generator_block(output_mask, final_layer=True)
+        if self.use_fsdp:
+            output_block = FSDP(output_block)
+        generator_layers.append(output_block)
 
         self._generator = nn.Sequential(*generator_layers)
 
@@ -276,19 +277,17 @@ class CausalGenerator(nn.Module):
             masked_linear.reapply_mask()
             return nn.Sequential(
                 masked_linear,
-                nn.BatchNorm1d(mask.shape[1]),
+                nn.BatchNorm1d(mask.shape[1], device=self.device),
                 nn.ReLU(inplace=True),
             )
 
         else:
-            nn.init.kaiming_normal_(
-                masked_linear.weight, mode="fan_in", nonlinearity="relu"
-            )
+            nn.init.kaiming_normal_(masked_linear.weight, mode="fan_in", nonlinearity="relu")
             masked_linear.reapply_mask()
 
             torch.nn.init.zeros_(masked_linear.bias)
             if library_size is not None:
-                return nn.Sequential(masked_linear, ReLU(), LSN(library_size))
+                return nn.Sequential(masked_linear, ReLU(), LSN(library_size, device=self.device))
             else:
                 return nn.Sequential(masked_linear, ReLU())
 

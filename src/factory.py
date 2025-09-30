@@ -199,6 +199,7 @@ class CausalGANFactory(IGANFactory):
             labeler_layers=parse_list(self.parser["Model"]["labeler layers"], int),
             device=self.parser.get("EXPERIMENT", "device", fallback=None),
             library_size=self.parser.getint("Preprocessing", "library size"),
+            use_fsdp=self.parser.getboolean("Model", "use fsdp", fallback=False),
         )
 
     def get_trainer(self) -> typing.Callable:

@@ -27,6 +27,7 @@ class CausalGAN(GAN):
         labeler_layers: typing.List[int],
         device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
         library_size: typing.Optional[int] = 20000,
+        use_fsdp: typing.Optional[bool] = False,
     ) -> None:
         """
         Causal single-cell RNA-seq GAN (TODO: find a unique name).
@@ -69,6 +70,8 @@ class CausalGAN(GAN):
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
         library_size : typing.Optional[int], optional
             Total number of counts per generated cell, by default 20000.
+        use_fsdp : typing.Optional[bool], optional
+            Whether to use FSDP (Fully Sharded Data Parallel) for sharding generator modules, by default False.
         """
 
         self.causal_controller = Generator(
@@ -88,6 +91,7 @@ class CausalGAN(GAN):
         self.width_per_gene = width_per_gene
         self.causal_graph = causal_graph
         self.labeler_layers = labeler_layers
+        self.use_fsdp = use_fsdp
         super().__init__(
             genes_no,
             batch_size,
@@ -108,6 +112,8 @@ class CausalGAN(GAN):
             self.causal_controller,
             self.causal_graph,
             self.library_size,
+            device=self.device,
+            use_fsdp=self.use_fsdp,
         ).to(self.device)
         self.gen.freeze_causal_controller()
 
@@ -137,10 +143,10 @@ class CausalGAN(GAN):
         torch.save(
             {
                 "step": self.step,
-                "generator_state_dict": self.gen.module.state_dict(),
-                "critic_state_dict": self.crit.module.state_dict(),
-                "labeler_state_dict": self.labeler.module.state_dict(),
-                "antilabeler_state_dict": self.antilabeler.module.state_dict(),
+                "generator_state_dict": self.gen.state_dict(),
+                "critic_state_dict": self.crit.state_dict(),
+                "labeler_state_dict": self.labeler.state_dict(),
+                "antilabeler_state_dict": self.antilabeler.state_dict(),
                 "generator_optimizer_state_dict": self.gen_opt.state_dict(),
                 "critic_optimizer_state_dict": self.crit_opt.state_dict(),
                 "labeler_optimizer_state_dict": self.labeler_opt.state_dict(),
@@ -216,23 +222,23 @@ class CausalGAN(GAN):
 
         # train anti-labeler
         self.antilabeler_opt.zero_grad()
-        predicted_tfs = self.antilabeler(fake[:, self.gen.module.genes])
-        actual_tfs = fake[:, self.gen.module.tfs]
+        predicted_tfs = self.antilabeler(fake[:, self.gen.genes])
+        actual_tfs = fake[:, self.gen.tfs]
         antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
         antilabeler_loss.backward(retain_graph=True)
         self.antilabeler_opt.step()
 
         # train labeler on fake data
         self.labeler_opt.zero_grad()
-        predicted_tfs = self.labeler(fake[:, self.gen.module.genes])
+        predicted_tfs = self.labeler(fake[:, self.gen.genes])
         labeler_floss = self.mse(predicted_tfs, actual_tfs)
         labeler_floss.backward()
         self.labeler_opt.step()
 
         # train labeler on real data
         self.labeler_opt.zero_grad()
-        predicted_tfs = self.labeler(real_cells[:, self.gen.module.genes])
-        actual_tfs = real_cells[:, self.gen.module.tfs]
+        predicted_tfs = self.labeler(real_cells[:, self.gen.genes])
+        actual_tfs = real_cells[:, self.gen.tfs]
         labeler_rloss = self.mse(predicted_tfs, actual_tfs)
         labeler_rloss.backward()
         self.labeler_opt.step()
@@ -255,11 +261,11 @@ class CausalGAN(GAN):
 
         fake = self.gen(fake_noise)
 
-        predicted_tfs = self.labeler(fake[:, self.gen.module.genes])
-        actual_tfs = fake[:, self.gen.module.tfs]
+        predicted_tfs = self.labeler(fake[:, self.gen.genes])
+        actual_tfs = fake[:, self.gen.tfs]
         labeler_loss = self.mse(predicted_tfs, actual_tfs)
 
-        predicted_tfs = self.antilabeler(fake[:, self.gen.module.genes])
+        predicted_tfs = self.antilabeler(fake[:, self.gen.genes])
         antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
 
         crit_fake_pred = self.crit(fake)
@@ -407,10 +413,6 @@ class CausalGAN(GAN):
 
         # We only accept training on GPU since training on CPU is impractical.
         self.device = "cuda"
-        self.gen = torch.nn.DataParallel(self.gen)
-        self.crit = torch.nn.DataParallel(self.crit)
-        self.labeler = torch.nn.DataParallel(self.labeler)
-        self.antilabeler = torch.nn.DataParallel(self.antilabeler)
 
         # Main training loop
         generator_losses, critic_losses = [], []

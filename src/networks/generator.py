@@ -69,9 +69,7 @@ class Generator(nn.Module):
 
         # outermost layer
         layers.append(
-            self._create_generator_block(
-                input_size, self.output_cells_dim, self.library_size, final_layer=True
-            )
+            self._create_generator_block(input_size, self.output_cells_dim, self.library_size, final_layer=True)
         )
 
         self._generator = nn.Sequential(*layers)
@@ -84,7 +82,7 @@ class Generator(nn.Module):
         library_size: typing.Optional[typing.Union[int, None]] = None,
         final_layer: typing.Optional[bool] = False,
         *args,
-        **kwargs
+        **kwargs,
     ) -> nn.Sequential:
         """
         Function for creating a sequence of operations corresponding to
@@ -123,9 +121,7 @@ class Generator(nn.Module):
             )
         else:
             # * Unable to find variance_scaling_initializer() with FAN_AVG mode
-            nn.init.kaiming_normal_(
-                linear_layer.weight, mode="fan_in", nonlinearity="relu"
-            )
+            nn.init.kaiming_normal_(linear_layer.weight, mode="fan_in", nonlinearity="relu")
             torch.nn.init.zeros_(linear_layer.bias)
 
             # library_size = None
@@ -163,13 +159,9 @@ class ConditionalGenerator(Generator):
         """
         self.num_classes = num_classes
 
-        super(ConditionalGenerator, self).__init__(
-            z_input, output_cells_dim, gen_layers, library_size
-        )
+        super(ConditionalGenerator, self).__init__(z_input, output_cells_dim, gen_layers, library_size)
 
-    def forward(
-        self, noise: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs
-    ) -> torch.Tensor:
+    def forward(self, noise: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs) -> torch.Tensor:
         """
         Function for completing a forward pass of the generator.
 
@@ -202,9 +194,7 @@ class ConditionalGenerator(Generator):
         self._generator = nn.ModuleList()
         input_size = self.z_input
         for output_size in self.gen_layers:
-            layers = self._create_generator_block(
-                input_size, output_size, num_classes=self.num_classes
-            )
+            layers = self._create_generator_block(input_size, output_size, num_classes=self.num_classes)
             for layer in layers:
                 self._generator.append(layer)
             input_size = output_size  # update input size for the next layer
@@ -228,7 +218,7 @@ class ConditionalGenerator(Generator):
         final_layer: typing.Optional[bool] = False,
         num_classes: int = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> typing.Union[nn.Sequential, tuple]:
         """
         Function for creating a sequence of operations corresponding to
@@ -268,9 +258,7 @@ class ConditionalGenerator(Generator):
                 nn.ReLU(inplace=True),
             )
         else:
-            nn.init.kaiming_normal_(
-                linear_layer.weight, mode="fan_in", nonlinearity="relu"
-            )
+            nn.init.kaiming_normal_(linear_layer.weight, mode="fan_in", nonlinearity="relu")
             torch.nn.init.zeros_(linear_layer.bias)
 
             if library_size is not None:

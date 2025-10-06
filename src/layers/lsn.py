@@ -27,9 +27,7 @@ class LSN(nn.Module):
         self.register_parameter("library_size", self.library_size)
         self.scale = None
 
-    def forward(
-        self, in_: torch.Tensor, reuse_scale: typing.Optional[bool] = False
-    ) -> torch.Tensor:
+    def forward(self, in_: torch.Tensor, reuse_scale: typing.Optional[bool] = False) -> torch.Tensor:
         """
         Function for completing a forward pass of the LSN layer.
 
@@ -53,12 +51,12 @@ class LSN(nn.Module):
 
         if reuse_scale:
             if self.scale is not None:
-                scale = self.scale # use previously set scale if not first pass through the frozen LSN layer
+                scale = self.scale  # use previously set scale if not first pass through the frozen LSN layer
             else:
-                self.scale = scale # if first pass through the frozen LSN layer
+                self.scale = scale  # if first pass through the frozen LSN layer
         else:
             self.scale = None  # unfreeze LSN scale if set
 
         return torch.nan_to_num(
             torch.transpose(torch.transpose(in_, 0, 1) * scale, 0, 1), nan=0.0
-        ) # possible NaN if all genes are zero-expressed - NaNs are thus replaced with zeros
+        )  # possible NaN if all genes are zero-expressed - NaNs are thus replaced with zeros

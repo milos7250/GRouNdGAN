@@ -78,9 +78,7 @@ class CausalGAN(GAN):
             library_size=None,
         )
 
-        checkpoint = torch.load(
-            cc_pretrained_checkpoint, map_location=torch.device(device)
-        )
+        checkpoint = torch.load(cc_pretrained_checkpoint, map_location=torch.device(device))
         self.causal_controller.load_state_dict(checkpoint["generator_state_dict"])
 
         self.noise_per_gene = noise_per_gene
@@ -114,12 +112,8 @@ class CausalGAN(GAN):
         self.crit = Critic(self.genes_no, self.critic_layers).to(self.device)
 
         # the number of genes and TFs are resolved by the causal generator during its instantiation
-        self.labeler = Labeler(
-            self.gen.num_genes, self.gen.num_tfs, self.labeler_layers
-        ).to(self.device)
-        self.antilabeler = Labeler(
-            self.gen.num_genes, self.gen.num_tfs, self.labeler_layers
-        ).to(self.device)
+        self.labeler = Labeler(self.gen.num_genes, self.gen.num_tfs, self.labeler_layers).to(self.device)
+        self.antilabeler = Labeler(self.gen.num_genes, self.gen.num_tfs, self.labeler_layers).to(self.device)
 
     def _save(self, path: typing.Union[str, bytes, os.PathLike]) -> None:
         """
@@ -195,9 +189,7 @@ class CausalGAN(GAN):
             self.labeler.load_state_dict(checkpoint["labeler_state_dict"])
             self.antilabeler.load_state_dict(checkpoint["antilabeler_state_dict"])
             self.labeler_opt.load_state_dict(checkpoint["labeler_optimizer_state_dict"])
-            self.antilabeler_opt.load_state_dict(
-                checkpoint["antilabeler_optimizer_state_dict"]
-            )
+            self.antilabeler_opt.load_state_dict(checkpoint["antilabeler_optimizer_state_dict"])
 
         else:
             raise ValueError("mode should be 'inference' or 'training'")
@@ -212,7 +204,7 @@ class CausalGAN(GAN):
             Tensor containing a batch of real cells.
         """
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
-        fake = self.gen(fake_noise).detach() 
+        fake = self.gen(fake_noise).detach()
 
         # train anti-labeler
         self.antilabeler_opt.zero_grad()
@@ -247,11 +239,9 @@ class CausalGAN(GAN):
         """
         self.gen_opt.zero_grad()
 
-        fake_noise = self._generate_noise(
-            self.batch_size, self.latent_dim, device=self.device
-        )
+        fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
 
-        self.tb_fake_noise = fake_noise # for tensorboard model graph
+        self.tb_fake_noise = fake_noise  # for tensorboard model graph
 
         fake = self.gen(fake_noise)
 
@@ -267,14 +257,13 @@ class CausalGAN(GAN):
 
         # comment for ablation of labeler and anti-labeler (GRouNdGAN_def_even_ablation1)
         gen_loss += labeler_loss + antilabeler_loss
-        
+
         # uncomment for ablation of anti-labeler but keeping the labeler (GRouNdGAN_def_even_ablation2)
         # gen_loss += labeler_loss
 
         # uncomment for ablation of labeler but keeping the anti-labeler (GRouNdGAN_def_even_ablation3)
         # gen_loss += antilabeler_loss
 
-        
         gen_loss.backward()
 
         # Update weights
@@ -390,12 +379,8 @@ class CausalGAN(GAN):
         self.mse = torch.nn.MSELoss()
 
         # Exponential Learning Rate
-        self.gen_lr_scheduler = self._set_exponential_lr(
-            self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps
-        )
-        self.crit_lr_scheduler = self._set_exponential_lr(
-            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps
-        )
+        self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps)
+        self.crit_lr_scheduler = self._set_exponential_lr(self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps)
 
         if checkpoint is not None:
             self._load(checkpoint, mode="training")
@@ -429,9 +414,7 @@ class CausalGAN(GAN):
             if self.step != 0:
                 mean_iter_crit_loss = 0
                 for _ in range(critic_iter):
-                    crit_loss, gp = self._train_critic(
-                        real_cells, real_labels, c_lambda
-                    )
+                    crit_loss, gp = self._train_critic(real_cells, real_labels, c_lambda)
                     mean_iter_crit_loss += crit_loss.item() / critic_iter
 
                 critic_losses += [mean_iter_crit_loss]

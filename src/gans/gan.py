@@ -340,9 +340,7 @@ class GAN:
 
     def _build_model(self) -> None:
         """Instantiates the Generator and Critic."""
-        self.gen = Generator(
-            self.latent_dim, self.genes_no, self.gen_layers, self.library_size
-        ).to(self.device)
+        self.gen = Generator(self.latent_dim, self.genes_no, self.gen_layers, self.library_size).to(self.device)
         self.crit = Critic(self.genes_no, self.critic_layers).to(self.device)
 
     def _get_loaders(
@@ -455,9 +453,7 @@ class GAN:
         fake_cells = self.generate_cells(len(valid_loader.dataset))
         valid_cells, _ = next(iter(valid_loader))
 
-        embedded_cells = TSNE().fit_transform(
-            np.concatenate((valid_cells, fake_cells), axis=0)
-        )
+        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]
@@ -482,9 +478,7 @@ class GAN:
         )
 
         plt.grid(True)
-        plt.legend(
-            loc="lower left", numpoints=1, ncol=2, fontsize=8, bbox_to_anchor=(0, 0)
-        )
+        plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=8, bbox_to_anchor=(0, 0))
 
         plt.savefig(tsne_path + "/step_" + str(self.step) + ".jpg")
 
@@ -518,7 +512,7 @@ class GAN:
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
         fake = self.gen(fake_noise)
 
-        self.tb_fake = fake # for tensorboard model graph
+        self.tb_fake = fake  # for tensorboard model graph
 
         crit_fake_pred = self.crit(fake.detach())
         crit_real_pred = self.crit(real_cells)
@@ -549,11 +543,9 @@ class GAN:
         """
         self.gen_opt.zero_grad()
 
-        fake_noise = self._generate_noise(
-            self.batch_size, self.latent_dim, device=self.device
-        )
+        fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
 
-        self.tb_fake_noise = fake_noise # for tensorboard model graph
+        self.tb_fake_noise = fake_noise  # for tensorboard model graph
 
         fake = self.gen(fake_noise)
         crit_fake_pred = self.crit(fake)
@@ -646,12 +638,8 @@ class GAN:
         )
 
         # Exponential Learning Rate
-        self.gen_lr_scheduler = self._set_exponential_lr(
-            self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps
-        )
-        self.crit_lr_scheduler = self._set_exponential_lr(
-            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps
-        )
+        self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps)
+        self.crit_lr_scheduler = self._set_exponential_lr(self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps)
 
         if checkpoint is not None:
             if not Path(checkpoint).exists():
@@ -684,9 +672,7 @@ class GAN:
             if self.step != 0:
                 mean_iter_crit_loss = 0
                 for _ in range(critic_iter):
-                    crit_loss, gp = self._train_critic(
-                        real_cells, real_labels, c_lambda
-                    )
+                    crit_loss, gp = self._train_critic(real_cells, real_labels, c_lambda)
                     mean_iter_crit_loss += crit_loss.item() / critic_iter
 
                 critic_losses += [mean_iter_crit_loss]
@@ -705,7 +691,7 @@ class GAN:
                 crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
 
                 # if self.step == summary_freq:
-                    # self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
+                # self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
 
                 self._update_tensorboard(
                     gen_mean,

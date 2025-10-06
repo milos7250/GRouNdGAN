@@ -26,7 +26,7 @@ def create_GRN(cfg: ConfigParser) -> None:
     gene_names = real_cells.var_names.tolist()
     TFs = pd.read_csv(cfg.get("GRN Preparation", "TFs"), sep="\t")["Symbol"]
     TFs = list(set(TFs).intersection(gene_names))
-    
+
     if sparse.issparse(real_cells.X):
         real_cells.X = real_cells.X.todense()
 
@@ -41,9 +41,7 @@ def create_GRN(cfg: ConfigParser) -> None:
 
     # read GRN csv output, group TFs regulating genes, sort by importance
     real_grn = (
-        pd.read_csv(cfg.get("GRN Preparation", "Inferred GRN"))
-        .sort_values("importance", ascending=False)
-        .astype(str)
+        pd.read_csv(cfg.get("GRN Preparation", "Inferred GRN")).sort_values("importance", ascending=False).astype(str)
     )
     causal_graph = dict(real_grn.groupby("target")["TF"].apply(list))
 
@@ -57,18 +55,18 @@ def create_GRN(cfg: ConfigParser) -> None:
     elif cfg.get("GRN Preparation", "strategy") == "pos ctr":
         print("Creating positive control GRN from even indexed top TFs (top 1, 3, 5, ...)")
         causal_graph = {
-            gene: set(tfs[0:k:2]) # sample even indices
+            gene: set(tfs[0:k:2])  # sample even indices
             for (gene, tfs) in causal_graph.items()
-        }    
+        }
 
     elif cfg.get("GRN Preparation", "strategy") == "neg ctr":
         print("Creating negative control GRN from odd indexed top TFs (top 2, 4, 6, ...)")
         causal_graph = {
-            gene: set(tfs[1:k:2]) # sample odd indices
+            gene: set(tfs[1:k:2])  # sample odd indices
             for (gene, tfs) in causal_graph.items()
-        }    
-    else: 
-        print("GRN preparation strategy not valid")    
+        }
+    else:
+        print("GRN preparation strategy not valid")
 
     # get gene, TF names
     regulators = list(chain.from_iterable(causal_graph.values()))
@@ -110,8 +108,7 @@ def create_GRN(cfg: ConfigParser) -> None:
     gene_idx = real_cells.to_df().columns
     # convert gene names to numerical indices
     causal_graph = {
-        gene_idx.get_loc(gene): {gene_idx.get_loc(tf) for tf in tfs}
-        for (gene, tfs) in causal_graph.items()
+        gene_idx.get_loc(gene): {gene_idx.get_loc(tf) for tf in tfs} for (gene, tfs) in causal_graph.items()
     }
 
     # save causal graph

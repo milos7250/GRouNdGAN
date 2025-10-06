@@ -406,11 +406,13 @@ class CausalGAN(GAN):
         self.antilabeler.train()
 
         # We only accept training on GPU since training on CPU is impractical.
-        self.device = "cuda"
-        self.gen = torch.nn.DataParallel(self.gen)
-        self.crit = torch.nn.DataParallel(self.crit)
-        self.labeler = torch.nn.DataParallel(self.labeler)
-        self.antilabeler = torch.nn.DataParallel(self.antilabeler)
+        if torch.distributed.is_initialized():
+            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen)
+            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit)
+            self.labeler = torch.nn.parallel.DistributedDataParallel(self.labeler)
+            self.antilabeler = torch.nn.parallel.DistributedDataParallel(self.antilabeler)
+        else:
+            self.device = "cuda"
 
         # Main training loop
         generator_losses, critic_losses = [], []

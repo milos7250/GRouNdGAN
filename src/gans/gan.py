@@ -653,7 +653,7 @@ class GAN:
             self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps
         )
 
-        if checkpoint is not None and Path(checkpoint).exists():
+        if checkpoint is not None:
             if not Path(checkpoint).exists():
                 warnings.warn(f"Checkpoint {checkpoint} does not exist.")
             else:
@@ -663,9 +663,11 @@ class GAN:
         self.crit.train()
 
         # We only accept training on GPU since training on CPU is impractical.
-        self.device = "cuda"
-        self.gen = torch.nn.DataParallel(self.gen)
-        self.crit = torch.nn.DataParallel(self.crit)
+        if torch.distributed.is_initialized():
+            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen)
+            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit)
+        else:
+            self.device = "cuda"
 
         # Main training loop
         generator_losses, critic_losses = [], []

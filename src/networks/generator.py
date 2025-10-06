@@ -75,6 +75,7 @@ class Generator(nn.Module):
         )
 
         self._generator = nn.Sequential(*layers)
+        self.register_module("generator", self._generator)
 
     @staticmethod
     def _create_generator_block(

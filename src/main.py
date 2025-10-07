@@ -10,10 +10,15 @@ import torch.distributed
 from custom_parser import get_argparser, get_configparser
 from evaluation import data_quality, grn_inference
 from factory import get_factory
+from loggers import setup_logger
 from perturbation import perturbation
 from preprocessing import grn_creation, preprocess
 
-if __name__ == "__main__":
+# Setup logger
+logger = setup_logger("main")
+
+
+def main():
     """
     Main script to process the data and/or start the training or
     generate cells from an existing model.
@@ -48,7 +53,7 @@ if __name__ == "__main__":
             group = torch.distributed.init_process_group("nccl")
             fac.get_trainer()()
             torch.distributed.destroy_process_group(group)
-            print("Finished training.")
+            logger.info("Finished training.")
             if args.generate or args.evaluate or args.benchmark_grn or args.perturb:
                 raise ValueError(
                     "Cannot generate, evaluate, benchmark GRN, or perturb after training with DDP."
@@ -57,7 +62,7 @@ if __name__ == "__main__":
             exit(0)
         else:
             fac.get_trainer()()
-            print("Finished training")
+            logger.info("Finished training")
 
     if args.generate:
         simulated_cells = fac.get_gan().generate_cells(
@@ -75,7 +80,7 @@ if __name__ == "__main__":
             generation_path = cfg_parser.get("EXPERIMENT", "output directory") + "/simulated.h5ad"
 
         simulated_cells.write(generation_path)
-        print("Simulated cells saved to", generation_path)
+        logger.info("Simulated cells saved to", generation_path)
 
     if args.evaluate:
         data_quality.evaluate(cfg_parser)
@@ -85,3 +90,10 @@ if __name__ == "__main__":
 
     if args.perturb:
         perturbation.perturb(cfg_parser)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        logger.exception("Exception occurred")

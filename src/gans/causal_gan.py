@@ -2,6 +2,7 @@ import os
 import typing
 
 import torch
+from loggers import setup_logger
 from networks.critic import Critic
 from networks.generator import Generator
 from networks.labeler import Labeler
@@ -344,6 +345,9 @@ class CausalGAN(GAN):
             Period between saves of the model, by default 10000.
         """
 
+        # Configure logger
+        logger = setup_logger(__name__)
+
         def should_run(freq):
             return (freq > 0 and self.step % freq == 0 and self.step > 1) or (self.step - 1 == max_steps)
 
@@ -434,6 +438,10 @@ class CausalGAN(GAN):
             if should_run(labeler_training_interval):
                 self._train_labelers(real_cells)
 
+            if should_run(save_feq):
+                self._save(output_dir)
+                logger.info(f"Step {self.step}: Saved checkpoint to {output_dir}")
+
             # Log and visualize progress
             if should_run(summary_freq):
                 gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
@@ -450,17 +458,19 @@ class CausalGAN(GAN):
                     self.crit_lr_scheduler.get_last_lr()[0],
                     output_dir,
                 )
-                print("Saved logs")
+
+                logger.info(
+                    f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}"
+                )
+                logger.debug(
+                    f"Step {self.step}: Generator LR: {self.gen_lr_scheduler.get_last_lr()[0]:.6f}, Critic LR: {self.crit_lr_scheduler.get_last_lr()[0]:.6f}"
+                )
 
             if should_run(plt_freq):
                 self._generate_tsne_plot(valid_loader, output_dir)
-                print("Saved t-SNE plot")
+                logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
 
-            print("Done training GRouNdGAN step", self.step, flush=True)
-
-            if should_run(save_feq):
-                self._save(output_dir)
-                print("Saved checkpoint")
+            logger.info(f"Step {self.step}/{max_steps} completed")
 
             self.step += 1
             if torch.distributed.is_initialized():

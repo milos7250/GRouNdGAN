@@ -4,6 +4,7 @@ from configparser import ConfigParser
 import numpy as np
 import pandas as pd
 import scanpy as sc
+from loggers import setup_logger
 from scipy.sparse import issparse
 
 
@@ -17,6 +18,10 @@ def preprocess(cfg: ConfigParser) -> None:
         Parser for config file containing preprocessing params.
     """
 
+    # Configure logger
+    logger = setup_logger(__name__)
+
+    logger.info("Loading data...")
     if cfg.get("Preprocessing", "10x") == "True":
         anndata = sc.read_10x_mtx(
             cfg.get("Preprocessing", "raw"), make_unique=True, gex_only=True
@@ -25,13 +30,15 @@ def preprocess(cfg: ConfigParser) -> None:
     else:
         anndata = sc.read_h5ad(cfg.get("Preprocessing", "raw"))
 
+    logger.info("Shuffling data...")
     original_order = np.arange(anndata.n_obs)  # Store the original cell order
     np.random.shuffle(original_order)  # Shuffle the indices
 
     # Apply the shuffled order to the AnnData object
-    anndata = anndata[original_order]
+    anndata = anndata[original_order].copy()
 
     # clustering
+    logger.info("Clustering data...")
     ann_clustered = anndata.copy()
     sc.pp.recipe_zheng17(ann_clustered)
     sc.tl.pca(ann_clustered, n_comps=50)
@@ -50,6 +57,7 @@ def preprocess(cfg: ConfigParser) -> None:
     anndata.uns["clusters_no"] = len(cluster_ratios)
 
     # filtering
+    logger.info("Filtering data...")
     sc.pp.filter_cells(anndata, min_genes=int(cfg.get("Preprocessing", "min genes")))
     sc.pp.filter_genes(anndata, min_cells=int(cfg.get("Preprocessing", "min cells")))
     anndata.uns["cells_no"] = anndata.shape[0]
@@ -58,6 +66,7 @@ def preprocess(cfg: ConfigParser) -> None:
     canndata = anndata.copy()
 
     # library-size normalization
+    logger.info("Subsetting highly variable genes...")
     sc.pp.normalize_per_cell(
         canndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size"))
     )
@@ -86,7 +95,7 @@ def preprocess(cfg: ConfigParser) -> None:
 
     anndata = anndata[
         :, canndata.var["highly_variable"]
-    ]  # only keep highly variable genes
+    ].copy()  # only keep highly variable genes
 
     sc.pp.normalize_per_cell(
         anndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size"))
@@ -99,11 +108,16 @@ def preprocess(cfg: ConfigParser) -> None:
     val_size = int(cfg.get("Preprocessing", "validation set size"))
     test_size = int(cfg.get("Preprocessing", "test set size"))
 
+    logger.info("Saving datasets...")
     anndata[:val_size].write_h5ad(cfg.get("Data", "validation"))
     anndata[val_size : test_size + val_size].write_h5ad(cfg.get("Data", "test"))
     anndata[test_size + val_size :].write_h5ad(cfg.get("Data", "train"))
 
-    print("Successfully preprocessed and saved dataset.")
-    print("Train set:", cfg.get("Data", "train"))
-    print("Validation set:", cfg.get("Data", "validation"))
-    print("Test set:", cfg.get("Data", "test"))
+    logger.info("Successfully preprocessed and saved dataset.")
+    logger.info(
+        f"Train set ({anndata[test_size + val_size :].shape[0]} cells): {cfg.get('Data', 'train')}"
+    )
+    logger.info(
+        f"Validation set ({val_size} cells): {cfg.get('Data', 'validation')}"
+    )
+    logger.info(f"Test set ({test_size} cells): {cfg.get('Data', 'test')}")

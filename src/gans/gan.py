@@ -6,6 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from loggers import setup_logger
 from networks.critic import Critic
 from networks.generator import Generator
 from sc_dataset import get_loader
@@ -631,6 +632,9 @@ class GAN:
             Period between saves of the model, by default 10000.
         """
 
+        # Configure logger
+        logger = setup_logger(__name__)
+
         def should_run(freq):
             return (freq > 0 and self.step % freq == 0 and self.step > 1) or (self.step - 1 == max_steps)
 
@@ -702,7 +706,7 @@ class GAN:
 
             if should_run(save_feq):
                 self._save(output_dir)
-                print("Saved checkpoint")
+                logger.info(f"Step {self.step}: Saved checkpoint to {output_dir}")
 
             # Log and visualize progress
             if should_run(summary_freq):
@@ -720,13 +724,20 @@ class GAN:
                     self.crit_lr_scheduler.get_last_lr()[0],
                     output_dir,
                 )
-                print("Saved logs")
+                logger.info(
+                    f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}"
+                )
+                logger.debug(
+                    f"Step {self.step}: Generator LR: {self.gen_lr_scheduler.get_last_lr()[0]:.6f}, Critic LR: {self.crit_lr_scheduler.get_last_lr()[0]:.6f}"
+                )
 
             if should_run(plt_freq):
                 self._generate_tsne_plot(valid_loader, output_dir)
-                print("Saved t-SNE plot")
+                logger.info(
+                    f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}"
+                )
 
-            print("Done training causal controller step", self.step, flush=True)
+            logger.info(f"Step {self.step}/{max_steps} completed")
 
             if torch.distributed.is_initialized():
                 torch.distributed.barrier()

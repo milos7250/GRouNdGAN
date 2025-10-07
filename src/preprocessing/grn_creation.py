@@ -1,13 +1,14 @@
 import pickle
 from configparser import ConfigParser
 from itertools import chain
+from pathlib import Path
 
 import pandas as pd
 import scanpy as sc
 from arboreto.algo import grnboost2
-from tabulate import tabulate
+from loggers import setup_logger
 from scipy import sparse
-from pathlib import Path
+from tabulate import tabulate
 
 
 def create_GRN(cfg: ConfigParser) -> None:
@@ -19,6 +20,9 @@ def create_GRN(cfg: ConfigParser) -> None:
     cfg : ConfigParser
         Parser for config file containing GRN creation params.
     """
+    # Configure logger
+    logger = setup_logger(__name__)
+
     real_cells = sc.read_h5ad(cfg.get("Data", "train"))
     real_cells_val = sc.read_h5ad(cfg.get("Data", "validation"))
     real_cells_test = sc.read_h5ad(cfg.get("Data", "test"))
@@ -36,12 +40,12 @@ def create_GRN(cfg: ConfigParser) -> None:
         real_cells_df = pd.DataFrame(real_cells.X, columns=real_cells.var_names)
 
         # we can optionally pass a list of TFs to GRNBoost2
-        print(f"Using {len(TFs)} TFs for GRN inference.")
+        logger.info(f"Starting GRN inference using {len(TFs)} TFs.")
         real_grn = grnboost2(real_cells_df, tf_names=TFs, verbose=True, seed=1)
         real_grn.to_csv(cfg.get("GRN Preparation", "Inferred GRN"))
-        print("Successfully saved GRN inferred by GRNBoost2 GRN to", cfg.get("GRN Preparation", "Inferred GRN"))
+        logger.info(f"Successfully saved GRN inferred by GRNBoost2 GRN to {cfg.get('GRN Preparation', 'Inferred GRN')}")
     else:
-        print("Using already existing GRNBoost2 GRN at", cfg.get("GRN Preparation", "Inferred GRN"))
+        logger.info(f"Using already existing GRNBoost2 GRN at {cfg.get('GRN Preparation', 'Inferred GRN')}")
 
     # read GRN csv output, group TFs regulating genes, sort by importance
     real_grn = (
@@ -52,25 +56,26 @@ def create_GRN(cfg: ConfigParser) -> None:
     k = int(cfg.get("GRN Preparation", "k"))
 
     if cfg.get("GRN Preparation", "strategy") == "top":
+        logger.info(f"Creating top {k} GRN from top TFs")
         causal_graph = {
             gene: set(tfs[:k])  # to sample the top k edges
             for (gene, tfs) in causal_graph.items()
         }
     elif cfg.get("GRN Preparation", "strategy") == "pos ctr":
-        print("Creating positive control GRN from even indexed top TFs (top 1, 3, 5, ...)")
+        logger.info("Creating positive control GRN from even indexed top TFs (top 1, 3, 5, ...)")
         causal_graph = {
             gene: set(tfs[0:k:2])  # sample even indices
             for (gene, tfs) in causal_graph.items()
         }
 
     elif cfg.get("GRN Preparation", "strategy") == "neg ctr":
-        print("Creating negative control GRN from odd indexed top TFs (top 2, 4, 6, ...)")
+        logger.info("Creating negative control GRN from odd indexed top TFs (top 2, 4, 6, ...)")
         causal_graph = {
             gene: set(tfs[1:k:2])  # sample odd indices
             for (gene, tfs) in causal_graph.items()
         }
     else:
-        print("GRN preparation strategy not valid")
+        raise ValueError("GRN preparation strategy not valid")
 
     # get gene, TF names
     regulators = list(chain.from_iterable(causal_graph.values()))
@@ -93,10 +98,9 @@ def create_GRN(cfg: ConfigParser) -> None:
     real_cells_test[:, genes].write_h5ad(cfg.get("Data", "test"))
 
     # print causal graph info
-    print(
-        "",
-        "Causal Graph",
-        tabulate(
+    logger.info(
+        "Causal graph info:\n"
+        + tabulate(
             [
                 ("``TFs``", len(tfs)),
                 ("``Targets``", len(targets)),
@@ -105,8 +109,7 @@ def create_GRN(cfg: ConfigParser) -> None:
                 ("Imposed Edges", k * len(targets)),
                 ("GRN density Edges", k * len(targets) / (len(tfs) * len(targets))),
             ]
-        ),
-        sep="\n",
+        )
     )
 
     gene_idx = real_cells.to_df().columns
@@ -119,4 +122,4 @@ def create_GRN(cfg: ConfigParser) -> None:
     with open(cfg.get("Data", "causal graph"), "wb") as fp:
         pickle.dump(causal_graph, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-    print("Successfully saved GRouNdGAN causal graph to", cfg.get("Data", "causal graph"))
+    logger.info(f"Successfully saved GRouNdGAN causal graph to {cfg.get('Data', 'causal graph')}")

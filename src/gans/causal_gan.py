@@ -79,7 +79,7 @@ class CausalGAN(GAN):
         )
 
         checkpoint = torch.load(cc_pretrained_checkpoint, map_location=torch.device(device))
-        self.causal_controller.load_state_dict(checkpoint["generator_state_dict"])
+        self.causal_controller.load_state_dict(checkpoint["generator_state_dict"], strict=False)
 
         self.noise_per_gene = noise_per_gene
         self.depth_per_gene = depth_per_gene
@@ -106,6 +106,7 @@ class CausalGAN(GAN):
             self.causal_controller,
             self.causal_graph,
             self.library_size,
+            self.device,
         ).to(self.device)
         self.gen.freeze_causal_controller()
 
@@ -124,6 +125,9 @@ class CausalGAN(GAN):
         path : typing.Union[str, bytes, os.PathLike]
             Directory to save the model.
         """
+        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+            return
+
         output_dir = path + "/checkpoints"
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
@@ -341,7 +345,7 @@ class CausalGAN(GAN):
         """
 
         def should_run(freq):
-            return freq > 0 and self.step % freq == 0 and self.step > 0
+            return (freq > 0 and self.step % freq == 0 and self.step > 1) or (self.step - 1 == max_steps)
 
         loader, valid_loader = self._get_loaders(train_files, valid_files)
         loader_gen = iter(loader)
@@ -392,10 +396,10 @@ class CausalGAN(GAN):
 
         # We only accept training on GPU since training on CPU is impractical.
         if torch.distributed.is_initialized():
-            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen)
-            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit)
-            self.labeler = torch.nn.parallel.DistributedDataParallel(self.labeler)
-            self.antilabeler = torch.nn.parallel.DistributedDataParallel(self.antilabeler)
+            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen, find_unused_parameters=True)
+            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit, find_unused_parameters=True)
+            self.labeler = torch.nn.parallel.DistributedDataParallel(self.labeler, find_unused_parameters=True)
+            self.antilabeler = torch.nn.parallel.DistributedDataParallel(self.antilabeler, find_unused_parameters=True)
         else:
             self.device = "cuda"
 
@@ -459,3 +463,5 @@ class CausalGAN(GAN):
                 print("Saved checkpoint")
 
             self.step += 1
+            if torch.distributed.is_initialized():
+                torch.distributed.barrier()

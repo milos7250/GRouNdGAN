@@ -263,9 +263,13 @@ class GAN:
         batch_no = int(np.ceil(cells_no / self.batch_size))
 
         fake_cells = []
-        for _ in range(batch_no):
-            noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
-            fake_cells.append(self.gen(noise).cpu().detach().numpy())
+        was_training = self.gen.training
+        self.gen.eval()
+        with torch.no_grad():
+            for _ in range(batch_no):
+                noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
+                fake_cells.append(self.gen(noise).cpu().detach().numpy())
+        self.gen.train(was_training)
 
         return np.concatenate(fake_cells)[:cells_no]
 
@@ -278,6 +282,10 @@ class GAN:
         path : typing.Union[str, bytes, os.PathLike]
             Directory to save the model.
         """
+
+        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+            return
+
         output_dir = path + "/checkpoints"
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir)
@@ -416,6 +424,9 @@ class GAN:
             Directory to save the tfevents.
         """
 
+        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+            return
+
         with SummaryWriter(f"{output_dir}/TensorBoard/generator") as w:
             w.add_scalar("loss", gen_loss, self.step)
 
@@ -452,6 +463,10 @@ class GAN:
 
         fake_cells = self.generate_cells(len(valid_loader.dataset))
         valid_cells, _ = next(iter(valid_loader))
+        valid_cells = valid_cells.cpu().numpy()
+
+        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+            return
 
         embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
@@ -617,7 +632,7 @@ class GAN:
         """
 
         def should_run(freq):
-            return freq > 0 and self.step % freq == 0 and self.step > 0
+            return (freq > 0 and self.step % freq == 0 and self.step > 1) or (self.step - 1 == max_steps)
 
         loader, valid_loader = self._get_loaders(train_files, valid_files)
         loader_gen = iter(loader)
@@ -685,6 +700,10 @@ class GAN:
 
             generator_losses += [gen_loss.item()]
 
+            if should_run(save_feq):
+                self._save(output_dir)
+                print("Saved checkpoint")
+
             # Log and visualize progress
             if should_run(summary_freq):
                 gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
@@ -709,8 +728,6 @@ class GAN:
 
             print("Done training causal controller step", self.step, flush=True)
 
-            if should_run(save_feq):
-                self._save(output_dir)
-                print("Saved checkpoint")
-
+            if torch.distributed.is_initialized():
+                torch.distributed.barrier()
             self.step += 1

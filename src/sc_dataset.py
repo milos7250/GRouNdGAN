@@ -78,4 +78,4 @@ def get_loader(
     if batch_size is None:
         batch_size = len(dataset)
 
-    return DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
+    return DataLoader(dataset, batch_size, shuffle=True, drop_last=True, pin_memory=True, num_workers=2)

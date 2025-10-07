@@ -117,7 +117,7 @@ class Generator(nn.Module):
             return nn.Sequential(
                 linear_layer,
                 nn.BatchNorm1d(output_dim),
-                nn.ReLU(inplace=True),
+                ReLU(inplace=True),
             )
         else:
             # * Unable to find variance_scaling_initializer() with FAN_AVG mode
@@ -255,7 +255,7 @@ class ConditionalGenerator(Generator):
             return (
                 linear_layer,
                 ConditionalBatchNorm(output_dim, num_classes),
-                nn.ReLU(inplace=True),
+                ReLU(inplace=True),
             )
         else:
             nn.init.kaiming_normal_(linear_layer.weight, mode="fan_in", nonlinearity="relu")

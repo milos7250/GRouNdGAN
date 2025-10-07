@@ -86,6 +86,7 @@ class CausalGenerator(nn.Module):
         self.noise = None
 
         self._lsn = LSN(self.library_size)
+        self.register_module("lsn", self._lsn)
 
         self._create_generator()
         self._create_labeler()
@@ -124,10 +125,8 @@ class CausalGenerator(nn.Module):
         batch_size = tf_expressions.shape[0]
 
         # create placeholder for cells
-        cells = torch.zeros(batch_size, self.num_tfs + self.num_genes).to(self.device)
-        cells = cells.index_add_(
-            1, torch.tensor(self.tfs).to(self.device), tf_expressions
-        )
+        cells = torch.zeros(batch_size, self.num_tfs + self.num_genes, device=self.device)
+        cells = cells.index_add_(1, torch.tensor(self.tfs, device=self.device), tf_expressions)
 
         # lazy way of avoiding a circular dependency
         # FIXME: circular dependency
@@ -141,12 +140,10 @@ class CausalGenerator(nn.Module):
             else:
                 self.noise = noise
 
-        regulators = torch.cat([tf_expressions, noise], dim=1)
+        regulators = torch.cat([tf_expressions, noise], dim=1).to(self.device)
         gene_expression = self._generator(regulators)
 
-        cells = cells.index_add_(
-            1, torch.tensor(self.genes).to(self.device), gene_expression
-        )
+        cells = cells.index_add_(1, torch.tensor(self.genes, device=self.device), gene_expression)
         if self.library_size is not None:
             # reuse previous LSN scale in perturbation mode
             cells = self._lsn(cells, reuse_scale=self.pert_mode)

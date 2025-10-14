@@ -254,6 +254,9 @@ class CausalGANFactory(IGANFactory):
                     "Training", "labeler and antilabeler training intervals"
                 ),
                 checkpoint=self.parser.get("EXPERIMENT", "checkpoint", fallback=None),
+                starting_checkpoint=self.parser.get(
+                    "EXPERIMENT", "starting checkpoint", fallback=None
+                ),
                 summary_freq=self.parser.getint("Logging", "summary frequency"),
                 plt_freq=self.parser.getint("Logging", "plot frequency"),
                 save_feq=self.parser.getint("Logging", "save frequency"),

@@ -168,19 +168,22 @@ class CausalGAN(GAN):
         mode: typing.Optional[str] = "inference",
     ) -> None:
         """
-        Loads a saved causal GAN model (.pth file).
+        Loads a saved causal GAN model (.pth file). Inference mode only loads the generator and critic.
+        Initialization mode loads the model only for weight initialization of the generator, critic and
+        labellers (optimizer states are not loaded). Training mode loads the model for training from
+        checkpoint with optimizer states.
 
         Parameters
         ----------
         path : typing.Union[str, bytes, os.PathLike]
             Path to the saved model.
         mode : typing.Optional[str], optional
-            Specify if the loaded model is used for 'inference' or 'training', by default "inference".
+            Specify if the loaded model is used for 'inference', 'initialization', or 'training', by default "inference".
 
         Raises
         ------
         ValueError
-            If a mode other than 'inference' or 'training' is specified.
+            If a mode other than 'inference', 'initialization', or 'training' is specified.
         """
 
         checkpoint = torch.load(path, map_location=torch.device(self.device))
@@ -193,6 +196,15 @@ class CausalGAN(GAN):
 
             self.gen.train()
             self.crit.train()
+
+        elif mode == "initialization":
+            self.labeler.load_state_dict(checkpoint["labeler_state_dict"])
+            self.antilabeler.load_state_dict(checkpoint["antilabeler_state_dict"])
+
+            self.gen.train()
+            self.crit.train()
+            self.labeler.train()
+            self.antilabeler.train()
 
         elif mode == "training":
             self.gen.train()
@@ -209,7 +221,9 @@ class CausalGAN(GAN):
             self.antilabeler_opt.load_state_dict(checkpoint["antilabeler_optimizer_state_dict"])
 
         else:
-            raise ValueError("mode should be 'inference' or 'training'")
+            raise ValueError(
+                "mode should be 'inference', 'initialization', or 'training'"
+            )
 
     def _train_labelers(self, real_cells: torch.Tensor) -> None:
         """
@@ -320,6 +334,9 @@ class CausalGAN(GAN):
         antilabeler_alpha: float,
         labeler_training_interval: int,
         checkpoint: typing.Optional[typing.Union[str, bytes, os.PathLike, None]] = None,
+        starting_checkpoint: typing.Optional[
+            typing.Union[str, bytes, os.PathLike, None]
+        ] = None,
         output_dir: typing.Optional[str] = "output",
         summary_freq: typing.Optional[int] = 5000,
         plt_freq: typing.Optional[int] = 10000,
@@ -361,6 +378,9 @@ class CausalGAN(GAN):
             If 20, the labeler and anti-labeler will be trained every 20 steps.
         checkpoint : typing.Optional[typing.Union[str, bytes, os.PathLike, None]], optional
             Path to a trained model; if specified, the checkpoint is be used to resume training, by default None.
+        starting_checkpoint : typing.Optional[typing.Union[str, bytes, os.PathLike, None]], optional
+            Path to a trained model; if specified, the checkpoint is be used to initialize the generator, critic,
+            labeler and anti-labeler, by default None.
         output_dir : typing.Optional[str], optional
             Directory to which plots, tfevents, and checkpoints will be saved, by default "output".
         summary_freq : typing.Optional[int], optional
@@ -418,6 +438,8 @@ class CausalGAN(GAN):
 
         if checkpoint is not None:
             self._load(checkpoint, mode="training")
+        elif starting_checkpoint is not None:
+            self._load(starting_checkpoint, mode="initialization")
 
         self.gen.train()
         self.crit.train()

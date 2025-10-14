@@ -68,10 +68,12 @@ class CausalGenerator(nn.Module):
         self._generator = None
 
         self.genes = list(self.causal_graph.keys())
+        self.register_buffer("genes_tensor", torch.tensor(self.genes, device=self.device), persistent=False)
         self.regulators = list(  # all gene regulating TFs (can contain duplicate TFs)
             itertools.chain.from_iterable(self.causal_graph.values())
         )
         self.tfs = list(set(self.regulators))
+        self.register_buffer("tfs_tensor", torch.tensor(self.tfs, device=self.device), persistent=False)
 
         # if a gene has X number of regulators (TFs + noises), it will have a
         # hidden layer with the width of (hidden_width * num_regulators)
@@ -126,7 +128,7 @@ class CausalGenerator(nn.Module):
 
         # create placeholder for cells
         cells = torch.zeros(batch_size, self.num_tfs + self.num_genes, device=self.device)
-        cells = cells.index_add_(1, torch.tensor(self.tfs, device=self.device), tf_expressions)
+        cells = cells.index_add_(1, self.tfs_tensor, tf_expressions)
 
         # lazy way of avoiding a circular dependency
         # FIXME: circular dependency
@@ -140,10 +142,10 @@ class CausalGenerator(nn.Module):
             else:
                 self.noise = noise
 
-        regulators = torch.cat([tf_expressions, noise], dim=1).to(self.device)
+        regulators = torch.cat([tf_expressions, noise], dim=1)
         gene_expression = self._generator(regulators)
 
-        cells = cells.index_add_(1, torch.tensor(self.genes, device=self.device), gene_expression)
+        cells = cells.index_add_(1, self.genes_tensor, gene_expression)
         if self.library_size is not None:
             # reuse previous LSN scale in perturbation mode
             cells = self._lsn(cells, reuse_scale=self.pert_mode)

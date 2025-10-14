@@ -284,18 +284,27 @@ class GAN:
             Directory to save the model.
         """
 
-        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
             return
 
         output_dir = path + "/checkpoints"
-        if not os.path.isdir(output_dir):
-            os.makedirs(output_dir)
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        torch.save(
-            {
-                "step": self.step,
+        if torch.distributed.is_initialized():
+            state_dict = {
                 "generator_state_dict": self.gen.module.state_dict(),
                 "critic_state_dict": self.crit.module.state_dict(),
+            }
+        else:
+            state_dict = {
+                "generator_state_dict": self.gen.state_dict(),
+                "critic_state_dict": self.crit.state_dict(),
+            }
+
+        torch.save(
+            state_dict
+            | {
+                "step": self.step,
                 "generator_optimizer_state_dict": self.gen_opt.state_dict(),
                 "critic_optimizer_state_dict": self.crit_opt.state_dict(),
                 "generator_lr_scheduler": self.gen_lr_scheduler.state_dict(),
@@ -392,10 +401,17 @@ class GAN:
         crit_data : typing.Union[torch.Tensor, typing.Tuple[torch.Tensor]]
             Input to the critic.
         """
+        if torch.distributed.is_initialized():
+            gen = self.gen.module
+            crit = self.crit.module
+        else:
+            gen = self.gen
+            crit = self.crit
+
         with SummaryWriter(f"{output_dir}/TensorBoard/model/generator") as w:
-            w.add_graph(self.gen.module, gen_data)
+            w.add_graph(gen, gen_data)
         with SummaryWriter(f"{output_dir}/TensorBoard/model/critic") as w:
-            w.add_graph(self.crit.module, crit_data)
+            w.add_graph(crit, crit_data)
 
     def _update_tensorboard(
         self,
@@ -425,7 +441,8 @@ class GAN:
             Directory to save the tfevents.
         """
 
-        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+        # Only update on the master node
+        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
             return
 
         with SummaryWriter(f"{output_dir}/TensorBoard/generator") as w:
@@ -458,18 +475,20 @@ class GAN:
         output_dir : typing.Union[str, bytes, os.PathLike]
             Directory to save the t-SNE plots.
         """
-        tsne_path = output_dir + "/TSNE"
-        if not os.path.isdir(tsne_path):
-            os.makedirs(tsne_path)
-
         fake_cells = self.generate_cells(len(valid_loader.dataset))
         valid_cells, _ = next(iter(valid_loader))
-        valid_cells = valid_cells.cpu().numpy()
+        valid_cells = valid_cells.cpu().detach().numpy()
 
-        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+        # Only generate on the master node,
+        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
             return
 
-        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
+        tsne_path = output_dir + "/TSNE"
+        Path(tsne_path).mkdir(parents=True, exist_ok=True)
+
+        embedded_cells = TSNE().fit_transform(
+            np.concatenate((valid_cells, fake_cells), axis=0)
+        )
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]

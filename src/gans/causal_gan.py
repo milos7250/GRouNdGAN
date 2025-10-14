@@ -1,5 +1,6 @@
 import os
 import typing
+from pathlib import Path
 
 import torch
 from loggers import setup_logger
@@ -126,20 +127,31 @@ class CausalGAN(GAN):
         path : typing.Union[str, bytes, os.PathLike]
             Directory to save the model.
         """
-        if torch.distributed.is_initialized() and os.environ.get("LOCAL_RANK", "0") != "0":
+        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
             return
 
         output_dir = path + "/checkpoints"
-        if not os.path.isdir(output_dir):
-            os.makedirs(output_dir)
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        torch.save(
-            {
-                "step": self.step,
+        if torch.distributed.is_initialized():
+            state_dict = {
                 "generator_state_dict": self.gen.module.state_dict(),
                 "critic_state_dict": self.crit.module.state_dict(),
                 "labeler_state_dict": self.labeler.module.state_dict(),
                 "antilabeler_state_dict": self.antilabeler.module.state_dict(),
+            }
+        else:
+            state_dict = {
+                "generator_state_dict": self.gen.state_dict(),
+                "critic_state_dict": self.crit.state_dict(),
+                "labeler_state_dict": self.labeler.state_dict(),
+                "antilabeler_state_dict": self.antilabeler.state_dict(),
+            }
+
+        torch.save(
+            state_dict
+            | {
+                "step": self.step,
                 "generator_optimizer_state_dict": self.gen_opt.state_dict(),
                 "critic_optimizer_state_dict": self.crit_opt.state_dict(),
                 "labeler_optimizer_state_dict": self.labeler_opt.state_dict(),
@@ -211,25 +223,32 @@ class CausalGAN(GAN):
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
         fake = self.gen(fake_noise).detach()
 
+        if torch.distributed.is_initialized():
+            genes = self.gen.module.genes
+            tfs = self.gen.module.tfs
+        else:
+            genes = self.gen.genes
+            tfs = self.gen.tfs
+
         # train anti-labeler
         self.antilabeler_opt.zero_grad()
-        predicted_tfs = self.antilabeler(fake[:, self.gen.module.genes])
-        actual_tfs = fake[:, self.gen.module.tfs]
+        predicted_tfs = self.antilabeler(fake[:, genes])
+        actual_tfs = fake[:, tfs]
         antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
         antilabeler_loss.backward(retain_graph=True)
         self.antilabeler_opt.step()
 
         # train labeler on fake data
         self.labeler_opt.zero_grad()
-        predicted_tfs = self.labeler(fake[:, self.gen.module.genes])
+        predicted_tfs = self.labeler(fake[:, genes])
         labeler_floss = self.mse(predicted_tfs, actual_tfs)
         labeler_floss.backward()
         self.labeler_opt.step()
 
         # train labeler on real data
         self.labeler_opt.zero_grad()
-        predicted_tfs = self.labeler(real_cells[:, self.gen.module.genes])
-        actual_tfs = real_cells[:, self.gen.module.tfs]
+        predicted_tfs = self.labeler(real_cells[:, genes])
+        actual_tfs = real_cells[:, tfs]
         labeler_rloss = self.mse(predicted_tfs, actual_tfs)
         labeler_rloss.backward()
         self.labeler_opt.step()
@@ -250,11 +269,18 @@ class CausalGAN(GAN):
 
         fake = self.gen(fake_noise)
 
-        predicted_tfs = self.labeler(fake[:, self.gen.module.genes])
-        actual_tfs = fake[:, self.gen.module.tfs]
+        if torch.distributed.is_initialized():
+            genes = self.gen.module.genes
+            tfs = self.gen.module.tfs
+        else:
+            genes = self.gen.genes
+            tfs = self.gen.tfs
+
+        predicted_tfs = self.labeler(fake[:, genes])
+        actual_tfs = fake[:, tfs]
         labeler_loss = self.mse(predicted_tfs, actual_tfs)
 
-        predicted_tfs = self.antilabeler(fake[:, self.gen.module.genes])
+        predicted_tfs = self.antilabeler(fake[:, genes])
         antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
 
         crit_fake_pred = self.crit(fake)

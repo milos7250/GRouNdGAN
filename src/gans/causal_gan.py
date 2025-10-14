@@ -426,10 +426,10 @@ class CausalGAN(GAN):
 
         # We only accept training on GPU since training on CPU is impractical.
         if torch.distributed.is_initialized():
-            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen, find_unused_parameters=True)
-            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit, find_unused_parameters=True)
-            self.labeler = torch.nn.parallel.DistributedDataParallel(self.labeler, find_unused_parameters=True)
-            self.antilabeler = torch.nn.parallel.DistributedDataParallel(self.antilabeler, find_unused_parameters=True)
+            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen)
+            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit)
+            self.labeler = torch.nn.parallel.DistributedDataParallel(self.labeler)
+            self.antilabeler = torch.nn.parallel.DistributedDataParallel(self.antilabeler)
         else:
             self.device = "cuda"
 

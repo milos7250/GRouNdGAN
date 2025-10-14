@@ -91,7 +91,6 @@ class CausalGenerator(nn.Module):
         self.register_module("lsn", self._lsn)
 
         self._create_generator()
-        self._create_labeler()
 
     def forward(self, noise: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """
@@ -228,20 +227,6 @@ class CausalGenerator(nn.Module):
         )
 
         self._generator = nn.Sequential(*generator_layers)
-
-    def _create_labeler(self):
-        self._labeler = nn.Sequential(
-            nn.Linear(self.num_genes, self.num_genes * 2),
-            nn.BatchNorm1d(self.num_genes * 2),
-            nn.ReLU(inplace=True),
-            nn.Linear(self.num_genes * 2, self.num_genes * 2),
-            nn.BatchNorm1d(self.num_genes * 2),
-            nn.ReLU(inplace=True),
-            nn.Linear(self.num_genes * 2, self.num_genes * 2),
-            nn.BatchNorm1d(self.num_genes * 2),
-            nn.ReLU(inplace=True),
-            nn.Linear(self.num_genes * 2, self.num_tfs),
-        )
 
     def _create_generator_block(
         self,

@@ -48,7 +48,7 @@ def main():
         grn_creation.create_GRN(cfg_parser)
 
     if args.train:
-        if cfg_parser.get("EXPERIMENT", "use DDP") == "True":
+        if cfg_parser.get("EXPERIMENT", "use DDP", fallback="False") == "True":
             fac.parser.set("EXPERIMENT", "device", f"cuda:{os.environ['LOCAL_RANK']}")
             group = torch.distributed.init_process_group("nccl")
             fac.get_trainer()()

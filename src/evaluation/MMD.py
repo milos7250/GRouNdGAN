@@ -1,9 +1,8 @@
 import typing
 
-from sklearn.neighbors import NearestNeighbors
-from keras import backend as K
 import numpy as np
-import tensorflow as tf
+import torch
+from sklearn.neighbors import NearestNeighbors
 
 
 class MMD:
@@ -12,7 +11,7 @@ class MMD:
     between real and generated samples using Gaussian kernels.
     """
 
-    def __init__(self, real_cells: np.ndarray):
+    def __init__(self, real_cells: np.ndarray, device: str = "cpu"):
         """
         Initialize the MMD class with scale and weight parameters based on the median
         nearest neighbor distance among real cells.
@@ -21,98 +20,107 @@ class MMD:
         ----------
         real_cells : np.ndarray
             A NumPy array representing real cell data (cells x features).
+        device : str
+            Device to store tensors ('cpu' or 'cuda').
         """
+        self.device = device
         n_neighbors = 25
         med = np.ones(20)
+
         for ii in range(1, 20):
             sample = real_cells[
                 np.random.randint(real_cells.shape[0] - 1, size=real_cells.shape[0]), :
             ]
             nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
             distances, _ = nbrs.kneighbors(sample)
-            # nearest neighbor is the point so we need to exclude it
-            med[ii] = np.median(distances[:, 1:n_neighbors])
+            med[ii] = np.median(distances[:, 1:n_neighbors])  # exclude self-distance
 
         med = np.median(med)
-        scales = [med / 2, med, med * 2]
+        scales = torch.tensor(
+            [med / 2, med, med * 2], dtype=torch.float32, device=self.device
+        )
+        weights = torch.ones(len(scales), dtype=torch.float32, device=self.device)
 
-        weights = K.eval(K.shape(scales)[0])
-        weights = K.variable(value=np.asarray(weights))
+        # Reshape for broadcasting
+        self.scales = scales.view(-1, 1, 1)
+        self.weights = weights.view(-1, 1, 1)
 
-        self.scales = np.expand_dims(np.expand_dims(scales, -1), -1)
-        self.weights = np.expand_dims(np.expand_dims(weights, -1), -1)
-
-    def squaredDistance(
+    def squared_distance(
         self,
-        X: typing.Union[np.ndarray, "tf.Tensor"],
-        Y: typing.Union[np.ndarray, "tf.Tensor"],
-    ) -> "tf.Tensor":
+        X: torch.Tensor,
+        Y: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute pairwise squared Euclidean distances between rows of X and Y.
 
         Parameters
         ----------
-        X : np.ndarray or tf.Tensor
-            Input array of shape (n, d).
-
-        Y : np.ndarray or tf.Tensor
-            Input array of shape (m, d).
+        X : torch.Tensor
+            Input tensor of shape (n, d).
+        Y : torch.Tensor
+            Input tensor of shape (m, d).
 
         Returns
         -------
-        tf.Tensor
+        torch.Tensor
             A tensor of shape (n, m) representing squared distances.
         """
         # X is nxd, Y is mxd, returns nxm matrix of all pairwise Euclidean distances
         # broadcasted subtraction, a square, and a sum.
-        r = K.expand_dims(X, axis=1)
-        return K.sum(K.square(r - Y), axis=-1)
+        X = X.to(self.device)
+        Y = Y.to(self.device)
+        r = X.unsqueeze(1)  # shape: (n, 1, d)
+        return torch.sum((r - Y) ** 2, dim=-1)  # shape: (n, m)
 
     def gaussian_kernel(
         self,
-        a: typing.Union[np.ndarray, "tf.Tensor"],
-        b: typing.Union[np.ndarray, "tf.Tensor"],
-    ) -> "tf.Tensor":
+        a: torch.Tensor,
+        b: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute the multi-scale Gaussian kernel between two datasets.
 
         Parameters
         ----------
-        a : np.ndarray or tf.Tensor
-            Input array of shape (n, d).
-
-        b : np.ndarray or tf.Tensor
-            Input array of shape (m, d).
+        a : torch.Tensor
+            Input tensor of shape (n, d).
+        b : torch.Tensor
+            Input tensor of shape (m, d).
 
         Returns
         -------
-        tf.Tensor
+        torch.Tensor
             A tensor of shape (n, m) representing the Gaussian kernel matrix.
         """
-        numerator = np.expand_dims(self.squaredDistance(a, b), 0)
-        return np.sum(self.weights * np.exp(-numerator / (np.power(self.scales, 2))), 0)
+        numerator = self.squared_distance(a, b).unsqueeze(0)  # shape: (1, n, m)
+        kernel = torch.sum(self.weights * torch.exp(-numerator / (self.scales**2)), dim=0)
+        return kernel
 
     def compute(
         self,
-        a: typing.Union[np.ndarray, "tf.Tensor"],
-        b: typing.Union[np.ndarray, "tf.Tensor"],
-    ) -> "tf.Tensor":
+        a: typing.Union[np.ndarray, torch.Tensor],
+        b: typing.Union[np.ndarray, torch.Tensor],
+    ) -> torch.Tensor:
         """
         Compute the Maximum Mean Discrepancy (MMD) between two samples.
 
         Parameters
         ----------
-        a : np.ndarray or tf.Tensor
+        a : np.ndarray or torch.Tensor
             First sample of shape (n, d).
-
-        b : np.ndarray or tf.Tensor
+        b : np.ndarray or torch.Tensor
             Second sample of shape (m, d).
 
         Returns
         -------
-        tf.Tensor
+        torch.Tensor
             The MMD score between the two distributions.
         """
+        if not isinstance(a, torch.Tensor):
+            a = torch.tensor(a, dtype=torch.float32, device=self.device)
+        if not isinstance(b, torch.Tensor):
+            b = torch.tensor(b, dtype=torch.float32, device=self.device)
+
         return (
             self.gaussian_kernel(a, a).mean()
             + self.gaussian_kernel(b, b).mean()

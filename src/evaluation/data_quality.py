@@ -1,24 +1,23 @@
 import typing
+from configparser import ConfigParser
 
-import tensorflow as tf
-import numpy as np
-import scanpy as sc
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.font_manager as font_manager
-from matplotlib import rcParams
-from sklearn.ensemble import RandomForestClassifier
-import sklearn.metrics as metrics
-from sklearn.model_selection import train_test_split
-from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import scanpy as sc
+import sklearn.metrics as metrics
+from matplotlib import rcParams
 from scipy import sparse
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.manifold import TSNE
+from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
+from sklearn.model_selection import train_test_split
 
-from configparser import ConfigParser
 import evaluation.MMD as MMD
 from evaluation.lisi import compute_lisi
-
 
 font_dir = ["Atkinson_Hyperlegible/Web Fonts/TTF/"]
 for font in font_manager.findSystemFonts(font_dir):
@@ -110,9 +109,7 @@ def plot_tSNE(
     )
 
     plt.grid(True)
-    plt.legend(
-        loc="lower left", numpoints=1, ncol=2, fontsize=15, bbox_to_anchor=(0, 0)
-    )
+    plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=15, bbox_to_anchor=(0, 0))
     plt.xlabel("t-SNE 1")
     plt.ylabel("t-SNE 2")
 
@@ -121,11 +118,6 @@ def plot_tSNE(
         print("t-SNE plot saved to", output_dir + "tSNE.png")
 
     return real_embedding, fake_embedding
-
-
-from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
-from scipy.spatial import distance
-import numpy as np
 
 
 def compute_distances(
@@ -289,15 +281,18 @@ def evaluate(cfg: ConfigParser) -> None:
 
     if cfg.getboolean("Evaluation", "compute MMD"):
         print()
-        with tf.device("cpu:0"):
-            print(
-                "MMD (real vs fake):",
-                MMD.MMD(real_cells).compute(real_cells, fake_cells),
-            )
-            print(
-                "MMD (control):",
-                MMD.MMD(real_cells).compute(real_cells_ctr1, real_cells_ctr2),
-            )
+        print(
+            "MMD (real vs fake):",
+            MMD.MMD(real_cells, device=cfg.get("EXPERIMENT", "device")).compute(
+                real_cells, fake_cells
+            ),
+        )
+        print(
+            "MMD (control):",
+            MMD.MMD(real_cells, device=cfg.get("EXPERIMENT", "device")).compute(
+                real_cells_ctr1, real_cells_ctr2
+            ),
+        )
 
     if cfg.getboolean("Evaluation", "compute miLISI"):
         print()

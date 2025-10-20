@@ -17,7 +17,12 @@ def __get_handler():
 
 
 FORMAT = "([green]%(name)s[/green]) %(message)s "
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"), format=FORMAT, datefmt="[%X]", handlers=[__get_handler()])
+logging.basicConfig(
+    level=os.environ.get("LOGLEVEL", "INFO"),
+    format=FORMAT,
+    datefmt="[%X]",
+    handlers=[__get_handler()],
+)
 
 
 @contextmanager
@@ -41,6 +46,6 @@ def setup_logger(name: str = None) -> logging.Logger:
 
     if os.getenv("RANK", "0") == "0":
         logger.addHandler(__get_handler())
-        logger.info(f"Logger {name} initialized on rank {os.getenv('RANK', '0')}")
+        logger.debug(f"Logger {name} initialized on rank {os.getenv('RANK', '0')}")
 
     return logger

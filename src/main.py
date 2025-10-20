@@ -80,7 +80,7 @@ def main():
             generation_path = cfg_parser.get("EXPERIMENT", "output directory") + "/simulated.h5ad"
 
         simulated_cells.write(generation_path)
-        logger.info("Simulated cells saved to", generation_path)
+        logger.info(f"Simulated cells saved to {generation_path}")
 
     if args.evaluate:
         data_quality.evaluate(cfg_parser)

@@ -1,19 +1,19 @@
 import typing
+from configparser import ConfigParser
 
-import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
-from matplotlib import rcParams
+import matplotlib.pyplot as plt
 import numpy as np
 import scanpy as sc
-import umap.umap_ as umap
 import seaborn as sns
-from matplotlib import cm
-from matplotlib.lines import Line2D
 import torch
-
-from configparser import ConfigParser
+import umap.umap_ as umap
 from factory import get_factory, parse_list
+from loggers import setup_logger
+from matplotlib import cm, rcParams
 from sc_dataset import get_loader
+
+logger = setup_logger("perturbation")
 
 font_dir = ["Atkinson_Hyperlegible/Web Fonts/TTF/"]
 for font in font_manager.findSystemFonts(font_dir):
@@ -257,9 +257,9 @@ def perturb(cfg: ConfigParser) -> None:
 
     # Read the GAN
     gan = get_factory(cfg).get_gan()
-    print("Loaded GAN")
+    logger.info("Loaded GAN")
     checkpoint = cfg.get("EXPERIMENT", "checkpoint")
-    print("Using checkpoint at", checkpoint)
+    logger.info(f"Using checkpoint at {checkpoint}")
 
     # get real cells
     loader = get_loader(cfg.get("Data", "test"), cells_no)
@@ -303,7 +303,7 @@ def perturb(cfg: ConfigParser) -> None:
     gene_names = list(test_set.var_names)
     tfs_idx = [gene_names.index(tf) for tf in tfs_to_perturb]
     tf_idx = [gan.gen.tfs.index(tf_idx) for tf_idx in tfs_idx]
-    print(tf_idx)
+    logger.info(tf_idx)
 
     unperturbed_tfs = gan.gen.tf_expressions.clone()
     pert_tensor = torch.tensor(
@@ -346,7 +346,6 @@ def perturb(cfg: ConfigParser) -> None:
     fake_cells_perturbed.write(
         cfg.get("Perturbation", "save dir") + "after_perturbation.h5ad"
     )
-    print(
-        "Saved cells before and after perturbation to",
-        cfg.get("Perturbation", "save dir"),
+    logger.info(
+        f"Saved cells before and after perturbation to {cfg.get('Perturbation', 'save dir')}"
     )

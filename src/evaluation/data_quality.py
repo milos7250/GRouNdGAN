@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import sklearn.metrics as metrics
+from loggers import setup_logger
 from matplotlib import rcParams
 from scipy import sparse
 from sklearn.decomposition import PCA
@@ -26,6 +27,8 @@ for font in font_manager.findSystemFonts(font_dir):
 # Set font family globally
 rcParams["font.family"] = "Atkinson Hyperlegible"
 rcParams.update({"font.size": 13})
+
+logger = setup_logger("evaluate")
 
 
 def read_datasets(cfg: ConfigParser) -> typing.Tuple[np.ndarray, np.ndarray]:
@@ -110,12 +113,13 @@ def plot_tSNE(
 
     plt.grid(True)
     plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=15, bbox_to_anchor=(0, 0))
+    plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=15, bbox_to_anchor=(0, 0))
     plt.xlabel("t-SNE 1")
     plt.ylabel("t-SNE 2")
 
     if output_dir:
-        plt.savefig(output_dir + "tSNE.png", format="png", dpi=300, bbox_inches="tight")
-        print("t-SNE plot saved to", output_dir + "tSNE.png")
+        plt.savefig(output_dir + "/tSNE.png", format="png", dpi=300, bbox_inches="tight")
+        logger.info(f"t-SNE plot saved to {output_dir + '/tSNE.png'}")
 
     return real_embedding, fake_embedding
 
@@ -213,8 +217,8 @@ def compute_RF_AUROC(
     plt.ylim([0, 1])
     plt.ylabel("True Positive Rate")
     plt.xlabel("False Positive Rate")
-    plt.savefig(output_dir + "RF.png", format="png", bbox_inches="tight")
-    print("RF ROC plot saved to", output_dir + "RF.png")
+    plt.savefig(output_dir + "/RF.png", format="png", bbox_inches="tight")
+    logger.info(f"RF ROC plot saved to {output_dir + '/RF.png'}")
 
     return roc_auc
 
@@ -263,39 +267,28 @@ def evaluate(cfg: ConfigParser) -> None:
         euclidean_ctr, cosine_ctr = compute_distances(real_cells_ctr1, real_cells_ctr2)
 
     if cfg.getboolean("Evaluation", "compute euclidean distance"):
-        print()
-        print("Euclidean distance (real vs fake):", euclidean)
-        print("Euclidean distance (control):", euclidean_ctr)
+        logger.info(f"Euclidean distance (real vs fake): {euclidean}")
+        logger.info(f"Euclidean distance (control): {euclidean_ctr}")
 
     if cfg.getboolean("Evaluation", "compute cosine distance"):
-        print()
-        print("Cosine distance (real vs fake):", cosine)
-        print("Cosine distance (control):", cosine_ctr)
+        logger.info(f"Cosine distance (real vs fake): {cosine}")
+        logger.info(f"Cosine distance (control): {cosine_ctr}")
 
     if cfg.getboolean("Evaluation", "compute rf auroc"):
-        print()
         rf_auroc = compute_RF_AUROC(
             real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory")
         )
-        print("RF AUROC:", rf_auroc)
+        logger.info(f"RF AUROC: {rf_auroc}")
 
     if cfg.getboolean("Evaluation", "compute MMD"):
-        print()
-        print(
-            "MMD (real vs fake):",
-            MMD.MMD(real_cells, device=cfg.get("EXPERIMENT", "device")).compute(
-                real_cells, fake_cells
-            ),
+        logger.info(
+            f"MMD (real vs fake): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells, fake_cells)}"
         )
-        print(
-            "MMD (control):",
-            MMD.MMD(real_cells, device=cfg.get("EXPERIMENT", "device")).compute(
-                real_cells_ctr1, real_cells_ctr2
-            ),
+        logger.info(
+            f"MMD (control): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells_ctr1, real_cells_ctr2)}"
         )
 
     if cfg.getboolean("Evaluation", "compute miLISI"):
-        print()
         tsne_real_ctr1, tsne_real_ctr2 = plot_tSNE(real_cells_ctr1, real_cells_ctr2, "")
 
         tsne_coords = np.vstack((tsne_real, tsne_generated))
@@ -312,5 +305,5 @@ def evaluate(cfg: ConfigParser) -> None:
 
         lisis = compute_lisi(tsne_coords, metadata, ["type"])
         lisis_ctr = compute_lisi(tsne_coords_ctr, metadata_ctr, ["type"])
-        print("miLISI (real vs fake):", np.mean(lisis))
-        print("miLISI (control):", np.mean(lisis_ctr))
+        logger.info(f"miLISI (real vs fake): {np.mean(lisis)}")
+        logger.info(f"miLISI (control): {np.mean(lisis_ctr)}")

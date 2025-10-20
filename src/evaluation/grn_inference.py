@@ -1,14 +1,15 @@
 import pickle
 import typing
-
-import pandas as pd
-import scanpy as sc
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.metrics import auc
-
 from configparser import ConfigParser
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import scanpy as sc
+from loggers import setup_logger
+from sklearn.metrics import auc
+
+logger = setup_logger("evaluate")
 
 def get_imposed_grn(
     cfg: ConfigParser,
@@ -81,7 +82,7 @@ def get_imposed_grn(
         save_path = imposed_grn_save_path + "ground truth GRN.csv"
         imposed_grn_df = pd.DataFrame(to_save_edges)
         imposed_grn_df.to_csv(save_path, index=False)
-        print("Saved ground truth GRN to", save_path)
+        logger.info(f"Saved ground truth GRN to {save_path}")
 
     imposed_grn = pd.DataFrame(imposed_edges, columns=["res"])
     TFs = list(imposed_TFs)
@@ -235,8 +236,8 @@ def compute_precision_at_k(
         precisions.append(consistency)
         baselines.append(n_toptfs / len(TFs))
 
-    print("Inferred GRN precision at k:", precisions)
-    print("Baseline precision at k:", baselines)
+    logger.info(f"Inferred GRN precision at k: {precisions}")
+    logger.info(f"Baseline precision at k: {baselines}")
     fig = plt.figure(figsize=(6, 6))
     plt.plot(
         range_TFs_pergene,
@@ -269,7 +270,7 @@ def compute_precision_at_k(
             dpi=300,
             bbox_inches="tight",
         )
-        print("Saved precision at k plot at", save_path + "Top_TF_precision.png")
+        logger.info(f"Saved precision at k plot at {save_path + 'Top_TF_precision.png'}")
 
 
 def compute_PR(
@@ -347,13 +348,13 @@ def compute_PR(
 
     plt.legend(fontsize=13, loc="upper right")
     plt.grid(True)
-    print("Inferred GRN AURPC:", auc_score)
-    print("Baseline AUPRC (random predictor):", baseline)
+    logger.info(f"Inferred GRN AURPC: {auc_score}")
+    logger.info(f"Baseline AUPRC (random predictor): {baseline}")
     if save_path:
         plt.savefig(
             save_path + "PR_curve.png", format="png", dpi=300, bbox_inches="tight"
         )
-        print("Saved PR curve at", save_path + "PR_curve.png")
+        logger.info(f"Saved PR curve at {save_path + 'PR_curve.png'}")
 
 
 def evaluate(cfg: ConfigParser) -> None:
@@ -380,7 +381,6 @@ def evaluate(cfg: ConfigParser) -> None:
     fake_grn = get_fake_grn(cfg, imposed_TFs, imposed_targets, TFs, possible_edges_no)
 
     if cfg.getboolean("GRN Benchmarking", "compute precision at k"):
-        print()
         compute_precision_at_k(
             fake_grn,
             imposed_grn,
@@ -390,7 +390,6 @@ def evaluate(cfg: ConfigParser) -> None:
         )
 
     if cfg.getboolean("GRN Benchmarking", "compute pr"):
-        print()
         compute_PR(
             fake_grn,
             imposed_grn,

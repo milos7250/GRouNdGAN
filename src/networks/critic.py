@@ -81,9 +81,7 @@ class Critic(nn.Module):
         linear_layer = nn.Linear(input_dim, output_dim)
         torch.nn.init.zeros_(linear_layer.bias)
         if not final_layer:
-            torch.nn.init.kaiming_normal_(
-                linear_layer.weight, mode="fan_in", nonlinearity="relu"
-            )
+            torch.nn.init.kaiming_normal_(linear_layer.weight, mode="fan_in", nonlinearity="relu")
             return nn.Sequential(linear_layer, nn.ReLU(inplace=True))
         # don't use an activation function at the
         # outermost layer of the critic's network
@@ -93,9 +91,7 @@ class Critic(nn.Module):
 
 
 class ConditionalCritic(Critic):
-    def __init__(
-        self, x_input: int, critic_layers: typing.List[int], num_classes: int
-    ) -> None:
+    def __init__(self, x_input: int, critic_layers: typing.List[int], num_classes: int) -> None:
         """
         Conditional Critic's constructor - Projection Discriminator (Miyato et al.,2018).
 
@@ -113,9 +109,7 @@ class ConditionalCritic(Critic):
 
         super(ConditionalCritic, self).__init__(x_input, critic_layers)
 
-    def forward(
-        self, data: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs
-    ) -> torch.Tensor:
+    def forward(self, data: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs) -> torch.Tensor:
         """
         Function for completing a forward pass of the conditional critic.
 
@@ -162,9 +156,7 @@ class ConditionalCritic(Critic):
 
 
 class ConditionalCriticProj(Critic):
-    def __init__(
-        self, x_input: int, critic_layers: typing.List[int], num_classes: int
-    ) -> None:
+    def __init__(self, x_input: int, critic_layers: typing.List[int], num_classes: int) -> None:
         """
         Conditional Critic's constructor using a modified implementation of
         Projection Discriminator (Marouf et al, 2020).
@@ -183,9 +175,7 @@ class ConditionalCriticProj(Critic):
 
         super(ConditionalCriticProj, self).__init__(x_input, critic_layers)
 
-    def forward(
-        self, data: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs
-    ) -> torch.Tensor:
+    def forward(self, data: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs) -> torch.Tensor:
         """
         Function for completing a forward pass of the conditional critic.
 

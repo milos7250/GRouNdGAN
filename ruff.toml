@@ -1,0 +1,11 @@
+line-length = 120
+preview = true
+fix = true
+
+[format]
+# Enable preview style formatting.
+preview = true
+
+[lint]
+# Enable preview linting.
+preview = true

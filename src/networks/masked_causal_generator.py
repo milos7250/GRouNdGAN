@@ -166,9 +166,7 @@ class CausalGenerator(nn.Module):
 
         The MaskedLinear module is used to mask weights and gradients in linear layers.
         """
-        hidden_dims = (
-            len(self.regulators) + self.num_noises
-        ) * self.width_scale_per_gene
+        hidden_dims = (len(self.regulators) + self.num_noises) * self.width_scale_per_gene
 
         # noise mask will be added to TF mask
         input_mask = torch.zeros(self.num_tfs, hidden_dims).to(self.device)
@@ -178,24 +176,19 @@ class CausalGenerator(nn.Module):
         prev_gene_hidden_dims = 0
         for gene, gene_regulators in self.causal_graph.items():
             gene_idx = self.genes.index(gene)
-            curr_gene_hidden_dims = self.width_scale_per_gene * (
-                len(gene_regulators) + self.noise_per_gene
-            )
+            curr_gene_hidden_dims = self.width_scale_per_gene * (len(gene_regulators) + self.noise_per_gene)
             for gene_regulator in gene_regulators:
                 gene_regulator_idx = self.tfs.index(gene_regulator)
 
                 # mask for the tfs
                 input_mask[
                     gene_regulator_idx,
-                    prev_gene_hidden_dims : prev_gene_hidden_dims
-                    + curr_gene_hidden_dims,
+                    prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
                 ] = 1
 
             # mask for the noises
             noise_mask = torch.zeros(self.noise_per_gene, hidden_dims).to(self.device)
-            noise_mask[
-                :, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims
-            ] = 1
+            noise_mask[:, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims] = 1
             input_mask = torch.cat([input_mask, noise_mask])
 
             # mask for hidden layer
@@ -222,9 +215,7 @@ class CausalGenerator(nn.Module):
             generator_layers.append(self._create_generator_block(hidden_mask))
 
         # output block
-        generator_layers.append(
-            self._create_generator_block(output_mask, final_layer=True)
-        )
+        generator_layers.append(self._create_generator_block(output_mask, final_layer=True))
 
         self._generator = nn.Sequential(*generator_layers)
 
@@ -265,9 +256,7 @@ class CausalGenerator(nn.Module):
             )
 
         else:
-            nn.init.kaiming_normal_(
-                masked_linear.weight, mode="fan_in", nonlinearity="relu"
-            )
+            nn.init.kaiming_normal_(masked_linear.weight, mode="fan_in", nonlinearity="relu")
             masked_linear.reapply_mask()
 
             torch.nn.init.zeros_(masked_linear.bias)

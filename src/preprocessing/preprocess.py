@@ -23,9 +23,7 @@ def preprocess(cfg: ConfigParser) -> None:
 
     logger.info("Loading data...")
     if cfg.get("Preprocessing", "10x") == "True":
-        anndata = sc.read_10x_mtx(
-            cfg.get("Preprocessing", "raw"), make_unique=True, gex_only=True
-        )
+        anndata = sc.read_10x_mtx(cfg.get("Preprocessing", "raw"), make_unique=True, gex_only=True)
 
     else:
         anndata = sc.read_h5ad(cfg.get("Preprocessing", "raw"))
@@ -43,9 +41,7 @@ def preprocess(cfg: ConfigParser) -> None:
     sc.pp.recipe_zheng17(ann_clustered)
     sc.tl.pca(ann_clustered, n_comps=50)
     sc.pp.neighbors(ann_clustered, n_pcs=50)
-    sc.tl.louvain(
-        ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res"))
-    )
+    sc.tl.louvain(ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res")))
     anndata.obs["cluster"] = ann_clustered.obs["louvain"]
 
     # get cluster ratios
@@ -67,39 +63,26 @@ def preprocess(cfg: ConfigParser) -> None:
 
     # library-size normalization
     logger.info("Subsetting highly variable genes...")
-    sc.pp.normalize_per_cell(
-        canndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size"))
-    )
+    sc.pp.normalize_per_cell(canndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size")))
 
     if cfg.get("Preprocessing", "annotations") is not None:
-        annotations = pd.read_csv(
-            cfg.get("Preprocessing", "annotations"), delimiter="\t"
-        )
-        annotation_dict = {
-            item["barcodes"]: item["celltype"]
-            for item in annotations.to_dict("records")
-        }
+        annotations = pd.read_csv(cfg.get("Preprocessing", "annotations"), delimiter="\t")
+        annotation_dict = {item["barcodes"]: item["celltype"] for item in annotations.to_dict("records")}
         anndata.obs["barcodes"] = anndata.obs.index
         anndata.obs["celltype"] = anndata.obs["barcodes"].map(annotation_dict)
 
     # identify highly variable genes
     sc.pp.log1p(canndata)  # logarithmize the data
-    sc.pp.highly_variable_genes(
-        canndata, n_top_genes=int(cfg.get("Preprocessing", "highly variable number"))
-    )
+    sc.pp.highly_variable_genes(canndata, n_top_genes=int(cfg.get("Preprocessing", "highly variable number")))
 
     if issparse(canndata.X):
         canndata.X = np.exp(canndata.X.toarray()) - 1  # get back original data
     else:
         canndata.X = np.exp(canndata.X) - 1  # get back original data
 
-    anndata = anndata[
-        :, canndata.var["highly_variable"]
-    ].copy()  # only keep highly variable genes
+    anndata = anndata[:, canndata.var["highly_variable"]].copy()  # only keep highly variable genes
 
-    sc.pp.normalize_per_cell(
-        anndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size"))
-    )
+    sc.pp.normalize_per_cell(anndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size")))
 
     # sort genes by name (not needed)
     sorted_genes = np.sort(anndata.var_names)
@@ -114,10 +97,6 @@ def preprocess(cfg: ConfigParser) -> None:
     anndata[test_size + val_size :].write_h5ad(cfg.get("Data", "train"))
 
     logger.info("Successfully preprocessed and saved dataset.")
-    logger.info(
-        f"Train set ({anndata[test_size + val_size :].shape[0]} cells): {cfg.get('Data', 'train')}"
-    )
-    logger.info(
-        f"Validation set ({val_size} cells): {cfg.get('Data', 'validation')}"
-    )
+    logger.info(f"Train set ({anndata[test_size + val_size :].shape[0]} cells): {cfg.get('Data', 'train')}")
+    logger.info(f"Validation set ({val_size} cells): {cfg.get('Data', 'validation')}")
     logger.info(f"Test set ({test_size} cells): {cfg.get('Data', 'test')}")

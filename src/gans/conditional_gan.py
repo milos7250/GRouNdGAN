@@ -15,9 +15,7 @@ from gans.gan import GAN
 
 class ConditionalGAN(GAN, ABC):
     @staticmethod
-    def _sample_pseudo_labels(
-        batch_size: int, cluster_ratios: torch.Tensor
-    ) -> torch.Tensor:
+    def _sample_pseudo_labels(batch_size: int, cluster_ratios: torch.Tensor) -> torch.Tensor:
         """
         Randomly samples cluster labels following a multinomial distribution.
 
@@ -64,9 +62,7 @@ class ConditionalGAN(GAN, ABC):
         valid_cells, valid_labels = next(iter(valid_loader))
         valid_labels = valid_labels.flatten()
 
-        embedded_cells = TSNE().fit_transform(
-            np.concatenate((valid_cells, fake_cells), axis=0)
-        )
+        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]
@@ -88,9 +84,7 @@ class ConditionalGAN(GAN, ABC):
                 label="real_" + str(i),
             )
 
-        ax1.legend(
-            loc="lower left", numpoints=1, ncol=3, fontsize=8, bbox_to_anchor=(0, 0)
-        )
+        ax1.legend(loc="lower left", numpoints=1, ncol=3, fontsize=8, bbox_to_anchor=(0, 0))
 
         for i in range(self.num_classes):
             mask = fake_labels[:] == i
@@ -102,9 +96,7 @@ class ConditionalGAN(GAN, ABC):
                 label="fake_" + str(i),
             )
 
-        ax2.legend(
-            loc="lower left", numpoints=1, ncol=3, fontsize=8, bbox_to_anchor=(0, 0)
-        )
+        ax2.legend(loc="lower left", numpoints=1, ncol=3, fontsize=8, bbox_to_anchor=(0, 0))
 
         plt.savefig(tsne_path + "/step_" + str(self.step) + ".jpg")
 

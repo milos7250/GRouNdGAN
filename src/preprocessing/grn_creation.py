@@ -100,16 +100,14 @@ def create_GRN(cfg: ConfigParser) -> None:
     # print causal graph info
     logger.info(
         "Causal graph info:\n"
-        + tabulate(
-            [
-                ("``TFs``", len(tfs)),
-                ("``Targets``", len(targets)),
-                ("Genes", len(genes)),
-                ("Possible Edges", len(tfs) * len(targets)),
-                ("Imposed Edges", k * len(targets)),
-                ("GRN density Edges", k * len(targets) / (len(tfs) * len(targets))),
-            ]
-        )
+        + tabulate([
+            ("``TFs``", len(tfs)),
+            ("``Targets``", len(targets)),
+            ("Genes", len(genes)),
+            ("Possible Edges", len(tfs) * len(targets)),
+            ("Imposed Edges", k * len(targets)),
+            ("GRN density Edges", k * len(targets) / (len(tfs) * len(targets))),
+        ])
     )
 
     gene_idx = real_cells.to_df().columns

@@ -12,6 +12,7 @@ from sklearn.metrics import auc
 
 logger = setup_logger("evaluate")
 
+
 def get_imposed_grn(
     cfg: ConfigParser,
 ) -> typing.Tuple[
@@ -147,9 +148,7 @@ def get_fake_grn(
         # header=None,
     )
     fake_grn.columns = ["TF", "target", "importance"]
-    fake_grn = fake_grn.reindex(
-        fake_grn.importance.abs().sort_values(ascending=False).index
-    )
+    fake_grn = fake_grn.reindex(fake_grn.importance.abs().sort_values(ascending=False).index)
 
     fake_grn["res"] = fake_grn["TF"] + " -> " + fake_grn["target"]
 
@@ -161,9 +160,7 @@ def get_fake_grn(
             unimportant_edges["importance"].append(0)
             unimportant_edges["res"].append(tf + " -> " + gene)
 
-    fake_grn = fake_grn[
-        ~fake_grn["target"].isin(TFs)
-    ]  # remove edge if a TF is also a target gene
+    fake_grn = fake_grn[~fake_grn["target"].isin(TFs)]  # remove edge if a TF is also a target gene
     fake_grn = fake_grn[fake_grn["TF"].isin(TFs)]  # remove edge not coming from a TF
     fake_grn = fake_grn[fake_grn["target"].isin(imposed_targets)]
     fake_grn = fake_grn[fake_grn["TF"].isin(TFs)]
@@ -171,9 +168,7 @@ def get_fake_grn(
     # add all the edges that don't appear in the inference method as low importance edges
     # without this, recall might not go to 1
     fake_grn = (
-        pd.concat([fake_grn, pd.DataFrame(unimportant_edges)])
-        .drop_duplicates(subset=["res"])
-        .reset_index(drop=True)
+        pd.concat([fake_grn, pd.DataFrame(unimportant_edges)]).drop_duplicates(subset=["res"]).reset_index(drop=True)
     )
     assert fake_grn.shape[0] == possible_edges_no
     return fake_grn
@@ -217,9 +212,7 @@ def compute_precision_at_k(
     for n_toptfs in range_TFs_pergene:
         # the code below doesn't preserve order
         fake_grn_dict = dict(fake_grn.groupby("target")["TF"].apply(list))
-        fake_grn_dict = {
-            gene: set(tfs[:n_toptfs]) for (gene, tfs) in fake_grn_dict.items()
-        }
+        fake_grn_dict = {gene: set(tfs[:n_toptfs]) for (gene, tfs) in fake_grn_dict.items()}
 
         edges = []
         for gene, tfs in fake_grn_dict.items():
@@ -229,9 +222,7 @@ def compute_precision_at_k(
                 edges.append(tf + " -> " + gene)
 
         fake_grn_dict = pd.DataFrame(edges, columns=["res"])
-        common_edges = len(
-            set(fake_grn_dict.iloc[:]["res"]) & set(imposed_grn.iloc[:]["res"])
-        )
+        common_edges = len(set(fake_grn_dict.iloc[:]["res"]) & set(imposed_grn.iloc[:]["res"]))
 
         consistency = common_edges / fake_grn_dict.shape[0]  # precision
         precisions.append(consistency)
@@ -244,7 +235,7 @@ def compute_precision_at_k(
 
     logger.info(f"Inferred GRN precision at k: {precisions}")
     logger.info(f"Baseline precision at k: {baselines}")
-    fig = plt.figure(figsize=(6, 6))
+    plt.figure(figsize=(6, 6))
     plt.plot(
         range_TFs_pergene,
         precisions,
@@ -323,9 +314,7 @@ def compute_PR(
     lb = np.arange(0.001, 1.001, 0.001)  # define the TOP % of edges to consider
     for _, ct in enumerate(lb):
         ct = int(fake_grn.shape[0] * ct)
-        common_edges = len(
-            set(fake_grn.iloc[:ct]["res"]) & set(imposed_grn.iloc[:]["res"])
-        )
+        common_edges = len(set(fake_grn.iloc[:ct]["res"]) & set(imposed_grn.iloc[:]["res"]))
         recall = common_edges / imposed_grn.shape[0]
         recalls.append(recall)
         precision = common_edges / ct
@@ -359,9 +348,7 @@ def compute_PR(
     logger.info(f"Baseline AUPRC (random predictor): {baseline}")
     if save_path:
         Path(save_path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(
-            save_path / "PR_curve.png", format="png", dpi=300, bbox_inches="tight"
-        )
+        plt.savefig(save_path / "PR_curve.png", format="png", dpi=300, bbox_inches="tight")
         logger.info(f"Saved PR curve at {save_path / 'PR_curve.png'}")
 
 

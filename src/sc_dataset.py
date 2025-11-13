@@ -25,9 +25,7 @@ class SCDataset(Dataset):
             self.data.X = self.data.X.todense()
 
         self.cells = torch.from_numpy(self.data.X)
-        self.clusters = torch.from_numpy(
-            self.data.obs.cluster.to_numpy(dtype=int)
-        )
+        self.clusters = torch.from_numpy(self.data.obs.cluster.to_numpy(dtype=int))
 
     def __getitem__(self, index: int) -> typing.Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -78,6 +76,4 @@ def get_loader(
     if batch_size is None:
         batch_size = len(dataset)
 
-    return DataLoader(
-        dataset, batch_size, shuffle=True, drop_last=True, pin_memory=True, num_workers=1
-    )
+    return DataLoader(dataset, batch_size, shuffle=True, drop_last=True, pin_memory=True, num_workers=1)

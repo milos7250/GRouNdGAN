@@ -36,9 +36,7 @@ def get_argparser() -> argparse.ArgumentParser:
     required = parser.add_argument_group("required arguments")
     optional = parser.add_argument_group("optional arguments")
 
-    required.add_argument(
-        "--config", required=True, help="Path to the configuration file"
-    )
+    required.add_argument("--config", required=True, help="Path to the configuration file")
 
     optional.add_argument(
         "--preprocess",

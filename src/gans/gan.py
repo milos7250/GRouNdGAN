@@ -486,9 +486,7 @@ class GAN:
         tsne_path = output_dir + "/TSNE"
         Path(tsne_path).mkdir(parents=True, exist_ok=True)
 
-        embedded_cells = TSNE().fit_transform(
-            np.concatenate((valid_cells, fake_cells), axis=0)
-        )
+        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]
@@ -752,9 +750,7 @@ class GAN:
 
             if should_run(plt_freq):
                 self._generate_tsne_plot(valid_loader, output_dir)
-                logger.info(
-                    f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}"
-                )
+                logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
 
             logger.info(f"Step {self.step}/{max_steps} completed")
 

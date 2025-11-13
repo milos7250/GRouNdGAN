@@ -52,9 +52,7 @@ def read_datasets(cfg: ConfigParser) -> typing.Tuple[np.ndarray, np.ndarray]:
     fake_cells_path = cfg.get("Evaluation", "simulated data path", fallback="")
     if not fake_cells_path:  # Fall back to generation path
         fake_cells_path = cfg.get("Generation", "generation path", fallback="")
-    if (
-        not fake_cells_path
-    ):  # Fall back on default save dir if generation path is also empty
+    if not fake_cells_path:  # Fall back on default save dir if generation path is also empty
         fake_cells_path = cfg.get("EXPERIMENT", "output directory") + "/simulated.h5ad"
 
     real_cells = sc.read_h5ad(test_cells_path)
@@ -63,9 +61,7 @@ def read_datasets(cfg: ConfigParser) -> typing.Tuple[np.ndarray, np.ndarray]:
     return real_cells.X, fake_cells.X
 
 
-def plot_tSNE(
-    real: np.ndarray, fake: np.ndarray, output_dir: str
-) -> typing.Tuple[np.ndarray, np.ndarray]:
+def plot_tSNE(real: np.ndarray, fake: np.ndarray, output_dir: str) -> typing.Tuple[np.ndarray, np.ndarray]:
     """
     Perform t-SNE embedding on real and fake cell data and save a scatter plot.
 
@@ -124,9 +120,7 @@ def plot_tSNE(
     return real_embedding, fake_embedding
 
 
-def compute_distances(
-    real_cells: np.ndarray, fake_cells: np.ndarray, axis: int = 0
-) -> typing.Tuple[float, float]:
+def compute_distances(real_cells: np.ndarray, fake_cells: np.ndarray, axis: int = 0) -> typing.Tuple[float, float]:
     """
     Compute Euclidean and Cosine distances between the mean expression profiles of real and fake cells.
 
@@ -258,9 +252,7 @@ def evaluate(cfg: ConfigParser) -> None:
     real_cells_ctr2 = real_cells[half:, :]
 
     if cfg.getboolean("Evaluation", "plot tsne"):
-        tsne_real, tsne_generated = plot_tSNE(
-            real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory")
-        )
+        tsne_real, tsne_generated = plot_tSNE(real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory"))
 
     if cfg.getboolean("Evaluation", "compute euclidean distance") or cfg.getboolean(
         "Evaluation", "compute cosine distance"
@@ -277,9 +269,7 @@ def evaluate(cfg: ConfigParser) -> None:
         logger.info(f"Cosine distance (control): {cosine_ctr}")
 
     if cfg.getboolean("Evaluation", "compute rf auroc"):
-        rf_auroc = compute_RF_AUROC(
-            real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory")
-        )
+        rf_auroc = compute_RF_AUROC(real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory"))
         logger.info(f"RF AUROC: {rf_auroc}")
 
     if cfg.getboolean("Evaluation", "compute MMD"):
@@ -294,12 +284,8 @@ def evaluate(cfg: ConfigParser) -> None:
             logger.warning(
                 f"MMD computation failed on device {cfg.get('EXPERIMENT', 'device')}: {e}, retrying with CPU."
             )
-            logger.info(
-                f"MMD (real vs fake): {MMD.MMD(real_cells, device='cpu').compute(real_cells, fake_cells)}"
-            )
-            logger.info(
-                f"MMD (control): {MMD.MMD(real_cells, device='cpu').compute(real_cells_ctr1, real_cells_ctr2)}"
-            )
+            logger.info(f"MMD (real vs fake): {MMD.MMD(real_cells, device='cpu').compute(real_cells, fake_cells)}")
+            logger.info(f"MMD (control): {MMD.MMD(real_cells, device='cpu').compute(real_cells_ctr1, real_cells_ctr2)}")
 
     if cfg.getboolean("Evaluation", "compute miLISI"):
         tsne_real_ctr1, tsne_real_ctr2 = plot_tSNE(real_cells_ctr1, real_cells_ctr2, "")

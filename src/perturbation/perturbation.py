@@ -81,9 +81,7 @@ def plot_UMAP(
         colormap = cm.get_cmap("tab20")
 
         # Get the colors from tab20 excluding the red color
-        colors = [
-            colormap(i) for i in range(colormap.N) if i != 6
-        ]  # Remove red color at index 2
+        colors = [colormap(i) for i in range(colormap.N) if i != 6]  # Remove red color at index 2
 
         # Create a new colormap without the red color
         colormap = cm.colors.ListedColormap(colors)
@@ -231,13 +229,9 @@ def plot_UMAP(
     plt.tight_layout()
 
     if save_path is not None:
-        fig1.savefig(
-            save_path + f"scatter_plot_{case_ctr}.png", dpi=300, bbox_inches="tight"
-        )
+        fig1.savefig(save_path + f"scatter_plot_{case_ctr}.png", dpi=300, bbox_inches="tight")
 
-        fig2.savefig(
-            save_path + f"density_plot_{case_ctr}.png", dpi=300, bbox_inches="tight"
-        )
+        fig2.savefig(save_path + f"density_plot_{case_ctr}.png", dpi=300, bbox_inches="tight")
 
 
 def perturb(cfg: ConfigParser) -> None:
@@ -293,9 +287,7 @@ def perturb(cfg: ConfigParser) -> None:
     gan.gen.pert_mode = True
     fake_cells = gan.generate_cells(cells_no, checkpoint)
     fake_cells_new = gan.generate_cells(cells_no, checkpoint)
-    assert (
-        fake_cells == fake_cells_new
-    ).all(), "perturbation mode should be deterministic"
+    assert (fake_cells == fake_cells_new).all(), "perturbation mode should be deterministic"
 
     tfs_to_perturb = parse_list(cfg.get("Perturbation", "tfs to perturb"), str)
     pert_values = parse_list(cfg.get("Perturbation", "perturbation values"), float)
@@ -339,13 +331,7 @@ def perturb(cfg: ConfigParser) -> None:
     fake_cells.write(cfg.get("Perturbation", "save dir") + "before_perturbation.h5ad")
 
     fake_cells_perturbed = sc.AnnData(fake_cells_perturbed)
-    fake_cells_perturbed.obs_names = np.repeat(
-        "pert_fake", fake_cells_perturbed.shape[0]
-    )
+    fake_cells_perturbed.obs_names = np.repeat("pert_fake", fake_cells_perturbed.shape[0])
     fake_cells_perturbed.obs_names_make_unique()
-    fake_cells_perturbed.write(
-        cfg.get("Perturbation", "save dir") + "after_perturbation.h5ad"
-    )
-    logger.info(
-        f"Saved cells before and after perturbation to {cfg.get('Perturbation', 'save dir')}"
-    )
+    fake_cells_perturbed.write(cfg.get("Perturbation", "save dir") + "after_perturbation.h5ad")
+    logger.info(f"Saved cells before and after perturbation to {cfg.get('Perturbation', 'save dir')}")

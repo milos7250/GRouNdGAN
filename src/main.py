@@ -75,9 +75,7 @@ def main():
         simulated_cells.obs_names_make_unique()
 
         # Add variable names
-        train_var_names = sc.read_h5ad(
-            cfg_parser.get("Data", "train"), backed="r"
-        ).var_names
+        train_var_names = sc.read_h5ad(cfg_parser.get("Data", "train"), backed="r").var_names
         simulated_cells.var_names = train_var_names
 
         # Get generation path if defined, otherwise fallback

@@ -100,9 +100,7 @@ class ConditionalCatGANFactory(IGANFactory):
             gen_layers=parse_list(self.parser["Model"]["generator layers"], int),
             crit_layers=parse_list(self.parser["Model"]["critic layers"], int),
             num_classes=self.parser.getint("Data", "number of classes"),
-            label_ratios=torch.Tensor(
-                parse_list(self.parser["Data"]["label ratios"], float)
-            ),
+            label_ratios=torch.Tensor(parse_list(self.parser["Data"]["label ratios"], float)),
             device=self.parser.get("EXPERIMENT", "device", fallback=None),
             library_size=self.parser.getint("Preprocessing", "library size"),
         )
@@ -138,9 +136,7 @@ class ConditionalProjGANFactory(IGANFactory):
             gen_layers=parse_list(self.parser["Model"]["generator layers"], int),
             crit_layers=parse_list(self.parser["Model"]["critic layers"], int),
             num_classes=self.parser.getint("Data", "number of classes"),
-            label_ratios=torch.Tensor(
-                parse_list(self.parser["Data"]["label ratios"], float)
-            ),
+            label_ratios=torch.Tensor(parse_list(self.parser["Data"]["label ratios"], float)),
             device=self.parser.get("EXPERIMENT", "device", fallback=None),
             library_size=self.parser.getint("Preprocessing", "library size"),
         )
@@ -217,16 +213,10 @@ class CausalGANFactory(IGANFactory):
                 c_lambda=self.parser.getfloat("CC Model", "lambda"),
                 beta1=self.parser.getfloat("CC Optimizer", "beta1"),
                 beta2=self.parser.getfloat("CC Optimizer", "beta2"),
-                gen_alpha_0=self.parser.getfloat(
-                    "CC Learning Rate", "generator initial"
-                ),
-                gen_alpha_final=self.parser.getfloat(
-                    "CC Learning Rate", "generator final"
-                ),
+                gen_alpha_0=self.parser.getfloat("CC Learning Rate", "generator initial"),
+                gen_alpha_final=self.parser.getfloat("CC Learning Rate", "generator final"),
                 crit_alpha_0=self.parser.getfloat("CC Learning Rate", "critic initial"),
-                crit_alpha_final=self.parser.getfloat(
-                    "CC Learning Rate", "critic final"
-                ),
+                crit_alpha_final=self.parser.getfloat("CC Learning Rate", "critic final"),
                 checkpoint=self.parser.get("EXPERIMENT", "output directory")
                 + f"_CC/checkpoints/step_{self.parser.getint('CC Training', 'maximum steps')}.pth",
                 summary_freq=self.parser.getint("CC Logging", "summary frequency"),
@@ -243,9 +233,7 @@ class CausalGANFactory(IGANFactory):
                 beta1=self.parser.getfloat("Optimizer", "beta1"),
                 beta2=self.parser.getfloat("Optimizer", "beta2"),
                 gen_alpha_0=self.parser.getfloat("Learning Rate", "generator initial"),
-                gen_alpha_final=self.parser.getfloat(
-                    "Learning Rate", "generator final"
-                ),
+                gen_alpha_final=self.parser.getfloat("Learning Rate", "generator final"),
                 crit_alpha_0=self.parser.getfloat("Learning Rate", "critic initial"),
                 crit_alpha_final=self.parser.getfloat("Learning Rate", "critic final"),
                 labeler_alpha=self.parser.getfloat("Learning Rate", "labeler"),
@@ -254,9 +242,7 @@ class CausalGANFactory(IGANFactory):
                     "Training", "labeler and antilabeler training intervals"
                 ),
                 checkpoint=self.parser.get("EXPERIMENT", "checkpoint", fallback=None),
-                starting_checkpoint=self.parser.get(
-                    "EXPERIMENT", "starting checkpoint", fallback=None
-                ),
+                starting_checkpoint=self.parser.get("EXPERIMENT", "starting checkpoint", fallback=None),
                 summary_freq=self.parser.getint("Logging", "summary frequency"),
                 plt_freq=self.parser.getint("Logging", "plot frequency"),
                 save_feq=self.parser.getint("Logging", "save frequency"),

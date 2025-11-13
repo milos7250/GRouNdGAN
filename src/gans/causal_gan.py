@@ -222,9 +222,7 @@ class CausalGAN(GAN):
             self.antilabeler_opt.load_state_dict(checkpoint["antilabeler_optimizer_state_dict"])
 
         else:
-            raise ValueError(
-                "mode should be 'inference', 'initialization', or 'training'"
-            )
+            raise ValueError("mode should be 'inference', 'initialization', or 'training'")
 
     def _update_tensorboard(
         self,
@@ -388,9 +386,7 @@ class CausalGAN(GAN):
         antilabeler_alpha: float,
         labeler_training_interval: int,
         checkpoint: typing.Optional[typing.Union[str, bytes, os.PathLike, None]] = None,
-        starting_checkpoint: typing.Optional[
-            typing.Union[str, bytes, os.PathLike, None]
-        ] = None,
+        starting_checkpoint: typing.Optional[typing.Union[str, bytes, os.PathLike, None]] = None,
         output_dir: typing.Optional[str] = "output",
         summary_freq: typing.Optional[int] = 5000,
         plt_freq: typing.Optional[int] = 10000,
@@ -577,9 +573,7 @@ class CausalGAN(GAN):
 
             if should_run(plt_freq):
                 self._generate_tsne_plot(valid_loader, output_dir)
-                logger.info(
-                    f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}"
-                )
+                logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
 
             logger.info(f"Step {self.step}/{max_steps} completed")
 

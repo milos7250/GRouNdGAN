@@ -71,9 +71,7 @@ def compute_lisi(
     for i, label in enumerate(label_colnames):
         labels = pd.Categorical(metadata[label])
         n_categories = len(labels.categories)
-        simpson = compute_simpson(
-            distances.T, indices.T, labels, n_categories, perplexity
-        )
+        simpson = compute_simpson(distances.T, indices.T, labels, n_categories, perplexity)
         lisi_df[:, i] = 1 / simpson
     return lisi_df
 

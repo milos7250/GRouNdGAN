@@ -68,7 +68,7 @@ class ConditionalProjGAN(ConditionalGAN):
         epsilon: torch.Tensor,
         labels: torch.Tensor = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> torch.Tensor:
         """
         Compute the gradient of the critic's scores with respect to interpolations
@@ -145,15 +145,11 @@ class ConditionalProjGAN(ConditionalGAN):
         for _ in range(batch_no):
             noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
             if class_ is None:
-                labels = self._sample_pseudo_labels(
-                    self.batch_size, self.label_ratios
-                ).to(self.device)
+                labels = self._sample_pseudo_labels(self.batch_size, self.label_ratios).to(self.device)
             else:
                 label_ratios = torch.zeros(self.num_classes).to(self.device)
                 label_ratios[class_] = 0.99
-                labels = self._sample_pseudo_labels(self.batch_size, label_ratios).to(
-                    self.device
-                )
+                labels = self._sample_pseudo_labels(self.batch_size, label_ratios).to(self.device)
             fake_cells.append(self.gen(noise, labels).cpu().detach().numpy())
             fake_labels.append(labels.cpu().detach().numpy())
 
@@ -172,13 +168,9 @@ class ConditionalProjGAN(ConditionalGAN):
             self.library_size,
         ).to(self.device)
 
-        self.crit = ConditionalCritic(
-            self.genes_no, self.critic_layers, self.num_classes
-        ).to(self.device)
+        self.crit = ConditionalCritic(self.genes_no, self.critic_layers, self.num_classes).to(self.device)
 
-    def _train_critic(
-        self, real_cells, real_labels, c_lambda
-    ) -> typing.Tuple[torch.Tensor, torch.Tensor]:
+    def _train_critic(self, real_cells, real_labels, c_lambda) -> typing.Tuple[torch.Tensor, torch.Tensor]:
         """
         Trains the critic for one iteration.
 
@@ -230,13 +222,9 @@ class ConditionalProjGAN(ConditionalGAN):
         """
         self.gen_opt.zero_grad()
 
-        fake_noise = self._generate_noise(
-            self.batch_size, self.latent_dim, device=self.device
-        )
+        fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
 
-        fake_labels = self._sample_pseudo_labels(self.batch_size, self.label_ratios).to(
-            self.device
-        )
+        fake_labels = self._sample_pseudo_labels(self.batch_size, self.label_ratios).to(self.device)
 
         fake = self.gen(fake_noise, fake_labels)
         crit_fake_pred = self.crit(fake, fake_labels)

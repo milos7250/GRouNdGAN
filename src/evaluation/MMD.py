@@ -28,17 +28,13 @@ class MMD:
         med = np.ones(20)
 
         for ii in range(1, 20):
-            sample = real_cells[
-                np.random.randint(real_cells.shape[0] - 1, size=real_cells.shape[0]), :
-            ]
+            sample = real_cells[np.random.randint(real_cells.shape[0] - 1, size=real_cells.shape[0]), :]
             nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
             distances, _ = nbrs.kneighbors(sample)
             med[ii] = np.median(distances[:, 1:n_neighbors])  # exclude self-distance
 
         med = np.median(med)
-        scales = torch.tensor(
-            [med / 2, med, med * 2], dtype=torch.float32, device=self.device
-        )
+        scales = torch.tensor([med / 2, med, med * 2], dtype=torch.float32, device=self.device)
         weights = torch.ones(len(scales), dtype=torch.float32, device=self.device)
 
         # Reshape for broadcasting

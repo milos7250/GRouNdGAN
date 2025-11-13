@@ -5,9 +5,7 @@ from torch import nn
 
 
 class Labeler(nn.Module):
-    def __init__(
-        self, num_genes: int, num_tfs: int, labeler_layers: typing.List[int]
-    ) -> None:
+    def __init__(self, num_genes: int, num_tfs: int, labeler_layers: typing.List[int]) -> None:
         """
         Labeler network's constructor.
 

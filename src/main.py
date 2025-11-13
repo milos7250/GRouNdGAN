@@ -74,6 +74,12 @@ def main():
         simulated_cells.obs_names = np.repeat("fake", simulated_cells.shape[0])
         simulated_cells.obs_names_make_unique()
 
+        # Add variable names
+        train_var_names = sc.read_h5ad(
+            cfg_parser.get("Data", "train"), backed="r"
+        ).var_names
+        simulated_cells.var_names = train_var_names
+
         # Get generation path if defined, otherwise fallback
         generation_path = cfg_parser.get("Generation", "generation path", fallback="")
         if not generation_path:
@@ -95,5 +101,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+        logger.info("Finished")
     except Exception:
         logger.exception("Exception occurred")

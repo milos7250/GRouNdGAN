@@ -247,7 +247,9 @@ def evaluate(cfg: ConfigParser) -> None:
     """
     real_cells, fake_cells = read_datasets(cfg)
     if sparse.issparse(real_cells):
-        real_cells = real_cells.todense()
+        real_cells = np.asarray(real_cells.todense())
+    if sparse.issparse(fake_cells):
+        fake_cells = np.asarray(fake_cells.todense())
 
     # Split the test set into 2 to compute the control metrics
     num_rows = real_cells.shape[0]
@@ -281,12 +283,23 @@ def evaluate(cfg: ConfigParser) -> None:
         logger.info(f"RF AUROC: {rf_auroc}")
 
     if cfg.getboolean("Evaluation", "compute MMD"):
-        logger.info(
-            f"MMD (real vs fake): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells, fake_cells)}"
-        )
-        logger.info(
-            f"MMD (control): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells_ctr1, real_cells_ctr2)}"
-        )
+        try:
+            logger.info(
+                f"MMD (real vs fake): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells, fake_cells)}"
+            )
+            logger.info(
+                f"MMD (control): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells_ctr1, real_cells_ctr2)}"
+            )
+        except Exception as e:
+            logger.warning(
+                f"MMD computation failed on device {cfg.get('EXPERIMENT', 'device')}: {e}, retrying with CPU."
+            )
+            logger.info(
+                f"MMD (real vs fake): {MMD.MMD(real_cells, device='cpu').compute(real_cells, fake_cells)}"
+            )
+            logger.info(
+                f"MMD (control): {MMD.MMD(real_cells, device='cpu').compute(real_cells_ctr1, real_cells_ctr2)}"
+            )
 
     if cfg.getboolean("Evaluation", "compute miLISI"):
         tsne_real_ctr1, tsne_real_ctr2 = plot_tSNE(real_cells_ctr1, real_cells_ctr2, "")

@@ -8,6 +8,7 @@ from networks.critic import Critic
 from networks.generator import Generator
 from networks.labeler import Labeler
 from networks.masked_causal_generator import CausalGenerator
+from torch.utils.tensorboard import SummaryWriter
 
 from gans.gan import GAN
 
@@ -225,6 +226,59 @@ class CausalGAN(GAN):
                 "mode should be 'inference', 'initialization', or 'training'"
             )
 
+    def _update_tensorboard(
+        self,
+        gen_loss: float,
+        crit_loss: float,
+        labeler_loss: float,
+        antilabeler_loss: float,
+        gp: torch.Tensor,
+        gen_lr: float,
+        crit_lr: float,
+        output_dir: typing.Union[str, bytes, os.PathLike],
+    ) -> None:
+        """
+        Updates the TensorBoard summary logs.
+
+        Parameters
+        ----------
+        gen_loss : float
+            Generator loss.
+        crit_loss : float
+            Critic loss.
+        labeler_loss : float
+            Labeler loss.
+        antilabeler_loss : float
+            Anti-labeler loss.
+        gp : torch.Tensor
+            Gradient penalty.
+        gen_lr : float
+            Generator's optimizer learning rate.
+        crit_lr : float
+            Critic's optimizer learning rate.
+        output_dir : typing.Union[str, bytes, os.PathLike]
+            Directory to save the tfevents.
+        """
+
+        # Only update on the master node
+        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
+            return
+
+        super()._update_tensorboard(
+            gen_loss,
+            crit_loss,
+            gp,
+            gen_lr,
+            crit_lr,
+            output_dir,
+        )
+
+        with SummaryWriter(f"{output_dir}/TensorBoard/labeler") as w:
+            w.add_scalar("loss", labeler_loss, self.step)
+
+        with SummaryWriter(f"{output_dir}/TensorBoard/antilabeler") as w:
+            w.add_scalar("loss", antilabeler_loss, self.step)
+
     def _train_labelers(self, real_cells: torch.Tensor) -> None:
         """
         Trains the labeler (on real and fake) and anti-labeler (on fake only).
@@ -314,7 +368,7 @@ class CausalGAN(GAN):
         # Update weights
         self.gen_opt.step()
 
-        return gen_loss
+        return gen_loss, labeler_loss, antilabeler_loss
 
     # FIXME: A lot of code duplication here with the parent train() method.
     def train(
@@ -457,6 +511,7 @@ class CausalGAN(GAN):
 
         # Main training loop
         generator_losses, critic_losses = [], []
+        labeler_losses, antilabeler_losses = [], []
         while self.step <= max_steps:
             try:
                 real_cells, real_labels = next(loader_gen)
@@ -476,12 +531,14 @@ class CausalGAN(GAN):
                 critic_losses += [mean_iter_crit_loss]
 
                 # Update learning rate
-                self.crit_lr_scheduler.step()
+                self.crit_lr_scheduler.step(self.step + 1)
 
-            gen_loss = self._train_generator()
-            self.gen_lr_scheduler.step()
+            gen_loss, labeler_loss, antilabeler_loss = self._train_generator()
+            self.gen_lr_scheduler.step(self.step + 1)
 
             generator_losses += [gen_loss.item()]
+            labeler_losses += [labeler_loss.item()]
+            antilabeler_losses += [antilabeler_loss.item()]
 
             if should_run(labeler_training_interval):
                 self._train_labelers(real_cells)
@@ -494,6 +551,8 @@ class CausalGAN(GAN):
             if should_run(summary_freq):
                 gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
                 crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
+                labeler_mean = sum(labeler_losses[-summary_freq:]) / summary_freq
+                antilabeler_mean = sum(antilabeler_losses[-summary_freq:]) / summary_freq
 
                 if self.step == summary_freq:
                     self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
@@ -501,6 +560,8 @@ class CausalGAN(GAN):
                 self._update_tensorboard(
                     gen_mean,
                     crit_mean,
+                    labeler_mean,
+                    antilabeler_mean,
                     gp,
                     self.gen_lr_scheduler.get_last_lr()[0],
                     self.crit_lr_scheduler.get_last_lr()[0],
@@ -508,7 +569,7 @@ class CausalGAN(GAN):
                 )
 
                 logger.info(
-                    f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}"
+                    f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}, Labeler loss: {labeler_mean:.4f}, Anti-labeler loss: {antilabeler_mean:.4f}"
                 )
                 logger.debug(
                     f"Step {self.step}: Generator LR: {self.gen_lr_scheduler.get_last_lr()[0]:.6f}, Critic LR: {self.crit_lr_scheduler.get_last_lr()[0]:.6f}"
@@ -516,7 +577,9 @@ class CausalGAN(GAN):
 
             if should_run(plt_freq):
                 self._generate_tsne_plot(valid_loader, output_dir)
-                logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
+                logger.info(
+                    f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}"
+                )
 
             logger.info(f"Step {self.step}/{max_steps} completed")
 

@@ -1,6 +1,7 @@
 import pickle
 import typing
 from configparser import ConfigParser
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -142,7 +143,7 @@ def get_fake_grn(
     # Read inferred GRN, assuming edges are already ordered by importance
     fake_grn = pd.read_csv(
         cfg.get("GRN Benchmarking", "grn to benchmark", fallback=""),
-        sep="\t",
+        sep=",",
         # header=None,
     )
     fake_grn.columns = ["TF", "target", "importance"]
@@ -235,6 +236,11 @@ def compute_precision_at_k(
         consistency = common_edges / fake_grn_dict.shape[0]  # precision
         precisions.append(consistency)
         baselines.append(n_toptfs / len(TFs))
+        logger.debug(f"Inferred grn at k = {n_toptfs}: {fake_grn_dict.iloc[:]['res']}")
+        logger.debug(f"Imposed grn at k = {n_toptfs}: {imposed_grn.iloc[:]['res']}")
+        logger.debug(f"Common edges at k = {n_toptfs}: {common_edges}")
+        logger.debug(f"Precision at k = {n_toptfs}: {consistency}")
+        logger.debug(f"Baseline at k = {n_toptfs}: {baselines[-1]}")
 
     logger.info(f"Inferred GRN precision at k: {precisions}")
     logger.info(f"Baseline precision at k: {baselines}")
@@ -264,13 +270,14 @@ def compute_precision_at_k(
     plt.xlim([1 - 0.1, numTFs_pergene + 0.1])
     plt.grid()
     if save_path:
+        Path(save_path).mkdir(parents=True, exist_ok=True)
         plt.savefig(
-            save_path + "Top_TF_precision.png",
+            save_path / "Top_TF_precision.png",
             format="png",
             dpi=300,
             bbox_inches="tight",
         )
-        logger.info(f"Saved precision at k plot at {save_path + 'Top_TF_precision.png'}")
+        logger.info(f"Saved precision at k plot at {save_path / 'Top_TF_precision.png'}")
 
 
 def compute_PR(
@@ -351,10 +358,11 @@ def compute_PR(
     logger.info(f"Inferred GRN AURPC: {auc_score}")
     logger.info(f"Baseline AUPRC (random predictor): {baseline}")
     if save_path:
+        Path(save_path).mkdir(parents=True, exist_ok=True)
         plt.savefig(
-            save_path + "PR_curve.png", format="png", dpi=300, bbox_inches="tight"
+            save_path / "PR_curve.png", format="png", dpi=300, bbox_inches="tight"
         )
-        logger.info(f"Saved PR curve at {save_path + 'PR_curve.png'}")
+        logger.info(f"Saved PR curve at {save_path / 'PR_curve.png'}")
 
 
 def evaluate(cfg: ConfigParser) -> None:

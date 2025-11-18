@@ -687,6 +687,9 @@ class GAN:
 
         # Main training loop
         generator_losses, critic_losses = [], []
+        torch.set_float32_matmul_precision("high")
+        self.gen.compile(fullgraph=True, mode="max-autotune")
+        self.crit.compile(fullgraph=True, mode="max-autotune")
         while self.step <= max_steps:
             try:
                 real_cells, real_labels = next(loader_gen)

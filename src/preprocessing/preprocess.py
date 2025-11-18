@@ -4,8 +4,8 @@ from configparser import ConfigParser
 import numpy as np
 import pandas as pd
 import scanpy as sc
+
 from loggers import setup_logger
-from scipy.sparse import issparse
 
 
 def preprocess(cfg: ConfigParser) -> None:
@@ -43,6 +43,7 @@ def preprocess(cfg: ConfigParser) -> None:
     sc.pp.neighbors(ann_clustered, n_pcs=50)
     sc.tl.louvain(ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res")))
     anndata.obs["cluster"] = ann_clustered.obs["louvain"]
+    del ann_clustered
 
     # get cluster ratios
     cells_per_cluster = Counter(anndata.obs["cluster"])
@@ -75,12 +76,13 @@ def preprocess(cfg: ConfigParser) -> None:
     sc.pp.log1p(canndata)  # logarithmize the data
     sc.pp.highly_variable_genes(canndata, n_top_genes=int(cfg.get("Preprocessing", "highly variable number")))
 
-    if issparse(canndata.X):
-        canndata.X = np.exp(canndata.X.toarray()) - 1  # get back original data
-    else:
-        canndata.X = np.exp(canndata.X) - 1  # get back original data
+    # if issparse(canndata.X):
+    #     canndata.X = np.exp(canndata.X.toarray()) - 1  # get back original data
+    # else:
+    #     canndata.X = np.exp(canndata.X) - 1  # get back original data
 
     anndata = anndata[:, canndata.var["highly_variable"]].copy()  # only keep highly variable genes
+    del canndata
 
     sc.pp.normalize_per_cell(anndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size")))
 

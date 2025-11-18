@@ -4,15 +4,8 @@ from __future__ import absolute_import
 import os
 import shutil
 
-import numpy as np
-import scanpy as sc
-import torch.distributed
 from custom_parser import get_argparser, get_configparser
-from evaluation import data_quality, grn_inference
-from factory import get_factory
 from loggers import setup_logger
-from perturbation import perturbation
-from preprocessing import grn_creation, preprocess
 
 # Setup logger
 logger = setup_logger("main")
@@ -38,21 +31,35 @@ def main():
     except shutil.SameFileError:
         pass
 
-    # get the GAN factory
-    fac = get_factory(cfg_parser)
-
     if args.preprocess:
+        from preprocessing import preprocess
         preprocess.preprocess(cfg_parser)
 
     if args.create_grn:
+        from preprocessing import grn_creation
         grn_creation.create_GRN(cfg_parser)
 
     if args.train:
+        import torch.distributed as dist
+
+        from factory import get_factory
+
+        fac = get_factory(cfg_parser)
+
         if cfg_parser.get("EXPERIMENT", "use DDP", fallback="False") == "True":
-            fac.parser.set("EXPERIMENT", "device", f"cuda:{os.environ['LOCAL_RANK']}")
-            group = torch.distributed.init_process_group("nccl")
+            group = dist.init_process_group("nccl")
+
+            try:
+                local_rank = int(os.environ["LOCAL_RANK"])
+            except KeyError:
+                logger.error(
+                    "LOCAL_RANK not found in environment variables. Make sure the program is launched with torch.distributed.launch or torchrun."
+                )
+                exit(1)
+
+            fac.parser.set("EXPERIMENT", "device", f"cuda:{local_rank}")
             fac.get_trainer()()
-            torch.distributed.destroy_process_group(group)
+            dist.destroy_process_group(group)
             logger.info("Finished training.")
             if args.generate or args.evaluate or args.benchmark_grn or args.perturb:
                 raise ValueError(
@@ -65,6 +72,13 @@ def main():
             logger.info("Finished training")
 
     if args.generate:
+        import numpy as np
+        import scanpy as sc
+
+        from factory import get_factory
+
+        fac = get_factory(cfg_parser)
+
         simulated_cells = fac.get_gan().generate_cells(
             int(cfg_parser.get("Generation", "number of cells to generate")),
             checkpoint=cfg_parser.get("EXPERIMENT", "checkpoint"),
@@ -87,12 +101,15 @@ def main():
         logger.info(f"Simulated cells saved to {generation_path}")
 
     if args.evaluate:
+        from evaluation import data_quality
         data_quality.evaluate(cfg_parser)
 
     if args.benchmark_grn:
+        from evaluation import grn_inference
         grn_inference.evaluate(cfg_parser)
 
     if args.perturb:
+        from perturbation import perturbation
         perturbation.perturb(cfg_parser)
 
 

@@ -62,7 +62,7 @@ class ConditionalGAN(GAN, ABC):
         valid_cells, valid_labels = next(iter(valid_loader))
         valid_labels = valid_labels.flatten()
 
-        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
+        embedded_cells = TSNE(n_jobs=-1).fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]

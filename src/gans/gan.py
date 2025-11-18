@@ -6,14 +6,15 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from loggers import setup_logger
-from networks.critic import Critic
-from networks.generator import Generator
-from sc_dataset import get_loader
 from sklearn.manifold import TSNE
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+
+from loggers import setup_logger
+from networks.critic import Critic
+from networks.generator import Generator
+from sc_dataset import get_loader
 
 
 class GAN:
@@ -486,7 +487,7 @@ class GAN:
         tsne_path = output_dir + "/TSNE"
         Path(tsne_path).mkdir(parents=True, exist_ok=True)
 
-        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
+        embedded_cells = TSNE(n_jobs=-1).fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]
@@ -730,8 +731,8 @@ class GAN:
                 gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
                 crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
 
-                # if self.step == summary_freq:
-                # self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
+                if self.step == summary_freq:
+                    self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
 
                 self._update_tensorboard(
                     gen_mean,

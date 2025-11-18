@@ -6,9 +6,9 @@ from pathlib import Path
 import pandas as pd
 import scanpy as sc
 from arboreto.algo import grnboost2
-from loggers import setup_logger
 from scipy import sparse
-from tabulate import tabulate
+
+from loggers import setup_logger
 
 
 def create_GRN(cfg: ConfigParser) -> None:
@@ -33,7 +33,7 @@ def create_GRN(cfg: ConfigParser) -> None:
     TFs = list(set(TFs).intersection(gene_names))
 
     if sparse.issparse(real_cells.X):
-        real_cells.X = real_cells.X.todense()
+        real_cells.X = real_cells.X.toarray()
 
     # preparing GRNBoost2's input
     if not Path(cfg.get("GRN Preparation", "Inferred GRN")).exists():
@@ -100,14 +100,14 @@ def create_GRN(cfg: ConfigParser) -> None:
     # print causal graph info
     logger.info(
         "Causal graph info:\n"
-        + tabulate([
+        + pd.DataFrame([
             ("``TFs``", len(tfs)),
             ("``Targets``", len(targets)),
             ("Genes", len(genes)),
             ("Possible Edges", len(tfs) * len(targets)),
             ("Imposed Edges", k * len(targets)),
             ("GRN density Edges", k * len(targets) / (len(tfs) * len(targets))),
-        ])
+        ]).to_string(index=False, header=False)
     )
 
     gene_idx = real_cells.to_df().columns

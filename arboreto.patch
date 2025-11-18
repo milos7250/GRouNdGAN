@@ -1,0 +1,12 @@
+--- /mnt/apps/users/mmicik/conda/envs/groundgan/lib/python3.11/site-packages/arboreto/core.py.bak	2025-11-17 18:12:08.920391504 +0000
++++ /mnt/apps/users/mmicik/conda/envs/groundgan/lib/python3.11/site-packages/arboreto/core.py	2025-11-17 18:12:35.540113299 +0000
+@@ -447,7 +447,8 @@
+ 
+     # gather the DataFrames into one distributed DataFrame
+     all_links_df = from_delayed(delayed_link_dfs, meta=_GRN_SCHEMA)
+-    all_meta_df = from_delayed(delayed_meta_dfs, meta=_META_SCHEMA)
++    if include_meta:
++        all_meta_df = from_delayed(delayed_meta_dfs, meta=_META_SCHEMA)
+ 
+     # optionally limit the number of resulting regulatory links, descending by top importance
+     if limit:

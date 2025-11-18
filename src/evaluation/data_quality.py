@@ -83,7 +83,7 @@ def plot_tSNE(real: np.ndarray, fake: np.ndarray, output_dir: str) -> typing.Tup
     """
     matplotlib.rcParams.update({"font.size": 15})
 
-    embedded_cells = TSNE().fit_transform(np.concatenate((real, fake), axis=0))
+    embedded_cells = TSNE(n_jobs=-1).fit_transform(np.concatenate((real, fake), axis=0))
 
     real_embedding = embedded_cells[0 : real.shape[0], :]
     fake_embedding = embedded_cells[fake.shape[0] :, :]

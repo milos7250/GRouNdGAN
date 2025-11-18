@@ -1,10 +1,11 @@
 import typing
 
 import torch
-from layers.cbn import ConditionalBatchNorm
-from layers.lsn import LSN
 from torch import nn
 from torch.nn.modules.activation import ReLU
+
+from layers.cbn import ConditionalBatchNorm
+from layers.lsn import LSN
 
 
 class Generator(nn.Module):

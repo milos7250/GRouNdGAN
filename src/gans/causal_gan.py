@@ -3,14 +3,14 @@ import typing
 from pathlib import Path
 
 import torch
+from torch.utils.tensorboard import SummaryWriter
+
+from gans.gan import GAN
 from loggers import setup_logger
 from networks.critic import Critic
 from networks.generator import Generator
 from networks.labeler import Labeler
 from networks.masked_causal_generator import CausalGenerator
-from torch.utils.tensorboard import SummaryWriter
-
-from gans.gan import GAN
 
 
 class CausalGAN(GAN):

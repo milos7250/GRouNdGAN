@@ -2,10 +2,11 @@ import itertools
 import typing
 
 import torch
-from layers.lsn import LSN
-from layers.masked_linear import MaskedLinear
+from sparselinear import SparseLinear
 from torch import nn
 from torch.nn.modules.activation import ReLU
+
+from layers.lsn import LSN
 
 
 class CausalGenerator(nn.Module):
@@ -169,9 +170,9 @@ class CausalGenerator(nn.Module):
         hidden_dims = (len(self.regulators) + self.num_noises) * self.width_scale_per_gene
 
         # noise mask will be added to TF mask
-        input_mask = torch.zeros(self.num_tfs, hidden_dims).to(self.device)
-        hidden_mask = torch.zeros(hidden_dims, hidden_dims).to(self.device)
-        output_mask = torch.zeros(hidden_dims, self.num_genes).to(self.device)
+        input_mask = torch.zeros(self.num_tfs, hidden_dims, dtype=torch.int64).to(self.device)
+        hidden_mask = torch.zeros(hidden_dims, hidden_dims, dtype=torch.int64).to(self.device)
+        output_mask = torch.zeros(hidden_dims, self.num_genes, dtype=torch.int64).to(self.device)
 
         prev_gene_hidden_dims = 0
         for gene, gene_regulators in self.causal_graph.items():
@@ -187,7 +188,7 @@ class CausalGenerator(nn.Module):
                 ] = 1
 
             # mask for the noises
-            noise_mask = torch.zeros(self.noise_per_gene, hidden_dims).to(self.device)
+            noise_mask = torch.zeros(self.noise_per_gene, hidden_dims, dtype=torch.int64).to(self.device)
             noise_mask[:, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims] = 1
             input_mask = torch.cat([input_mask, noise_mask])
 
@@ -244,11 +245,17 @@ class CausalGenerator(nn.Module):
         nn.Sequential
              Sequential container containing the modules.
         """
-        masked_linear = MaskedLinear(mask, device=self.device)
+        masked_linear = SparseLinear(mask.shape[0], mask.shape[1], connectivity=torch.nonzero(mask.T).T)
 
         if not final_layer:
-            nn.init.xavier_uniform_(masked_linear.weight)
-            masked_linear.reapply_mask()
+            # initialize weights using Xavier uniform initialization
+            fan_in, fan_out = mask.shape[0], mask.shape[1]
+            gain = nn.init.calculate_gain("relu")
+            std = gain * (2.0 / float(fan_in + fan_out)) ** 0.5
+            a = 3.0**0.5 * std  # Calculate uniform bounds from standard deviation
+            nn.init.uniform_(masked_linear.weights, -a, a)
+            torch.nn.init.zeros_(masked_linear.bias)
+
             return nn.Sequential(
                 masked_linear,
                 nn.BatchNorm1d(mask.shape[1]),
@@ -256,10 +263,13 @@ class CausalGenerator(nn.Module):
             )
 
         else:
-            nn.init.kaiming_normal_(masked_linear.weight, mode="fan_in", nonlinearity="relu")
-            masked_linear.reapply_mask()
-
+            # initialize weights using Kaiming normal initialization
+            fan_in, fan_out = mask.shape[0], mask.shape[1]
+            gain = nn.init.calculate_gain("relu")
+            std = gain / fan_in**0.5  # Using fan_in mode
+            nn.init.normal_(masked_linear.weights, 0, std)
             torch.nn.init.zeros_(masked_linear.bias)
+
             if library_size is not None:
                 return nn.Sequential(masked_linear, ReLU(), LSN(library_size))
             else:

@@ -3,10 +3,10 @@ import typing
 
 import numpy as np
 import torch
-from networks.critic import Critic
-from networks.generator import Generator
 
 from gans.conditional_gan import ConditionalGAN
+from networks.critic import Critic
+from networks.generator import Generator
 
 
 class ConditionalCatGAN(ConditionalGAN):
@@ -204,7 +204,7 @@ class ConditionalCatGAN(ConditionalGAN):
         typing.Tuple[torch.Tensor, torch.Tensor]
             The computed critic loss and gradient penalty.
         """
-        self.crit_opt.zero_grad()
+        self.crit_opt.zero_grad(set_to_none=True)
 
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
 
@@ -237,7 +237,7 @@ class ConditionalCatGAN(ConditionalGAN):
         torch.Tensor
             Tensor containing only 1 item, the generator loss.
         """
-        self.gen_opt.zero_grad()
+        self.gen_opt.zero_grad(set_to_none=True)
 
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
 

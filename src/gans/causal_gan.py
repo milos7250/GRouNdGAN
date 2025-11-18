@@ -194,7 +194,6 @@ class CausalGAN(GAN):
 
         if mode == "inference":
             # The causal GAN performs better when using batch stats (model.train() mode)
-
             self.gen.train()
             self.crit.train()
 
@@ -286,6 +285,7 @@ class CausalGAN(GAN):
         real_cells : torch.Tensor
             Tensor containing a batch of real cells.
         """
+
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
         fake = self.gen(fake_noise).detach()
 
@@ -297,7 +297,7 @@ class CausalGAN(GAN):
             tfs = self.gen.tfs
 
         # train anti-labeler
-        self.antilabeler_opt.zero_grad()
+        self.antilabeler_opt.zero_grad(set_to_none=True)
         predicted_tfs = self.antilabeler(fake[:, genes])
         actual_tfs = fake[:, tfs]
         antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
@@ -305,14 +305,14 @@ class CausalGAN(GAN):
         self.antilabeler_opt.step()
 
         # train labeler on fake data
-        self.labeler_opt.zero_grad()
+        self.labeler_opt.zero_grad(set_to_none=True)
         predicted_tfs = self.labeler(fake[:, genes])
         labeler_floss = self.mse(predicted_tfs, actual_tfs)
         labeler_floss.backward()
         self.labeler_opt.step()
 
         # train labeler on real data
-        self.labeler_opt.zero_grad()
+        self.labeler_opt.zero_grad(set_to_none=True)
         predicted_tfs = self.labeler(real_cells[:, genes])
         actual_tfs = real_cells[:, tfs]
         labeler_rloss = self.mse(predicted_tfs, actual_tfs)
@@ -327,11 +327,9 @@ class CausalGAN(GAN):
         torch.Tensor
             Tensor containing only 1 item, the generator loss.
         """
-        self.gen_opt.zero_grad()
+        self.gen_opt.zero_grad(set_to_none=True)
 
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
-
-        self.tb_fake_noise = fake_noise  # for tensorboard model graph
 
         fake = self.gen(fake_noise)
 
@@ -445,7 +443,7 @@ class CausalGAN(GAN):
         logger = setup_logger(__name__)
 
         def should_run(freq):
-            return (freq > 0 and self.step % freq == 0 and self.step > 1) or (self.step - 1 == max_steps)
+            return (freq > 0 and self.step % freq == 0 and self.step > 0) or (self.step - 1 == max_steps)
 
         loader, valid_loader = self._get_loaders(train_files, valid_files)
         loader_gen = iter(loader)
@@ -505,9 +503,16 @@ class CausalGAN(GAN):
         else:
             self.device = "cuda"
 
+        self.log_tensorboard_graph(output_dir)
+
         # Main training loop
         generator_losses, critic_losses = [], []
         labeler_losses, antilabeler_losses = [], []
+        torch.set_float32_matmul_precision("high")
+        self.gen.compile(fullgraph=True, mode="max-autotune")
+        self.crit.compile(fullgraph=True, mode="max-autotune")
+        self.labeler.compile(fullgraph=True, mode="max-autotune-no-cudagraphs")
+        self.antilabeler.compile(fullgraph=True, mode="max-autotune-no-cudagraphs")
         while self.step <= max_steps:
             try:
                 real_cells, real_labels = next(loader_gen)

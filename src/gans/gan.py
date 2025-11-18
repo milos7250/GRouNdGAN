@@ -206,11 +206,7 @@ class GAN:
 
         # Take the gradient of the scores with respect to the data
         gradient = torch.autograd.grad(
-            inputs=interpolates,
-            outputs=critic_interpolates,
-            grad_outputs=torch.ones_like(critic_interpolates),
-            create_graph=True,
-            retain_graph=True,
+            inputs=interpolates, outputs=critic_interpolates, grad_outputs=torch.ones_like(critic_interpolates)
         )[0]
         return gradient
 
@@ -384,12 +380,7 @@ class GAN:
         """
         return get_loader(train_file, self.batch_size), get_loader(validation_file)
 
-    def _add_tensorboard_graph(
-        self,
-        output_dir: typing.Union[str, bytes, os.PathLike],
-        gen_data: typing.Union[torch.Tensor, typing.Tuple[torch.Tensor]],
-        crit_data: typing.Union[torch.Tensor, typing.Tuple[torch.Tensor]],
-    ) -> None:
+    def log_tensorboard_graph(self, output_dir: typing.Union[str, bytes, os.PathLike]) -> None:
         """
         Adds the model graph to TensorBoard.
 
@@ -397,17 +388,19 @@ class GAN:
         ----------
         output_dir : typing.Union[str, bytes, os.PathLike]
             Directory to save the tfevents.
-        gen_data : typing.Union[torch.Tensor, typing.Tuple[torch.Tensor]]
-            Input to the generator.
-        crit_data : typing.Union[torch.Tensor, typing.Tuple[torch.Tensor]]
-            Input to the critic.
         """
         if torch.distributed.is_initialized():
+            # Only log on the master node
+            if os.environ.get("RANK", "0") != "0":
+                return
             gen = self.gen.module
             crit = self.crit.module
         else:
             gen = self.gen
             crit = self.crit
+
+        gen_data = self._generate_noise(self.batch_size, self.latent_dim, self.device)
+        crit_data = self.gen(gen_data)
 
         with SummaryWriter(f"{output_dir}/TensorBoard/model/generator") as w:
             w.add_graph(gen, gen_data)
@@ -541,12 +534,10 @@ class GAN:
         typing.Tuple[torch.Tensor, torch.Tensor]
             The computed critic loss and gradient penalty.
         """
-        self.crit_opt.zero_grad()
+        self.crit_opt.zero_grad(set_to_none=True)
 
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
         fake = self.gen(fake_noise)
-
-        self.tb_fake = fake  # for tensorboard model graph
 
         crit_fake_pred = self.crit(fake.detach())
         crit_real_pred = self.crit(real_cells)
@@ -575,11 +566,9 @@ class GAN:
         torch.Tensor
             Tensor containing only 1 item, the generator loss.
         """
-        self.gen_opt.zero_grad()
+        self.gen_opt.zero_grad(set_to_none=True)
 
         fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
-
-        self.tb_fake_noise = fake_noise  # for tensorboard model graph
 
         fake = self.gen(fake_noise)
         crit_fake_pred = self.crit(fake)
@@ -694,6 +683,8 @@ class GAN:
         else:
             self.device = "cuda"
 
+        self.log_tensorboard_graph(output_dir)
+
         # Main training loop
         generator_losses, critic_losses = [], []
         while self.step <= max_steps:
@@ -731,9 +722,6 @@ class GAN:
                 gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
                 crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
 
-                if self.step == summary_freq:
-                    self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
-
                 self._update_tensorboard(
                     gen_mean,
                     crit_mean,
@@ -755,6 +743,6 @@ class GAN:
 
             logger.info(f"Step {self.step}/{max_steps} completed")
 
+            self.step += 1
             if torch.distributed.is_initialized():
                 torch.distributed.barrier()
-            self.step += 1

@@ -6,7 +6,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from sklearn.manifold import TSNE
+from MulticoreTSNE import MulticoreTSNE as TSNE
+from sklearn.decomposition import PCA
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -402,10 +403,16 @@ class GAN:
         gen_data = self._generate_noise(self.batch_size, self.latent_dim, self.device)
         crit_data = self.gen(gen_data)
 
-        with SummaryWriter(f"{output_dir}/TensorBoard/model/generator") as w:
-            w.add_graph(gen, gen_data)
-        with SummaryWriter(f"{output_dir}/TensorBoard/model/critic") as w:
-            w.add_graph(crit, crit_data)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*Trace had nondeterministic nodes.*")
+            warnings.filterwarnings(
+                "ignore",
+                message=".*the traced function does not match the corresponding output of the Python function.*",
+            )
+            with SummaryWriter(f"{output_dir}/TensorBoard/model/generator") as w:
+                w.add_graph(gen, gen_data, use_strict_trace=False)
+            with SummaryWriter(f"{output_dir}/TensorBoard/model/critic") as w:
+                w.add_graph(crit, crit_data, use_strict_trace=False)
 
     def _update_tensorboard(
         self,
@@ -480,7 +487,10 @@ class GAN:
         tsne_path = output_dir + "/TSNE"
         Path(tsne_path).mkdir(parents=True, exist_ok=True)
 
-        embedded_cells = TSNE(n_jobs=-1).fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
+        # Compute PCA embedding to use as initialization for t-SNE
+        pca = PCA(n_components=2).fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
+
+        embedded_cells = TSNE(n_jobs=-1, init=pca).fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
 
         real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
         fake_embedding = embedded_cells[valid_cells.shape[0] :, :]
@@ -672,6 +682,7 @@ class GAN:
                 warnings.warn(f"Checkpoint {checkpoint} does not exist.")
             else:
                 self._load(checkpoint, mode="training")
+                return
 
         self.gen.train()
         self.crit.train()
@@ -741,6 +752,7 @@ class GAN:
                 )
 
             if should_run(plt_freq):
+                logger.info(f"Step {self.step}: Generating t-SNE plot...")
                 self._generate_tsne_plot(valid_loader, output_dir)
                 logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
 

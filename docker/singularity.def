@@ -5,8 +5,8 @@ From: pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
     export DEBIAN_FRONTEND=noninteractive
 
 %files
-    /home/mmicik/Geneformer/simulation/GRouNdGAN/requirements.txt /groundgan/requirements.txt
-    /home/mmicik/Geneformer/simulation/GRouNdGAN/arboreto.patch /groundgan/arboreto.patch
+    requirements.txt /groundgan/requirements.txt
+    arboreto.patch /groundgan/arboreto.patch
 
 %post
     set -eu

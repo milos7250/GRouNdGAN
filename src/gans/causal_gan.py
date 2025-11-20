@@ -1,18 +1,21 @@
 import os
+import time
 import typing
+import warnings
 from pathlib import Path
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from tqdm.rich import tqdm
 
 from gans.gan import GAN
-from loggers import setup_logger
+from loggers import setup_logger, tqdm_logging_redirect
 from networks.critic import Critic
 from networks.generator import Generator
 from networks.labeler import Labeler
 from networks.masked_causal_generator import CausalGenerator
 
-
+warnings.filterwarnings("ignore", message=".*rich is experimental/alpha.*")
 class CausalGAN(GAN):
     def __init__(
         self,
@@ -503,85 +506,95 @@ class CausalGAN(GAN):
         else:
             self.device = "cuda"
 
+        logger.info("Saving model graph...")
         self.log_tensorboard_graph(output_dir)
 
         # Main training loop
         generator_losses, critic_losses = [], []
         labeler_losses, antilabeler_losses = [], []
         torch.set_float32_matmul_precision("high")
+        logger.info("Compiling models...")
         self.gen.compile(fullgraph=True, mode="max-autotune")
         self.crit.compile(fullgraph=True, mode="max-autotune")
         self.labeler.compile(fullgraph=True, mode="max-autotune-no-cudagraphs")
         self.antilabeler.compile(fullgraph=True, mode="max-autotune-no-cudagraphs")
-        while self.step <= max_steps:
-            try:
-                real_cells, real_labels = next(loader_gen)
-            except StopIteration:
-                loader_gen = iter(loader)
-                real_cells, real_labels = next(loader_gen)
 
-            real_cells = real_cells.to(self.device)
-            real_labels = real_labels.flatten().to(self.device)
+        logger.info("Starting training...")
+        with tqdm_logging_redirect(
+            loggers=[logger], tqdm_class=tqdm, desc="Training Causal GAN", total=max_steps
+        ) as pbar:
+            pbar.update(self.step)
+            while self.step <= max_steps:
+                time_start = time.time_ns()
+                try:
+                    real_cells, real_labels = next(loader_gen)
+                except StopIteration:
+                    loader_gen = iter(loader)
+                    real_cells, real_labels = next(loader_gen)
 
-            if self.step != 0:
-                mean_iter_crit_loss = 0
-                for _ in range(critic_iter):
-                    crit_loss, gp = self._train_critic(real_cells, real_labels, c_lambda)
-                    mean_iter_crit_loss += crit_loss.item() / critic_iter
+                real_cells = real_cells.to(self.device)
+                real_labels = real_labels.flatten().to(self.device)
 
-                critic_losses += [mean_iter_crit_loss]
+                if self.step != 0:
+                    mean_iter_crit_loss = 0
+                    for _ in range(critic_iter):
+                        crit_loss, gp = self._train_critic(real_cells, real_labels, c_lambda)
+                        mean_iter_crit_loss += crit_loss.item() / critic_iter
 
-                # Update learning rate
-                self.crit_lr_scheduler.step(self.step + 1)
+                    critic_losses += [mean_iter_crit_loss]
 
-            gen_loss, labeler_loss, antilabeler_loss = self._train_generator()
-            self.gen_lr_scheduler.step(self.step + 1)
+                    # Update learning rate
+                    self.crit_lr_scheduler.step(self.step + 1)
 
-            generator_losses += [gen_loss.item()]
-            labeler_losses += [labeler_loss.item()]
-            antilabeler_losses += [antilabeler_loss.item()]
+                gen_loss, labeler_loss, antilabeler_loss = self._train_generator()
+                self.gen_lr_scheduler.step(self.step + 1)
 
-            if should_run(labeler_training_interval):
-                self._train_labelers(real_cells)
+                generator_losses += [gen_loss.item()]
+                labeler_losses += [labeler_loss.item()]
+                antilabeler_losses += [antilabeler_loss.item()]
 
-            if should_run(save_feq):
-                self._save(output_dir)
-                logger.info(f"Step {self.step}: Saved checkpoint to {output_dir}")
+                if should_run(labeler_training_interval):
+                    self._train_labelers(real_cells)
 
-            # Log and visualize progress
-            if should_run(summary_freq):
-                gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
-                crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
-                labeler_mean = sum(labeler_losses[-summary_freq:]) / summary_freq
-                antilabeler_mean = sum(antilabeler_losses[-summary_freq:]) / summary_freq
+                if should_run(save_feq):
+                    self._save(output_dir)
+                    logger.info(f"Step {self.step}: Saved checkpoint to {output_dir}")
 
-                if self.step == summary_freq:
-                    self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
+                # Log and visualize progress
+                if should_run(summary_freq):
+                    gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
+                    crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
+                    labeler_mean = sum(labeler_losses[-summary_freq:]) / summary_freq
+                    antilabeler_mean = sum(antilabeler_losses[-summary_freq:]) / summary_freq
 
-                self._update_tensorboard(
-                    gen_mean,
-                    crit_mean,
-                    labeler_mean,
-                    antilabeler_mean,
-                    gp,
-                    self.gen_lr_scheduler.get_last_lr()[0],
-                    self.crit_lr_scheduler.get_last_lr()[0],
-                    output_dir,
-                )
+                    self._update_tensorboard(
+                        gen_mean,
+                        crit_mean,
+                        labeler_mean,
+                        antilabeler_mean,
+                        gp,
+                        self.gen_lr_scheduler.get_last_lr()[0],
+                        self.crit_lr_scheduler.get_last_lr()[0],
+                        output_dir,
+                    )
 
-                logger.info(
-                    f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}, Labeler loss: {labeler_mean:.4f}, Anti-labeler loss: {antilabeler_mean:.4f}"
-                )
+                    logger.info(
+                        f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}, Labeler loss: {labeler_mean:.4f}, Anti-labeler loss: {antilabeler_mean:.4f}"
+                    )
+                    logger.debug(
+                        f"Step {self.step}: Generator LR: {self.gen_lr_scheduler.get_last_lr()[0]:.6f}, Critic LR: {self.crit_lr_scheduler.get_last_lr()[0]:.6f}"
+                    )
+
+                if should_run(plt_freq):
+                    logger.info(f"Step {self.step}: Generating t-SNE plot...")
+                    self._generate_tsne_plot(valid_loader, output_dir)
+                    logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
+
+                self.step += 1
+                pbar.update()
+                if torch.distributed.is_initialized():
+                    torch.distributed.barrier()
+                time_end = time.time_ns()
                 logger.debug(
-                    f"Step {self.step}: Generator LR: {self.gen_lr_scheduler.get_last_lr()[0]:.6f}, Critic LR: {self.crit_lr_scheduler.get_last_lr()[0]:.6f}"
+                    f"Step {self.step}/{max_steps} completed in {(time_end - time_start) // 1_000_000:.0f} milliseconds"
                 )
-
-            if should_run(plt_freq):
-                self._generate_tsne_plot(valid_loader, output_dir)
-                logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
-
-            logger.info(f"Step {self.step}/{max_steps} completed")
-
-            self.step += 1
-            if torch.distributed.is_initialized():
-                torch.distributed.barrier()

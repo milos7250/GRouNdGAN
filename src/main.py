@@ -40,6 +40,7 @@ def main():
         grn_creation.create_GRN(cfg_parser)
 
     if args.train:
+        logger.info("Initializing training libraries...")
         import torch.distributed as dist
 
         from factory import get_factory
@@ -58,6 +59,7 @@ def main():
                 exit(1)
 
             fac.parser.set("EXPERIMENT", "device", f"cuda:{local_rank}")
+            logger.info("Starting DDP training...")
             fac.get_trainer()()
             dist.destroy_process_group(group)
             logger.info("Finished training.")
@@ -68,6 +70,7 @@ def main():
                 )
             exit(0)
         else:
+            logger.info("Starting trainer...")
             fac.get_trainer()()
             logger.info("Finished training")
 

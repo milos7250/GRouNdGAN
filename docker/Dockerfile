@@ -4,8 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install git g++ make && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /groundgan
-COPY requirements.txt .
-COPY arboreto.patch .
+COPY arboreto.patch requirements.txt ./
 
 # Install dependencies from requirements.txt
 RUN python -m pip install --no-cache-dir --root-user-action ignore -r /groundgan/requirements.txt && (rm -rf /root/.cache/pip || true)

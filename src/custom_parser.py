@@ -1,5 +1,6 @@
 import argparse
-from configparser import ConfigParser
+from configparser import ConfigParser, ExtendedInterpolation
+from os import environ
 
 
 def get_configparser() -> ConfigParser:
@@ -11,9 +12,11 @@ def get_configparser() -> ConfigParser:
     ConfigParser.
     """
     return ConfigParser(
+        defaults=environ,
         empty_lines_in_values=False,
         allow_no_value=True,
         inline_comment_prefixes=";",
+        interpolation=ExtendedInterpolation(),
     )
 
 
@@ -47,7 +50,7 @@ def get_argparser() -> argparse.ArgumentParser:
     )
 
     optional.add_argument(
-        "--create_grn",
+        "--create-grn",
         required=False,
         default=False,
         action="store_true",
@@ -60,6 +63,14 @@ def get_argparser() -> argparse.ArgumentParser:
         default=False,
         action="store_true",
         help="Start or resume model training",
+    )
+
+    optional.add_argument(
+        "--optimize-hyperparameters",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Start or resume hyperparameter optimization using Optuna",
     )
 
     optional.add_argument(
@@ -79,7 +90,7 @@ def get_argparser() -> argparse.ArgumentParser:
     )
 
     optional.add_argument(
-        "--benchmark_grn",
+        "--benchmark-grn",
         required=False,
         default=False,
         action="store_true",

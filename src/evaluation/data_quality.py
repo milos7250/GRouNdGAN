@@ -1,37 +1,28 @@
-import typing
+import json
 from configparser import ConfigParser
+from pathlib import Path
 
-import matplotlib
-import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
 import sklearn.metrics as metrics
-from loggers import setup_logger
-from matplotlib import rcParams
+from matplotlib.figure import Figure
 from scipy import sparse
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.manifold import TSNE
 from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
 from sklearn.model_selection import train_test_split
+from umap import UMAP
 
 import evaluation.MMD as MMD
 from evaluation.lisi import compute_lisi
-
-font_dir = ["Atkinson_Hyperlegible/Web Fonts/TTF/"]
-for font in font_manager.findSystemFonts(font_dir):
-    font_manager.fontManager.addfont(font)
-
-# Set font family globally
-rcParams["font.family"] = "Atkinson Hyperlegible"
-rcParams.update({"font.size": 13})
+from loggers import setup_logger
 
 logger = setup_logger("evaluate")
 
 
-def read_datasets(cfg: ConfigParser) -> typing.Tuple[np.ndarray, np.ndarray]:
+def read_datasets(cfg: ConfigParser) -> tuple[sparse.csr_matrix, sparse.csr_matrix]:
     """
     Load real and simulated (fake) gene expression datasets.
 
@@ -53,98 +44,166 @@ def read_datasets(cfg: ConfigParser) -> typing.Tuple[np.ndarray, np.ndarray]:
     if not fake_cells_path:  # Fall back to generation path
         fake_cells_path = cfg.get("Generation", "generation path", fallback="")
     if not fake_cells_path:  # Fall back on default save dir if generation path is also empty
-        fake_cells_path = cfg.get("EXPERIMENT", "output directory") + "/simulated.h5ad"
+        fake_cells_path = Path(cfg.get("EXPERIMENT", "output directory")) / "simulated.h5ad"
 
     real_cells = sc.read_h5ad(test_cells_path)
-    fake_cells = sc.read_h5ad(fake_cells_path)[: real_cells.shape[0]]
+    fake_cells = sc.read_h5ad(fake_cells_path)
 
-    return real_cells.X, fake_cells.X
+    if not isinstance(real_cells.X, sparse.csr_matrix):  # pyright: ignore[reportUnknownMemberType]
+        raise ValueError("The real data matrix is not in sparse csr format. Please preprocess the data accordingly.")
+    else:
+        real_cells = real_cells.X
+    if not isinstance(fake_cells.X, sparse.csr_matrix):  # pyright: ignore[reportUnknownMemberType]
+        raise ValueError("The fake data matrix is not in sparse csr format. Please preprocess the data accordingly.")
+    else:
+        fake_cells = fake_cells.X
+
+    no_of_cells = int(min(real_cells.shape[0], fake_cells.shape[0]))  # pyright: ignore[reportOptionalSubscript,reportUnknownArgumentType]
+    real_cells = real_cells[:no_of_cells, :]
+    fake_cells = fake_cells[:no_of_cells, :]
+
+    return real_cells, fake_cells
 
 
-def plot_tSNE(real: np.ndarray, fake: np.ndarray, output_dir: str) -> typing.Tuple[np.ndarray, np.ndarray]:
+def plot_UMAP(
+    real: np.ndarray | sparse.csr_matrix, fake: np.ndarray | sparse.csr_matrix, output_dir: Path | None
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Perform t-SNE embedding on real and fake cell data and save a scatter plot.
+    Perform UMAP embedding on real and fake cell data and save a scatter plot.
 
     Parameters
     ----------
-    real : np.ndarray
+    real : np.ndarray | sparse.csr_matrix
         A NumPy array of real cell data with shape (n_real_cells, n_features).
-    fake : np.ndarray
+    fake : np.ndarray | sparse.csr_matrix
         A NumPy array of fake/generated cell data with shape (n_fake_cells, n_features).
-    output_dir : str
-        Path to the directory where the t-SNE plot image will be saved.
+    output_dir : Path | None
+        Path to the directory where the UMAP plot image will be saved.
         If empty, the plot is not saved.
 
     Returns
     -------
-    typing.Tuple[np.ndarray, np.ndarray]
-        A tuple containing the 2D t-SNE embeddings of the real and fake data,
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing the 2D UMAP embeddings of the real and fake data,
         in the form (real_embedding, fake_embedding).
     """
-    matplotlib.rcParams.update({"font.size": 15})
+    umap = UMAP(random_state=42, min_dist=0.0, n_jobs=1)
+    umap.fit(real)  # ensure UMAP is fitted only once to preserve comparability
+    real_embedding = np.array(umap.transform(real))
+    fake_embedding = np.array(umap.transform(fake))
 
-    embedded_cells = TSNE(n_jobs=-1).fit_transform(np.concatenate((real, fake), axis=0))
+    if not output_dir:
+        return real_embedding, fake_embedding
 
-    real_embedding = embedded_cells[0 : real.shape[0], :]
-    fake_embedding = embedded_cells[fake.shape[0] :, :]
+    extent = np.array([
+        [
+            min(min(real_embedding[:, 0]), min(fake_embedding[:, 0])),
+            max(max(real_embedding[:, 0]), max(fake_embedding[:, 0])),
+        ],
+        [
+            min(min(real_embedding[:, 1]), min(fake_embedding[:, 1])),
+            max(max(real_embedding[:, 1]), max(fake_embedding[:, 1])),
+        ],
+    ])
+    margin = np.array(extent[:, 1] - extent[:, 0]) * 0.05  # 5% margin
+    extent[:, 0] -= margin[0]
+    extent[:, 1] += margin[1]
 
     plt.clf()
-    plt.figure(figsize=(8, 8))
+    scatter_fig = plt.figure(figsize=(5, 5))
 
     plt.scatter(
         real_embedding[:, 0],
         real_embedding[:, 1],
         c="blue",
         label="real",
-        alpha=0.5,
+        alpha=0.1,
     )
 
     plt.scatter(
         fake_embedding[:, 0],
         fake_embedding[:, 1],
         c="red",
-        label="fake",
-        alpha=0.5,
+        label="generated",
+        alpha=0.1,
     )
 
     plt.grid(True)
-    plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=15, bbox_to_anchor=(0, 0))
-    plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=15, bbox_to_anchor=(0, 0))
-    plt.xlabel("t-SNE 1")
-    plt.ylabel("t-SNE 2")
+    plt.xlim(extent[0, 0], extent[0, 1])
+    plt.ylim(extent[1, 0], extent[1, 1])
+    plt.title("UMAP Projection of Real and Generated Cells")
+    plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=8, bbox_to_anchor=(0, 0))
 
-    if output_dir:
-        plt.savefig(output_dir + "/tSNE.png", format="png", dpi=300, bbox_inches="tight")
-        logger.info(f"t-SNE plot saved to {output_dir + '/tSNE.png'}")
+    hexbin_fig, ax = plt.subplots(1, 2, figsize=(13, 5))
+    ax[0].hexbin(
+        real_embedding[:, 0], real_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds"
+    )
+    ax[0].set_title("Real Cells")
+    plt.colorbar(ax[0].collections[0], ax=ax[0])
+
+    ax[1].hexbin(
+        fake_embedding[:, 0], fake_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds"
+    )
+    ax[1].set_title("Generated Cells")
+    plt.colorbar(ax[1].collections[0], ax=ax[1])
+    plt.suptitle("UMAP Histograms")
+
+    H_real, xedges, yedges = np.histogram2d(real_embedding[:, 0], real_embedding[:, 1], bins=100, range=extent)
+    H_fake, _, _ = np.histogram2d(fake_embedding[:, 0], fake_embedding[:, 1], bins=100, range=extent)
+    H_diff = H_real - H_fake
+    X, Y = np.meshgrid(xedges, yedges)
+    v_bound = np.max(np.abs(H_diff))
+
+    hist_diff_fig = plt.figure(figsize=(5, 5))
+
+    H_diff[H_diff == 0] = np.nan
+    plt.pcolormesh(X, Y, H_diff.T, shading="auto", cmap="coolwarm", vmin=-v_bound, vmax=v_bound)
+
+    plt.title("UMAP Histogram Difference (Real - Generated)")
+
+    plt.subplots_adjust(left=0.15, right=0.85, top=0.85, bottom=0.15)  # shrink fig so cbar is visible
+    # make new ax object for the cbar
+    cbar_ax = hist_diff_fig.add_axes((0.87, 0.15, 0.02, 0.7))  # x, y, width, height
+    plt.colorbar(cax=cbar_ax)
+
+    umap_path = output_dir / "UMAP"
+    umap_path.mkdir(parents=True, exist_ok=True)
+    scatter_fig.savefig(umap_path / "UMAP Scatter.jpg")
+    hexbin_fig.savefig(umap_path / "UMAP Histogram.jpg")
+    hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.jpg")
+
+    plt.close("all")
 
     return real_embedding, fake_embedding
 
 
-def compute_distances(real_cells: np.ndarray, fake_cells: np.ndarray, axis: int = 0) -> typing.Tuple[float, float]:
+def compute_distances(
+    real_cells: np.ndarray | sparse.csr_matrix, fake_cells: np.ndarray | sparse.csr_matrix, axis: int = 0
+) -> tuple[float, float]:
     """
     Compute Euclidean and Cosine distances between the mean expression profiles of real and fake cells.
 
 
     Parameters
     ----------
-    real_cells : np.ndarray
-        A NumPy array representing real cell data (cells x features).
-    fake_cells : np.ndarray
+    real_cells : np.ndarray | sparse.csr_matrix
+        A NumPy array representing real cell data (cells × features).
+    fake_cells : np.ndarray | sparse.csr_matrix
         A NumPy array representing fake cell data (cells × features).
     axis : int, optional
         Axis along which to compute the mean expression (default is 0, meaning across cells), by default 0
 
     Returns
     -------
-    typing.Tuple[float, float]
+    tuple[float, float]
         A tuple containing:
         - Euclidean distance between the mean expression profiles.
         - Cosine distance between the mean expression profiles.
     """
 
     # calculate mean expression across cells
-    fake_mean_expression = np.mean(fake_cells, axis=axis).reshape(1, -1)
-    real_mean_expression = np.mean(real_cells, axis=axis).reshape(1, -1)
+    fake_mean_expression = np.asarray(fake_cells.mean(axis=axis).reshape(1, -1))
+    real_mean_expression = np.asarray(real_cells.mean(axis=axis).reshape(1, -1))
     return (
         euclidean_distances(fake_mean_expression, real_mean_expression).item(),
         cosine_distances(fake_mean_expression, real_mean_expression).item(),
@@ -152,11 +211,10 @@ def compute_distances(real_cells: np.ndarray, fake_cells: np.ndarray, axis: int 
 
 
 def compute_RF_AUROC(
-    real_cells: np.ndarray,
-    fake_cells: np.ndarray,
-    output_dir: str,
+    real_cells: np.ndarray | sparse.csr_matrix,
+    fake_cells: np.ndarray | sparse.csr_matrix,
     n_components: int = 50,
-) -> float:
+) -> tuple[float, Figure]:
     """
     Compute the AUROC and plot the ROC curve of a Random Forest classifier distinguishing real from fake cells.
 
@@ -166,26 +224,24 @@ def compute_RF_AUROC(
         A NumPy array representing real cell data (cells x features).
     fake_cells : np.ndarray
         A NumPy array representing fake/generated cell data (cells x features).
-    output_dir : str
-        Path to the directory where the ROC curve plot will be saved. The plot is saved as 'RF.png'.
     n_components : int, optional
         Number of principal components to retain during PCA, by default 50
 
     Returns
     -------
-    float
-        The area under the ROC curve (AUROC) for the classifier.
+    tuple[float, Figure]
+        The area under the ROC curve (AUROC) for the classifier and the matplotlib Figure object containing the ROC plot.
     """
     # create labels for real and fake data (real = 1, fake = 0)
-    y_real = np.ones(real_cells.shape[0])
-    y_fake = np.zeros(fake_cells.shape[0])
+    y_real = np.ones(real_cells.shape[0])  # pyright: ignore[reportOptionalSubscript]
+    y_fake = np.zeros(fake_cells.shape[0])  # pyright: ignore[reportOptionalSubscript]
 
     # perform PCA
     pca = PCA(n_components=n_components)
 
     # split data into training and testing
     X_train, X_test, y_train, y_test = train_test_split(
-        np.concatenate((real_cells, fake_cells), axis=0),
+        sparse.vstack((real_cells, fake_cells), format="csr"),
         np.hstack((y_real, y_fake)),
         test_size=0.3,
         shuffle=True,
@@ -195,11 +251,11 @@ def compute_RF_AUROC(
     X_test = pca.transform(X_test)
 
     # train and test RF
-    rf = RandomForestClassifier(n_estimators=1000)
+    rf = RandomForestClassifier(n_estimators=1000, n_jobs=8)
     rf.fit(X_train, y_train)
     preds = rf.predict_proba(X_test)
     fpr, tpr, _ = metrics.roc_curve(y_test, preds[:, 1])
-    roc_auc = metrics.roc_auc_score(y_test, preds[:, 1])
+    roc_auc = float(metrics.roc_auc_score(y_test, preds[:, 1]))
 
     # plot ROC
     plt.figure(figsize=(5, 5))
@@ -211,17 +267,15 @@ def compute_RF_AUROC(
     plt.ylim([0, 1])
     plt.ylabel("True Positive Rate")
     plt.xlabel("False Positive Rate")
-    plt.savefig(output_dir + "/RF.png", format="png", bbox_inches="tight")
-    logger.info(f"RF ROC plot saved to {output_dir + '/RF.png'}")
 
-    return roc_auc
+    return roc_auc, plt.gcf()
 
 
 def evaluate(cfg: ConfigParser) -> None:
     """
     Assess the data quality of the simulated dataset.
 
-    - T-SNE plots of real vs simulated cells (jointly embedded and plotted).
+    - Umap plots of real vs simulated cells (jointly embedded and plotted).
     - Euclidean and Cosine distances between the centroids of real cells and simulated cells.
         The centroid cell was obtained by calculating the mean along the gene axis (across all simulated or real cells).
     - Area under the receiver operating characteristic curve of a random forest in distinguishing real cells from simulated ones.
@@ -239,20 +293,19 @@ def evaluate(cfg: ConfigParser) -> None:
     cfg : ConfigParser
         Parser for config file containing program params.
     """
+    output_dir = Path(cfg.get("EXPERIMENT", "output directory"))
+    results = {}
+
     real_cells, fake_cells = read_datasets(cfg)
-    if sparse.issparse(real_cells):
-        real_cells = np.asarray(real_cells.todense())
-    if sparse.issparse(fake_cells):
-        fake_cells = np.asarray(fake_cells.todense())
 
     # Split the test set into 2 to compute the control metrics
-    num_rows = real_cells.shape[0]
+    num_rows = real_cells.shape[0]  # pyright: ignore[reportOptionalSubscript]
     half = num_rows // 2
     real_cells_ctr1 = real_cells[:half, :]
     real_cells_ctr2 = real_cells[half:, :]
 
-    if cfg.getboolean("Evaluation", "plot tsne"):
-        tsne_real, tsne_generated = plot_tSNE(real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory"))
+    if cfg.getboolean("Evaluation", "plot umap") or cfg.getboolean("Evaluation", "compute miLISI"):
+        umap_real, umap_generated = plot_UMAP(real_cells, fake_cells, output_dir)
 
     if cfg.getboolean("Evaluation", "compute euclidean distance") or cfg.getboolean(
         "Evaluation", "compute cosine distance"
@@ -260,49 +313,66 @@ def evaluate(cfg: ConfigParser) -> None:
         euclidean, cosine = compute_distances(real_cells, fake_cells)
         euclidean_ctr, cosine_ctr = compute_distances(real_cells_ctr1, real_cells_ctr2)
 
-    if cfg.getboolean("Evaluation", "compute euclidean distance"):
         logger.info(f"Euclidean distance (real vs fake): {euclidean}")
         logger.info(f"Euclidean distance (control): {euclidean_ctr}")
 
-    if cfg.getboolean("Evaluation", "compute cosine distance"):
         logger.info(f"Cosine distance (real vs fake): {cosine}")
         logger.info(f"Cosine distance (control): {cosine_ctr}")
+        
+        results |= {
+            "euclidean_distance_real_vs_fake": euclidean,
+            "euclidean_distance_control": euclidean_ctr,
+            "cosine_distance_real_vs_fake": cosine,
+            "cosine_distance_control": cosine_ctr,
+        }
 
     if cfg.getboolean("Evaluation", "compute rf auroc"):
-        rf_auroc = compute_RF_AUROC(real_cells, fake_cells, cfg.get("EXPERIMENT", "output directory"))
+        rf_auroc, fig = compute_RF_AUROC(
+            real_cells,
+            fake_cells,
+        )
+        fig.savefig(output_dir / "RF.png", format="png", bbox_inches="tight")
+        fig.savefig(output_dir / "RF.pdf", format="pdf", bbox_inches="tight")
+        plt.close(fig)
+        logger.info(f"RF ROC plot saved to {output_dir / 'RF.png'}")
         logger.info(f"RF AUROC: {rf_auroc}")
+        results |= {"rf_auroc": rf_auroc}
 
     if cfg.getboolean("Evaluation", "compute MMD"):
-        try:
-            logger.info(
-                f"MMD (real vs fake): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells, fake_cells)}"
-            )
-            logger.info(
-                f"MMD (control): {MMD.MMD(real_cells, device=cfg.get('EXPERIMENT', 'device')).compute(real_cells_ctr1, real_cells_ctr2)}"
-            )
-        except Exception as e:
-            logger.warning(
-                f"MMD computation failed on device {cfg.get('EXPERIMENT', 'device')}: {e}, retrying with CPU."
-            )
-            logger.info(f"MMD (real vs fake): {MMD.MMD(real_cells, device='cpu').compute(real_cells, fake_cells)}")
-            logger.info(f"MMD (control): {MMD.MMD(real_cells, device='cpu').compute(real_cells_ctr1, real_cells_ctr2)}")
+        mmd_real_vs_fake = MMD.MMD(real_cells).compute(real_cells, fake_cells)
+        mmd_control = MMD.MMD(real_cells).compute(real_cells_ctr1, real_cells_ctr2)
+        logger.info(f"MMD (real vs fake): {mmd_real_vs_fake}")
+        logger.info(f"MMD (control): {mmd_control}")
+        results |= {
+            "mmd_real_vs_fake": mmd_real_vs_fake,
+            "mmd_control": mmd_control,
+        }
 
     if cfg.getboolean("Evaluation", "compute miLISI"):
-        tsne_real_ctr1, tsne_real_ctr2 = plot_tSNE(real_cells_ctr1, real_cells_ctr2, "")
+        umap_real_ctr1, umap_real_ctr2 = plot_UMAP(real_cells_ctr1, real_cells_ctr2, None)
 
-        tsne_coords = np.vstack((tsne_real, tsne_generated))
-        tsne_coords_ctr = np.vstack((tsne_real_ctr1, tsne_real_ctr2))
+        umap_coords = np.vstack((umap_real, umap_generated))  # pyright: ignore[reportPossiblyUnboundVariable]
+        umap_coords_ctr = np.vstack((umap_real_ctr1, umap_real_ctr2))
 
         metadata = pd.DataFrame(
-            ["real"] * real_cells.shape[0] + ["generated"] * fake_cells.shape[0],
+            ["real"] * real_cells.shape[0] + ["generated"] * fake_cells.shape[0],  # pyright: ignore[reportOptionalSubscript]
             columns=["type"],
         )
         metadata_ctr = pd.DataFrame(
-            ["ctr1"] * tsne_real_ctr1.shape[0] + ["ctr2"] * tsne_real_ctr2.shape[0],
+            ["ctr1"] * umap_real_ctr1.shape[0] + ["ctr2"] * umap_real_ctr2.shape[0],
             columns=["type"],
         )
 
-        lisis = compute_lisi(tsne_coords, metadata, ["type"])
-        lisis_ctr = compute_lisi(tsne_coords_ctr, metadata_ctr, ["type"])
-        logger.info(f"miLISI (real vs fake): {np.mean(lisis)}")
-        logger.info(f"miLISI (control): {np.mean(lisis_ctr)}")
+        lisis = compute_lisi(umap_coords, metadata, ["type"])
+        lisis_ctr = compute_lisi(umap_coords_ctr, metadata_ctr, ["type"])
+        lisis = np.mean(lisis)
+        lisis_ctr = np.mean(lisis_ctr)
+        logger.info(f"miLISI (real vs fake): {lisis}")
+        logger.info(f"miLISI (control): {lisis_ctr}")
+        results |= {
+            "miLISI_real_vs_fake": float(lisis),
+            "miLISI_control": float(lisis_ctr),
+        }
+    
+    with open(output_dir / "evaluation_results.json", "w") as f:
+        json.dump(results, f, indent=2)

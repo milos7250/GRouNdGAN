@@ -1,5 +1,6 @@
 import itertools
-import typing
+from typing import TYPE_CHECKING
+from warnings import filterwarnings
 
 import torch
 from sparselinear import SparseLinear
@@ -7,6 +8,11 @@ from torch import nn
 from torch.nn.modules.activation import ReLU
 
 from layers.lsn import LSN
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    from torch import Tensor
 
 
 class CausalGenerator(nn.Module):
@@ -17,9 +23,9 @@ class CausalGenerator(nn.Module):
         depth_per_gene: int,
         width_scale_per_gene: int,
         causal_controller: nn.Module,
-        causal_graph: typing.Dict[int, typing.Set[int]],
-        library_size: typing.Optional[typing.Union[int, None]] = None,
-        device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
+        causal_graph: dict[int, set[int]],
+        library_size: int | None = None,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> None:
         """
         Causal Generator's constructor.
@@ -42,7 +48,7 @@ class CausalGenerator(nn.Module):
             Causal controller module (retrieved from checkpoint if pretrained). It is a GAN trained on
             genes and TFs with the LSN layer removed after training. It cannot be trained on TFs only since the
             library size has to be enforced. However, during causal generator training, only TFs are used.
-        causal_graph : typing.Dict[int, typing.Set[int]]
+        causal_graph : dict[int, set[int]]
             The causal graph is a dictionary representing the TRN to impose. It has the following format:
             {target gene index: {TF1 index, TF2 index, ...}}. This causal graph has to be acyclic and bipartite.
             A TF cannot be regulated by another TF.
@@ -51,9 +57,9 @@ class CausalGenerator(nn.Module):
             Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
 
             Valid causal graph example: {1: {2, 3, 4}, 6: {5, 4, 2}, ...}
-        library_size : typing.Optional[typing.Union[int, None]], optional
+        library_size : int | None, optional
             Total number of counts per generated cell, by default None
-        device : typing.Optional[str], optional
+        device : str, optional
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
         """
@@ -66,15 +72,18 @@ class CausalGenerator(nn.Module):
         self.library_size = library_size
         self.device = device
         self._causal_controller = causal_controller
-        self._generator = None
 
         self.genes = list(self.causal_graph.keys())
-        self.register_buffer("genes_tensor", torch.tensor(self.genes, device=self.device), persistent=False)
+        self.genes_tensor = torch.nn.Buffer(
+            torch.tensor(self.genes, device=self.device, dtype=torch.int64), persistent=False
+        )
         self.regulators = list(  # all gene regulating TFs (can contain duplicate TFs)
             itertools.chain.from_iterable(self.causal_graph.values())
         )
         self.tfs = list(set(self.regulators))
-        self.register_buffer("tfs_tensor", torch.tensor(self.tfs, device=self.device), persistent=False)
+        self.tfs_tensor = torch.nn.Buffer(
+            torch.tensor(self.tfs, device=self.device, dtype=torch.int64), persistent=False
+        )
 
         # if a gene has X number of regulators (TFs + noises), it will have a
         # hidden layer with the width of (hidden_width * num_regulators)
@@ -88,12 +97,33 @@ class CausalGenerator(nn.Module):
         self.tf_expressions = None
         self.noise = None
 
-        self._lsn = LSN(self.library_size)
-        self.register_module("lsn", self._lsn)
+        if self.library_size is not None:
+            self._lsn = LSN(self.library_size)
 
         self._create_generator()
 
-    def forward(self, noise: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+    @staticmethod
+    def _generate_noise(batch_size: int, latent_dim: int, device: str) -> "Tensor":
+        """
+        Function for creating noise vectors: Given the dimensions (batch_size, latent_dim).
+
+        Parameters
+        ----------
+        batch_size : int
+            The number of samples to generate (normally equal to training batch size).
+        latent_dim : int
+            Dimension of the latent space to sample from.
+        device : str
+            The device type.
+
+        Returns
+        -------
+        Tensor
+            A tensor filled with random numbers from the standard normal distribution.
+        """
+        return torch.randn(batch_size, latent_dim, device=device)
+
+    def forward(self, noise: torch.Tensor, *args: "Any", **kwargs: "Any") -> torch.Tensor:
         """
         Function for completing a forward pass of the generator. This includes a
         forward pass of the causal controller to generate TFs. TFs and generated
@@ -113,9 +143,7 @@ class CausalGenerator(nn.Module):
         torch.Tensor
             The output of the causal generator (gene expression matrix).
         """
-        tf_expressions = self._causal_controller(noise)
-        tf_expressions = tf_expressions[:, self.tfs]
-        tf_expressions = tf_expressions.detach()
+        tf_expressions = self._causal_controller(noise)[:, self.tfs].detach()
 
         # use the same tf expressions as the previous forward pass in perturbation mode
         if self.pert_mode:
@@ -130,11 +158,7 @@ class CausalGenerator(nn.Module):
         cells = torch.zeros(batch_size, self.num_tfs + self.num_genes, device=self.device)
         cells = cells.index_add_(1, self.tfs_tensor, tf_expressions)
 
-        # lazy way of avoiding a circular dependency
-        # FIXME: circular dependency
-        from gans.gan import GAN
-
-        noise = GAN._generate_noise(batch_size, self.num_noises, self.device)
+        noise = self._generate_noise(batch_size, self.num_noises, self.device)
 
         if self.pert_mode:
             if self.noise is not None:
@@ -223,8 +247,8 @@ class CausalGenerator(nn.Module):
     def _create_generator_block(
         self,
         mask: torch.Tensor,
-        library_size: typing.Optional[typing.Union[int, None]] = None,
-        final_layer: typing.Optional[bool] = False,
+        library_size: int | None = None,
+        final_layer: bool | None = False,
     ) -> nn.Sequential:
         """
         Method for creating a sequence of operations corresponding to
@@ -235,9 +259,9 @@ class CausalGenerator(nn.Module):
         ----------
         mask : torch.Tensor
             Mask Tensor with shape (n_input_feature, n_output_feature).
-        library_size : typing.Optional[typing.Union[int, None]], optional
+        library_size : int | None, optional
             Total number of counts per generated cell, by default None.
-        final_layer : typing.Optional[bool], optional
+        final_layer : bool | None, optional
             Indicates if the block contains the final layer, by default False.
 
         Returns
@@ -245,6 +269,9 @@ class CausalGenerator(nn.Module):
         nn.Sequential
              Sequential container containing the modules.
         """
+        filterwarnings(
+            "ignore", message=r".*torch\.sparse\.SparseTensor\(indices, values, shape, \*, device=\) is deprecated.*"
+        )  # suppress sparselinear warnings
         masked_linear = SparseLinear(mask.shape[0], mask.shape[1], connectivity=torch.nonzero(mask.T).T)
 
         if not final_layer:
@@ -271,9 +298,9 @@ class CausalGenerator(nn.Module):
             torch.nn.init.zeros_(masked_linear.bias)
 
             if library_size is not None:
-                return nn.Sequential(masked_linear, ReLU(), LSN(library_size))
+                return nn.Sequential(masked_linear, ReLU(inplace=False), LSN(library_size))
             else:
-                return nn.Sequential(masked_linear, ReLU())
+                return nn.Sequential(masked_linear, ReLU(inplace=False))
 
     def freeze_causal_controller(self):
         """Freezes the pretrained causal controller and disallows any further updates."""

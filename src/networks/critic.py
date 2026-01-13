@@ -1,11 +1,16 @@
-import typing
+from typing import TYPE_CHECKING
 
 import torch
 from torch import nn
 
+if TYPE_CHECKING:
+    from typing import Any
+
+    from torch import Tensor
+
 
 class Critic(nn.Module):
-    def __init__(self, x_input: int, critic_layers: typing.List[int]) -> None:
+    def __init__(self, x_input: int, critic_layers: list[int]) -> None:
         """
         Non-conditional Critic's constructor.
 
@@ -13,7 +18,7 @@ class Critic(nn.Module):
         ----------
         x_input : int
             The dimension of the input tensor.
-        critic_layers : typing.List[int]
+        critic_layers : list[int]
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
         """
@@ -24,13 +29,13 @@ class Critic(nn.Module):
 
         self._create_critic()
 
-    def forward(self, data: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+    def forward(self, data: "Tensor", *args: "Any", **kwargs: "Any") -> "Tensor":
         """
         Function for completing a forward pass of the critic.
 
         Parameters
         ----------
-        data : torch.Tensor
+        data : Tensor
             Tensor containing gene expression of (fake/real) cells.
         *args
             Variable length argument list.
@@ -39,7 +44,7 @@ class Critic(nn.Module):
 
         Returns
         -------
-        torch.Tensor
+        Tensor
             1-dimensional tensor representing fake/real cells.
         """
         return self._critic(data)
@@ -57,9 +62,7 @@ class Critic(nn.Module):
         self._critic = nn.Sequential(*layers)
 
     @staticmethod
-    def _create_critic_block(
-        input_dim: int, output_dim: int, final_layer: typing.Optional[bool] = False
-    ) -> nn.Sequential:
+    def _create_critic_block(input_dim: int, output_dim: int, final_layer: bool | None = False) -> nn.Sequential:
         """
         Function for creating a sequence of operations corresponding to
         a Critic block; a linear layer, and ReLU (except in the final block).
@@ -70,7 +73,7 @@ class Critic(nn.Module):
             The block's input dimensions.
         output_dim : int
             The block's output dimensions.
-        final_layer : typing.Optional[bool], optional
+        final_layer : bool | None, optional
             Indicates if the block contains the final layer, by default False.
 
         Returns
@@ -91,7 +94,7 @@ class Critic(nn.Module):
 
 
 class ConditionalCritic(Critic):
-    def __init__(self, x_input: int, critic_layers: typing.List[int], num_classes: int) -> None:
+    def __init__(self, x_input: int, critic_layers: list[int], num_classes: int) -> None:
         """
         Conditional Critic's constructor - Projection Discriminator (Miyato et al.,2018).
 
@@ -99,7 +102,7 @@ class ConditionalCritic(Critic):
         ----------
         x_input : int
             The dimension of the input tensor.
-        critic_layers : typing.List[int]
+        critic_layers : list[int]
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
         num_classes : int
@@ -109,15 +112,15 @@ class ConditionalCritic(Critic):
 
         super(ConditionalCritic, self).__init__(x_input, critic_layers)
 
-    def forward(self, data: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs) -> torch.Tensor:
+    def forward(self, data: "Tensor", labels: "Tensor | None" = None, *args: "Any", **kwargs: "Any") -> "Tensor":
         """
         Function for completing a forward pass of the conditional critic.
 
         Parameters
         ----------
-        data : torch.Tensor
+        data : Tensor
             Tensor containing gene expression of (fake/real) cells.
-        labels : torch.Tensor
+        labels : Tensor
             Tensor containing labels corresponding to cells (data parameter).
         *args
             Variable length argument list.
@@ -126,7 +129,7 @@ class ConditionalCritic(Critic):
 
         Returns
         -------
-        torch.Tensor
+        Tensor
             1-dimensional tensor representing fake/real cells.
         """
         y = data
@@ -156,7 +159,7 @@ class ConditionalCritic(Critic):
 
 
 class ConditionalCriticProj(Critic):
-    def __init__(self, x_input: int, critic_layers: typing.List[int], num_classes: int) -> None:
+    def __init__(self, x_input: int, critic_layers: list[int], num_classes: int) -> None:
         """
         Conditional Critic's constructor using a modified implementation of
         Projection Discriminator (Marouf et al, 2020).
@@ -165,7 +168,7 @@ class ConditionalCriticProj(Critic):
         ----------
         x_input : int
             The dimension of the input tensor.
-        critic_layers : typing.List[int]
+        critic_layers : list[int]
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
         num_classes : int
@@ -175,15 +178,15 @@ class ConditionalCriticProj(Critic):
 
         super(ConditionalCriticProj, self).__init__(x_input, critic_layers)
 
-    def forward(self, data: torch.Tensor, labels: torch.Tensor = None, *args, **kwargs) -> torch.Tensor:
+    def forward(self, data: "Tensor", labels: "Tensor | None" = None, *args: "Any", **kwargs: "Any") -> "Tensor":
         """
         Function for completing a forward pass of the conditional critic.
 
         Parameters
         ----------
-        data : torch.Tensor
+        data : Tensor
             Tensor containing gene expression of (fake/real) cells.
-        labels : torch.Tensor
+        labels : Tensor
             Tensor containing labels corresponding to cells (data parameter).
         *args
             Variable length argument list.
@@ -192,7 +195,7 @@ class ConditionalCriticProj(Critic):
 
         Returns
         -------
-        torch.Tensor
+        Tensor
             1-dimensional tensor representing fake/real cells.
         """
         y = data

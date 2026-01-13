@@ -1,11 +1,15 @@
 from collections import Counter
 from configparser import ConfigParser
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import scanpy as sc
+from scipy.sparse import csr_matrix
 
 from loggers import setup_logger
+
+from ._random import RANDOM_SEED, rng
 
 
 def preprocess(cfg: ConfigParser) -> None:
@@ -30,18 +34,20 @@ def preprocess(cfg: ConfigParser) -> None:
 
     logger.info("Shuffling data...")
     original_order = np.arange(anndata.n_obs)  # Store the original cell order
-    np.random.shuffle(original_order)  # Shuffle the indices
+    rng.shuffle(original_order)  # Shuffle the indices
+    shuffled_order = original_order.copy()
+    del original_order
 
     # Apply the shuffled order to the AnnData object
-    anndata = anndata[original_order].copy()
+    anndata = anndata[shuffled_order].copy()
 
     # clustering
     logger.info("Clustering data...")
     ann_clustered = anndata.copy()
     sc.pp.recipe_zheng17(ann_clustered)
     sc.tl.pca(ann_clustered, n_comps=50)
-    sc.pp.neighbors(ann_clustered, n_pcs=50)
-    sc.tl.louvain(ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res")))
+    sc.pp.neighbors(ann_clustered, n_pcs=50, random_state=RANDOM_SEED)
+    sc.tl.louvain(ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res")), random_state=RANDOM_SEED)
     anndata.obs["cluster"] = ann_clustered.obs["louvain"]
     del ann_clustered
 
@@ -60,45 +66,47 @@ def preprocess(cfg: ConfigParser) -> None:
     anndata.uns["cells_no"] = anndata.shape[0]
     anndata.uns["genes_no"] = anndata.shape[1]
 
-    canndata = anndata.copy()
-
     # library-size normalization
     logger.info("Subsetting highly variable genes...")
-    sc.pp.normalize_per_cell(canndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size")))
+    anndata.layers["normalized"] = sc.pp.normalize_total(
+        anndata, target_sum=int(cfg.get("Preprocessing", "library size")), inplace=False
+    )["X"]  # pyright: ignore[reportOptionalSubscript]
 
-    if cfg.get("Preprocessing", "annotations") is not None:
-        annotations = pd.read_csv(cfg.get("Preprocessing", "annotations"), delimiter="\t")
-        annotation_dict = {item["barcodes"]: item["celltype"] for item in annotations.to_dict("records")}
-        anndata.obs["barcodes"] = anndata.obs.index
-        anndata.obs["celltype"] = anndata.obs["barcodes"].map(annotation_dict)
+    if cfg.get("Preprocessing", "annotations", fallback=None) is not None:
+        annotations = pd.read_csv(cfg.get("Preprocessing", "annotations"), delimiter="\t", index_col=['barcodes'])
+        anndata.obs["celltype"] = annotations.loc[anndata.obs_names, 'celltype'].values
 
     # identify highly variable genes
-    sc.pp.log1p(canndata)  # logarithmize the data
-    sc.pp.highly_variable_genes(canndata, n_top_genes=int(cfg.get("Preprocessing", "highly variable number")))
+    sc.pp.log1p(anndata, layer="normalized")  # logarithmize the data
+    hvgs = sc.pp.highly_variable_genes(
+        anndata, layer="normalized", n_top_genes=int(cfg.get("Preprocessing", "highly variable number")), inplace=False
+    )["highly_variable"]  # pyright: ignore[reportOptionalSubscript]
 
-    # if issparse(canndata.X):
-    #     canndata.X = np.exp(canndata.X.toarray()) - 1  # get back original data
-    # else:
-    #     canndata.X = np.exp(canndata.X) - 1  # get back original data
+    del anndata.layers["normalized"]
+    anndata = anndata[:, hvgs].copy()  # only keep highly variable genes
 
-    anndata = anndata[:, canndata.var["highly_variable"]].copy()  # only keep highly variable genes
-    del canndata
-
-    sc.pp.normalize_per_cell(anndata, counts_per_cell_after=int(cfg.get("Preprocessing", "library size")))
+    sc.pp.filter_cells(anndata, min_genes=int(cfg.get("Preprocessing", "min genes")))
+    sc.pp.filter_genes(anndata, min_cells=int(cfg.get("Preprocessing", "min cells")))
+    sc.pp.normalize_total(anndata, target_sum=int(cfg.get("Preprocessing", "library size")))
 
     # sort genes by name (not needed)
     sorted_genes = np.sort(anndata.var_names)
-    anndata = anndata[:, sorted_genes]
+    anndata = anndata[:, sorted_genes].copy()
 
     val_size = int(cfg.get("Preprocessing", "validation set size"))
     test_size = int(cfg.get("Preprocessing", "test set size"))
 
+    anndata.X = csr_matrix(anndata.X)
+
     logger.info("Saving datasets...")
+    Path(cfg.get("Data", "train")).parent.mkdir(parents=True, exist_ok=True)
     anndata[:val_size].write_h5ad(cfg.get("Data", "validation"))
+    Path(cfg.get("Data", "validation")).parent.mkdir(parents=True, exist_ok=True)
     anndata[val_size : test_size + val_size].write_h5ad(cfg.get("Data", "test"))
+    Path(cfg.get("Data", "test")).parent.mkdir(parents=True, exist_ok=True)
     anndata[test_size + val_size :].write_h5ad(cfg.get("Data", "train"))
 
     logger.info("Successfully preprocessed and saved dataset.")
-    logger.info(f"Train set ({anndata[test_size + val_size :].shape[0]} cells): {cfg.get('Data', 'train')}")
-    logger.info(f"Validation set ({val_size} cells): {cfg.get('Data', 'validation')}")
-    logger.info(f"Test set ({test_size} cells): {cfg.get('Data', 'test')}")
+    logger.info(f"Train set ({anndata[test_size + val_size :].shape[0]} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'train')}")
+    logger.info(f"Validation set ({val_size} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'validation')}")
+    logger.info(f"Test set ({test_size} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'test')}")

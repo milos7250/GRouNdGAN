@@ -8,9 +8,10 @@ import scanpy as sc
 import seaborn as sns
 import torch
 import umap.umap_ as umap
+from matplotlib import cm, rcParams
+
 from factory import get_factory, parse_list
 from loggers import setup_logger
-from matplotlib import cm, rcParams
 from sc_dataset import get_loader
 
 logger = setup_logger("perturbation")
@@ -28,11 +29,11 @@ UMAP = umap.UMAP(random_state=60, n_neighbors=15)
 def plot_UMAP(
     real: np.ndarray,
     fake: np.ndarray,
-    real_labels: typing.Optional[typing.Union[list[str], np.ndarray]] = None,
+    real_labels: typing.Union[list[str], np.ndarray] | None = None,
     fit: bool = False,
     fake_title: str = "Fake",
     case_ctr: str = "ctr",
-    save_path: typing.Optional[str] = None,
+    save_path: str | None = None,
 ) -> None:
     """
     Plot UMAP projections and density plots for real and generated (fake) cell data.
@@ -43,7 +44,7 @@ def plot_UMAP(
         Real cell expression data (cells x genes).
     fake : np.ndarray
         Fake/generated cell expression data (cells x genes).
-    real_labels : Optional[Union[list[str], np.ndarray]], optional
+    real_labels : Union[list[str], np.ndarray] | None, optional
         List or array of cell type labels for real cells (used for color-coded scatter plots), by default None
     fit : bool, optional
         Whether to fit a new UMAP model on the concatenated data (`True`),
@@ -52,7 +53,7 @@ def plot_UMAP(
         Title used for fake cells in the plots (e.g., "Generated", "Simulated"), by default "Fake"
     case_ctr : str, optional
         Identifier used in the saved filenames (before of after pert), by default "ctr"
-    save_path : Optional[str], optional
+    save_path : str | None, optional
         If provided, saves the scatter and density plots as PNGs, by default None
     """
 
@@ -262,7 +263,7 @@ def perturb(cfg: ConfigParser) -> None:
     real_cells[:cells_no], real_labels[:cells_no]
 
     # get fake cells without perturbation
-    fake_cells = gan.generate_cells(cells_no, checkpoint)
+    fake_cells = gan.generate_cells(cells_no, checkpoint)[0]
 
     #### LET USER DEFINE PATH IN CFG
     if "celltype" in test_set.obs:
@@ -285,8 +286,8 @@ def perturb(cfg: ConfigParser) -> None:
 
     gan.gen.tf_expressions = None
     gan.gen.pert_mode = True
-    fake_cells = gan.generate_cells(cells_no, checkpoint)
-    fake_cells_new = gan.generate_cells(cells_no, checkpoint)
+    fake_cells = gan.generate_cells(cells_no, checkpoint)[0]
+    fake_cells_new = gan.generate_cells(cells_no, checkpoint)[0]
     assert (fake_cells == fake_cells_new).all(), "perturbation mode should be deterministic"
 
     tfs_to_perturb = parse_list(cfg.get("Perturbation", "tfs to perturb"), str)
@@ -304,7 +305,7 @@ def perturb(cfg: ConfigParser) -> None:
         dtype=gan.gen.tf_expressions.dtype,
     )
     gan.gen.tf_expressions[:, tf_idx] = pert_tensor.unsqueeze(0)
-    fake_cells_perturbed = gan.generate_cells(cells_no, checkpoint)
+    fake_cells_perturbed = gan.generate_cells(cells_no, checkpoint)[0]
     gan.gen.tf_expressions = unperturbed_tfs
 
     if "celltype" in test_set.obs:

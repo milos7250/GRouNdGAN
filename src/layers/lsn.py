@@ -1,5 +1,3 @@
-import typing
-
 import torch
 from torch import nn
 
@@ -8,7 +6,7 @@ class LSN(nn.Module):
     def __init__(
         self,
         library_size: int,
-        device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
+        device: str | None = None,
     ) -> None:
         """
         Library size normalization (LSN) layer.
@@ -17,17 +15,17 @@ class LSN(nn.Module):
         ----------
         library_size : int
             Total number of counts per generated cell.
-        device : typing.Optional[str], optional
+        device : str | None, optional
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
-            GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
+            GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else "cpu".
 
         """
         super().__init__()
-        self.library_size = torch.nn.Parameter(torch.tensor(library_size), requires_grad=False)
-        self.register_parameter("library_size", self.library_size)
+        self.device = device if device is not None else ("cuda" if torch.cuda.is_available() else "cpu")
+        self.library_size = torch.nn.Parameter(torch.tensor(library_size, device=self.device), requires_grad=False)
         self.scale = None
 
-    def forward(self, in_: torch.Tensor, reuse_scale: typing.Optional[bool] = False) -> torch.Tensor:
+    def forward(self, in_: torch.Tensor, reuse_scale: bool | None = False) -> torch.Tensor:
         """
         Function for completing a forward pass of the LSN layer.
 
@@ -35,7 +33,7 @@ class LSN(nn.Module):
         ----------
         in_ : torch.Tensor
             Tensor containing gene expression of cells.
-        reuse_scale : typing.Optional[bool], optional
+        reuse_scale : bool | None, optional
             If set to true, the LSN layer will scale the cells by
             the same scale as the previous batch. Useful for performing
             perturbation studies. By default False

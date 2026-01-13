@@ -1,26 +1,31 @@
 import pickle
-import typing
-from configparser import ConfigParser
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from loggers import setup_logger
 from sklearn.metrics import auc
+
+from loggers import setup_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
+    from configparser import ConfigParser
+
 
 logger = setup_logger("evaluate")
 
 
 def get_imposed_grn(
-    cfg: ConfigParser,
-) -> typing.Tuple[
+    cfg: "ConfigParser",
+) -> tuple[
     pd.DataFrame,
-    typing.Set[str],
-    typing.Set[str],
-    typing.List[str],
-    typing.List[str],
+    set[str],
+    set[str],
+    list[str],
+    list[str],
     int,
 ]:
     """
@@ -42,16 +47,16 @@ def get_imposed_grn(
     imposed_grn : pd.DataFrame
         DataFrame with a single column "res" containing string-formatted edges ("TF -> target").
 
-    imposed_TFs : set
+    imposed_TFs : set[str]
         Set of transcription factors (TFs) involved in the imposed GRN.
 
-    imposed_targets : set
+    imposed_targets : set[str]
         Set of target genes in the imposed GRN.
 
-    imposed_edges : list of str
+    imposed_edges : list[str]
         List of edges as strings in the format "TF -> target".
 
-    TFs : list of str
+    TFs : list[str]
         List of unique transcription factors (from `imposed_TFs`), useful for downstream filtering.
 
     possible_edges_no : int
@@ -101,10 +106,10 @@ def get_imposed_grn(
 
 
 def get_fake_grn(
-    cfg: ConfigParser,
-    imposed_TFs: typing.Iterable[str],
-    imposed_targets: typing.Iterable[str],
-    TFs: typing.Iterable[str],
+    cfg: "ConfigParser",
+    imposed_TFs: "Collection[str]",
+    imposed_targets: "Collection[str]",
+    TFs: "Collection[str]",
     possible_edges_no: int,
 ) -> pd.DataFrame:
     """
@@ -120,13 +125,13 @@ def get_fake_grn(
         Configuration object providing the path to the inferred GRN file via the section
         "GRN Benchmarking" -> "grn to benchmark".
 
-    imposed_TFs : Iterable[str]
+    imposed_TFs : Collection[str]
         List of TFs that are considered "imposed" in the simulation and should be included as sources in the GRN.
 
-    imposed_targets : Iterable[str]
+    imposed_targets : Collection[str]
         List of target genes that are expected to be regulated in the benchmark.
 
-    TFs : Iterable[str]
+    TFs : Collection[str]
         List of all possible TFs used to filter the GRN (must be valid source nodes).
 
     possible_edges_no : int
@@ -150,7 +155,7 @@ def get_fake_grn(
     fake_grn.columns = ["TF", "target", "importance"]
     fake_grn = fake_grn.reindex(fake_grn.importance.abs().sort_values(ascending=False).index)
 
-    fake_grn["res"] = fake_grn["TF"] + " -> " + fake_grn["target"]
+    fake_grn["res"] = fake_grn["TF"] + " -> " + fake_grn["target"]  # pyright: ignore[reportOperatorIssue]
 
     unimportant_edges = {"TF": [], "target": [], "importance": [], "res": []}
     for tf in imposed_TFs:
@@ -177,9 +182,9 @@ def get_fake_grn(
 def compute_precision_at_k(
     fake_grn: pd.DataFrame,
     imposed_grn: pd.DataFrame,
-    TFs: typing.Union[typing.List[str], typing.Set[str]],
+    TFs: list[str] | set[str],
     numTFs_pergene: int,
-    save_path: str,
+    save_path: Path,
 ) -> None:
     """
     Compute precision at k for inferred GRN against the imposed ground truth.
@@ -193,12 +198,12 @@ def compute_precision_at_k(
     imposed_grn : pd.DataFrame
         Ground truth GRN with a column "res" representing edges in "TF -> target" format.
 
-    TFs : Union[List[str], Set[str]]
+    TFs : list[str] | set[str]
         List or set of valid transcription factors. Used to exclude predictions where a TF is treated as a target.
 
     numTFs_pergene : int
         Maximum number of top TFs to evaluate per gene.
-    save_path : str
+    save_path : Path
         Directory path where the precision-at-k plot should be saved. If empty, the plot is not saved.
 
     Returns
@@ -274,10 +279,10 @@ def compute_precision_at_k(
 def compute_PR(
     fake_grn: pd.DataFrame,
     imposed_grn: pd.DataFrame,
-    imposed_edges: typing.List[str],
-    imposed_targets: typing.Set[str],
-    imposed_TFs: typing.Set[str],
-    save_path: typing.Optional[str] = "",
+    imposed_edges: list[str],
+    imposed_targets: set[str],
+    imposed_TFs: set[str],
+    save_path: Path | None = None,
 ) -> None:
     """
     Compute and plot the Precision-Recall (PR) curve for a predicted gene regulatory network (GRN)
@@ -291,16 +296,16 @@ def compute_PR(
     imposed_grn : pd.DataFrame
         Ground-truth GRN DataFrame with a column 'res' representing edges in the same format.
 
-    imposed_edges : List[str]
+    imposed_edges : list[str]
         List of all ground-truth edges as strings ("TF -> target").
 
-    imposed_targets : Set[str]
+    imposed_targets : set[str]
         Set of ground-truth target genes.
 
-    imposed_TFs : Set[str]
+    imposed_TFs : set[str]
         Set of ground-truth transcription factors.
 
-    save_path : Optional[str]
+    save_path : Path | None
         Directory path to save the precision-recall plot as "PR_curve.png".
         If None or empty, the plot is not saved.
 
@@ -320,7 +325,7 @@ def compute_PR(
         precision = common_edges / ct
         precisions.append(precision)
 
-    fig, ax = plt.subplots(figsize=(6, 6))
+    _, ax = plt.subplots(figsize=(6, 6))
     auc_score = np.around(auc(recalls, precisions), 2)
     plt.rcParams.update({"font.size": 15})
 
@@ -339,8 +344,8 @@ def compute_PR(
     ax.axhline(y=baseline, color="dimgrey", linestyle="dashed")
     plt.text(-0.18, baseline, "random", weight="bold")
 
-    ax.set_ylim([0, 1])
-    ax.set_xlim([0, 1])
+    ax.set_ylim((0, 1))
+    ax.set_xlim((0, 1))
 
     plt.legend(fontsize=13, loc="upper right")
     plt.grid(True)
@@ -352,7 +357,7 @@ def compute_PR(
         logger.info(f"Saved PR curve at {save_path / 'PR_curve.png'}")
 
 
-def evaluate(cfg: ConfigParser) -> None:
+def evaluate(cfg: "ConfigParser") -> None:
     """
     Evaluate the reconstructed GRN against the ground truth GRN
 
@@ -381,7 +386,7 @@ def evaluate(cfg: ConfigParser) -> None:
             imposed_grn,
             TFs,
             cfg.getint("GRN Benchmarking", "k"),
-            cfg.get("GRN Benchmarking", "plots save path"),
+            Path(cfg.get("GRN Benchmarking", "plots save path")),
         )
 
     if cfg.getboolean("GRN Benchmarking", "compute pr"):
@@ -391,5 +396,5 @@ def evaluate(cfg: ConfigParser) -> None:
             imposed_edges,
             imposed_targets,
             imposed_TFs,
-            cfg.get("GRN Benchmarking", "plots save path"),
+            Path(cfg.get("GRN Benchmarking", "plots save path")),
         )

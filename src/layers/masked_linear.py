@@ -1,9 +1,15 @@
 import math
-import typing
+import warnings
+from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
 
+if TYPE_CHECKING:
+    from torch import Tensor
+
+
+# These classes are now deprecated in favour of SparseLinear from sparselinear package
 
 class MaskedLinearFunction(torch.autograd.Function):
     """
@@ -12,12 +18,12 @@ class MaskedLinearFunction(torch.autograd.Function):
 
     @staticmethod
     def forward(
-        ctx: torch.Tensor,
-        input: torch.Tensor,
-        weight: torch.Tensor,
-        bias: torch.Tensor = None,
-        mask: torch.Tensor = None,
-    ) -> torch.Tensor:
+        ctx: "Tensor",
+        input: "Tensor",
+        weight: "Tensor",
+        bias: "Tensor | None" = None,
+        mask: "Tensor | None" = None,
+    ) -> "Tensor":
         if mask is not None:
             weight = weight * mask
         output = input.mm(weight.t())
@@ -27,7 +33,7 @@ class MaskedLinearFunction(torch.autograd.Function):
         return output
 
     @staticmethod
-    def backward(ctx: torch.Tensor, grad_output: torch.Tensor):
+    def backward(ctx: "Tensor", grad_output: "Tensor"):
         input, weight, bias, mask = ctx.saved_tensors
         grad_input = grad_weight = grad_bias = grad_mask = None
 
@@ -48,9 +54,9 @@ class MaskedLinearFunction(torch.autograd.Function):
 class MaskedLinear(nn.Module):
     def __init__(
         self,
-        mask: torch.Tensor,
+        mask: "Tensor",
         bias: bool = True,
-        device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         """
         An extension of Pytorch's linear module based on the following thread:
@@ -58,7 +64,7 @@ class MaskedLinear(nn.Module):
 
         Parameters
         ----------
-        mask : torch.Tensor
+        mask : Tensor
             Mask Tensor with shape (n_input_feature, n_output_feature).
             the elements are 0 or 1 which declare un-connected or
             connected.
@@ -78,26 +84,27 @@ class MaskedLinear(nn.Module):
         bias : bool, optional
             By default True
 
-        device : typing.Optional[str], optional
+        device : str | None, optional
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
         """
+        warnings.warn(
+            "MaskedLinear is deprecated. Please use SparseLinear from the sparselinear package instead. It provides the same functionality with better performance.",
+            DeprecationWarning,
+        )
         super(MaskedLinear, self).__init__()
         self.input_features = mask.shape[0]
         self.output_features = mask.shape[1]
         self.device = device
 
-        if isinstance(mask, torch.Tensor):
-            self.mask = mask.type(torch.float).t()
-        else:
-            self.mask = torch.tensor(mask, dtype=torch.float).t()
+        self.mask = mask.type(torch.float).t()
 
         self.mask = nn.Parameter(self.mask, requires_grad=False).to(self.device)
 
-        self.weight = nn.Parameter(torch.Tensor(self.output_features, self.input_features).to(self.device))
+        self.weight = nn.Parameter(torch.empty(self.output_features, self.input_features).to(self.device))
 
         if bias:
-            self.bias = nn.Parameter(torch.Tensor(self.output_features).to(self.device))
+            self.bias = nn.Parameter(torch.empty(self.output_features).to(self.device))
         else:
             self.register_parameter("bias", None)
         self.reset_parameters()
@@ -114,15 +121,17 @@ class MaskedLinear(nn.Module):
     def reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.weight.size(1))
         self.weight.data.uniform_(-stdv, stdv)
-        if self.bias is not None:
+        if self.bias is not None:  # pyright: ignore[reportUnnecessaryComparison]
             self.bias.data.uniform_(-stdv, stdv)
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: "Tensor"):  # pyright: ignore[reportUnknownParameterType]
         return MaskedLinearFunction.apply(input, self.weight, self.bias, self.mask)
 
     def extra_repr(self):
         return "input_features={}, output_features={}, bias={}".format(
-            self.input_features, self.output_features, self.bias is not None
+            self.input_features,
+            self.output_features,
+            self.bias is not None,  # pyright: ignore[reportUnnecessaryComparison]
         )
 
 
@@ -137,5 +146,5 @@ if __name__ == "check grad":
         None,
         None,
     )
-    test = gradcheck(customlinear, input, eps=1e-6, atol=1e-4)
+    test = gradcheck(customlinear, input, eps=1e-6, atol=1e-4)  # pyright: ignore[reportArgumentType]
     print(test)

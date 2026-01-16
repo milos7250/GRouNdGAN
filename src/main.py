@@ -127,9 +127,10 @@ def main():
 
         fac = get_factory(cfg_parser)
 
-        logger.info("Generating cells...")
+        num_cells = int(cfg_parser.get("Generation", "number of cells to generate"))
+        logger.info(f"Generating {num_cells} cells...")
         simulated_cells = fac.get_gan().generate_cells(
-            int(cfg_parser.get("Generation", "number of cells to generate")),
+            num_cells,
             checkpoint=Path(cfg_parser.get("EXPERIMENT", "checkpoint")),
         )[0]
         simulated_cells = csr_matrix(simulated_cells)

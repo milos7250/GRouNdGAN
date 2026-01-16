@@ -1,0 +1,52 @@
+Bootstrap: docker
+From: python:3.11
+
+%environment
+    export DEBIAN_FRONTEND=noninteractive
+    export JULIAUP_DEPOT_PATH=/PIDC/julia
+    export JULIA_DEPOT_PATH=/PIDC/julia
+
+%files
+    PIDC/requirements.txt /PIDC/requirements.txt
+    PIDC/run_PIDC.jl /PIDC/run_PIDC.jl
+    PIDC/h5ad_to_tsv.py /PIDC/h5ad_to_tsv.py
+    PIDC/run_PIDC.sh /PIDC/run_PIDC.sh
+
+%post
+    set -euo pipefail
+
+    # Update and upgrade system packages (non-interactive)
+    apt-get update \
+      && apt-get upgrade -y --no-install-recommends \
+      && apt-get install git g++ make \
+      && apt-get clean \
+      && rm -rf /var/lib/apt/lists/*
+
+    # Create working directory
+    mkdir -p /PIDC
+
+    # Install Python requirements
+    python -m pip install --no-cache-dir --root-user-action ignore -r /PIDC/requirements.txt
+
+    # Cleanup pip cache
+    rm -rf /root/.cache/pip || true
+
+    # Install Julia 1.10, newer versions have dependencies that are not compatible with PIDC at this time
+    export JULIAUP_DEPOT_PATH=/PIDC/julia
+    export JULIA_DEPOT_PATH=/PIDC/julia
+    curl -fsSL https://install.julialang.org | sh -s -- -y -p /PIDC/julia --default-channel 1.10.10
+    ln -s /PIDC/julia/juliaup/julia-1.10.10+0.x64.linux.gnu/bin/julia /usr/local/bin/julia
+
+    # Install PIDC Julia dependencies
+    julia -e 'using Pkg; Pkg.add(["NetworkInference"])'
+
+%runscript
+    if [ "$#" -ne 2 ]; then
+      echo "Usage: apptainer run PIDC.sif <input_h5ad_file> <output_file>"
+      exit 1
+    fi
+    exec /PIDC/run_PIDC.sh "$@"
+
+%help
+    Singularity image for running PIDC for gene regulatory network inference.
+    Defaults to running: julia /PIDC/run_PIDC.jl --help

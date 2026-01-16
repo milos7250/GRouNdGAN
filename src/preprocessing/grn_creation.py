@@ -14,6 +14,7 @@ from scipy import sparse
 from loggers import setup_logger
 
 from ._random import RANDOM_SEED
+from .filter_grn import GRN
 
 _T = TypeVar("_T")
 
@@ -75,11 +76,7 @@ def create_GRN(cfg: ConfigParser) -> None:
         logger.info(f"Using already existing GRNBoost2 GRN at {cfg.get('GRN Preparation', 'Inferred GRN')}")
 
     # read GRN csv output, group TFs regulating genes, sort by importance
-    real_grn = pd.read_csv(
-        cfg.get("GRN Preparation", "Inferred GRN"),
-        dtype={"TF": str, "target": str, "importance": float},
-        usecols=["TF", "target", "importance"],
-    ).sort_values("importance", ascending=False)
+    real_grn = GRN(Path(cfg.get("GRN Preparation", "Inferred GRN")))
 
     # When using GRNBoost2 without a predefined TF list, all genes are considered as both potential TFs and targets.
     # This leads to most genes occuring as both TFs and targets in the inferred GRN. As we remove self-regulatory edges
@@ -87,15 +84,9 @@ def create_GRN(cfg: ConfigParser) -> None:
     # and very few targets. To mitigate this, we select TFs as those genes with higher total outgoing importance than
     # incoming importance, and then remove any targets that are also TFs.
     if TFs == "all":
-        importances = pd.DataFrame(
-            {
-                "TF": real_grn.groupby("TF")["importance"].sum(),
-                "target": real_grn.groupby("target")["importance"].sum(),
-            },
-            index=gene_names,
-        )
-        TFs = importances[importances["TF"] > importances["target"]].index
-        real_grn = real_grn[real_grn["TF"].isin(TFs) & ~real_grn["target"].isin(TFs)]
+        real_grn = real_grn.filtered_bipartite()
+    else:
+        real_grn = real_grn.grn
 
     causal_graph = dict(real_grn.groupby("target")["TF"].apply(list))
 

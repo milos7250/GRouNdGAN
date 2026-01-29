@@ -9,7 +9,6 @@ from loggers import setup_logger
 # Setup logger
 logger = setup_logger("main")
 
-
 def main():
     """
     Main script to process the data and/or start the training or

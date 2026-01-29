@@ -13,8 +13,8 @@ from scipy import sparse
 
 from loggers import setup_logger
 
-from ._random import RANDOM_SEED
-from .filter_grn import GRN
+from ._random_seeds import RANDOM_SEED
+from .grn_accessor import GRNAccessor
 
 _T = TypeVar("_T")
 
@@ -69,14 +69,14 @@ def create_GRN(cfg: ConfigParser) -> None:
 
         # we can optionally pass a list of TFs to GRNBoost2
         logger.info(f"Starting GRN inference using {len(TFs) if TFs != 'all' else 'all'} TFs.")
-        real_grn = grnboost2(real_cells_df, tf_names=TFs, verbose=True, seed=RANDOM_SEED)  # pyright: ignore[reportArgumentType]
-        real_grn.to_csv(cfg.get("GRN Preparation", "Inferred GRN"))
+        inferred_grn = grnboost2(real_cells_df, tf_names=TFs, verbose=True, seed=RANDOM_SEED)  # pyright: ignore[reportArgumentType]
+        inferred_grn.to_csv(cfg.get("GRN Preparation", "Inferred GRN"))
         logger.info(f"Successfully saved GRN inferred by GRNBoost2 GRN to {cfg.get('GRN Preparation', 'Inferred GRN')}")
     else:
         logger.info(f"Using already existing GRNBoost2 GRN at {cfg.get('GRN Preparation', 'Inferred GRN')}")
 
     # read GRN csv output, group TFs regulating genes, sort by importance
-    real_grn = GRN(Path(cfg.get("GRN Preparation", "Inferred GRN")))
+    real_grn = GRNAccessor.from_csv(Path(cfg.get("GRN Preparation", "Inferred GRN")))
 
     # When using GRNBoost2 without a predefined TF list, all genes are considered as both potential TFs and targets.
     # This leads to most genes occuring as both TFs and targets in the inferred GRN. As we remove self-regulatory edges
@@ -84,9 +84,7 @@ def create_GRN(cfg: ConfigParser) -> None:
     # and very few targets. To mitigate this, we select TFs as those genes with higher total outgoing importance than
     # incoming importance, and then remove any targets that are also TFs.
     if TFs == "all":
-        real_grn = real_grn.filtered_bipartite()
-    else:
-        real_grn = real_grn.grn
+        real_grn = real_grn.grn.to_bipartite()
 
     causal_graph = dict(real_grn.groupby("target")["TF"].apply(list))
 

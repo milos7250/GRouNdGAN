@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 
 from loggers import setup_logger
 
-from ._random import RANDOM_SEED, rng
+from ._random_seeds import RANDOM_SEED, rng
 
 
 def preprocess(cfg: ConfigParser) -> None:

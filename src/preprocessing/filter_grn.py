@@ -1,69 +1,56 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
+from loggers import setup_logger
 
-class GRN:
-    def __init__(self, grn_file: Path) -> None:
-        """
-        Initializes the GRN object by loading the GRN from a CSV file. The CSV file is expected to have columns:
-        'TF', 'target', and 'importance'.
-        
-        Args:
-            grn_file (Path): Path to the GRN CSV file.
-        """
-        self.grn = self.load_grn(grn_file)
-        
-    def load_grn(self, grn_file: Path) -> pd.DataFrame:
-        """
-        Loads a GRN from a CSV file. The CSV file is expected to have columns: 'TF', 'target', and 'importance'.
-        
-        Args:
-            grn_file (Path): Path to the GRN CSV file.
-            
-        Returns:
-            pd.DataFrame: DataFrame containing the GRN sorted by importance.
-        """
-        return pd.read_csv(
-            grn_file,
-            dtype={"TF": str, "target": str, "importance": float},
-            usecols=["TF", "target", "importance"],
-        ).sort_values("importance", ascending=False)
-        
-    def filtered_bipartite(self) -> pd.DataFrame:
-        """
-        FIlters the GRN in order to represent it as a bipartite graph. For each gene, the importance of edges where the
-        gene is a TF is summed up, as well as the importance of edges where the gene is a target. Genes with higher
-        TF importance than target importance are considered TFs, and only edges from these TFs to non-TF targets are
-        retained.
-        
-        Returns:
-            pd.DataFrame: Filtered bipartite GRN.
-        """
-        gene_names = self.grn["TF"].tolist() + self.grn["target"].tolist()
-        gene_names = pd.Index(gene_names).unique().sort_values()
-        importances = pd.DataFrame(
-            {
-                "TF": self.grn.groupby("TF")["importance"].sum(),
-                "target": self.grn.groupby("target")["importance"].sum(),
-            },
-            index=gene_names,
-        )
-        TFs = importances[importances["TF"] > importances["target"]].index
-        return self.grn[self.grn["TF"].isin(TFs) & ~self.grn["target"].isin(TFs)]
+from .grn_accessor import GRNAccessor
 
-# Allow running this module directly to filter a GRN CSV file
+logger = setup_logger(__name__)
+
+# Allow running this script directly to filter a GRN CSV file
 if __name__ == "__main__":
-    import click
-    
-    @click.command()
+    try:
+        import rich_click as click
+    except ImportError:
+        import click
+
+    @click.group()
     @click.option("--input", "-i", type=click.Path(exists=True), required=True, help="Input GRN CSV file")
     @click.option("--output", "-o", type=click.Path(), required=True, help="Output filtered bipartite GRN CSV file")
-    def main(input: Path, output: Path):
-        bipartite_grn = GRN(input)
-        filtered_grn = bipartite_grn.filtered_bipartite()
+    @click.option("--tf-col", type=str, default="TF", help="Column name for TFs in the input CSV")
+    @click.option("--target-col", type=str, default="target", help="Column name for targets in the input CSV")
+    @click.option("--importance-col", type=str, default=None, help="Column name for importance in the input CSV")
+    @click.pass_context
+    def cli(ctx: click.Context, input: Path, output: Path, tf_col: str, target_col: str, importance_col: str | None) -> None:
+        """This script processes a GRN CSV file to either filter it into a bipartite graph or convert it into an undirected graph."""
+        col_names = {"TF": tf_col, "target": target_col}
+        if importance_col is not None:
+            col_names["importance"] = importance_col
+        grn: GRNAccessor = GRNAccessor.from_csv(input, col_names=col_names).grn  # pyright: ignore[reportAssignmentType]
+        ctx.obj = grn
+    
+    @cli.result_callback()
+    def save_result(result: pd.DataFrame, output: Path, *args: tuple[Any], **kwargs: dict[str, Any]) -> None:
+        result.to_csv(output, index=False)
+        logger.info(f"Saved processed GRN to {output}")
         
-        filtered_grn.to_csv(output, index=False)
-        
-    main()
+    @cli.command("to-bipartite")
+    @click.pass_context
+    def to_bipartite(ctx: click.Context) -> pd.DataFrame:
+        """Filter the GRN into a bipartite graph based on importance of edges."""
+        grn: GRNAccessor = ctx.obj
+        filtered_grn = grn.to_bipartite()
+        return filtered_grn
+    
+    @cli.command("to-undirected")
+    @click.pass_context
+    def to_undirected(ctx: click.Context) -> pd.DataFrame:
+        """Convert the GRN into an undirected graph."""
+        grn: GRNAccessor = ctx.obj
+        undirected_grn = grn.to_undirected()
+        return undirected_grn
+
+    cli()

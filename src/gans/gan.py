@@ -694,6 +694,7 @@ class GAN:
             "val_crit_fake_loss": avg_crit_fake_loss.item(),
             "val_crit_gp_loss": avg_crit_gp_loss.item(),
             "val_crit_total_loss": avg_crit_total_loss.item(),
+            "val_total_loss": (avg_gen_total_loss + avg_crit_total_loss).item(),
         }
 
     def _critic_step(self, real_cells: "Tensor", real_labels: "Tensor") -> tuple["Tensor", "Tensor", "Tensor"]:
@@ -1051,6 +1052,7 @@ class GAN:
                         "val_crit_fake_loss": "Validation Critic Fake Loss",
                         "val_crit_gp_loss": "Validation Critic Gradient Penalty Loss",
                         "val_crit_total_loss": "Validation Critic Total Loss",
+                        "val_total_loss": "Validation Total Loss",
                     }
                     val_loss = {val_loss_display_names.get(k, k): v for k, v in val_loss.items()}
                     loss_dict_display_names = {

@@ -465,9 +465,9 @@ class GAN:
             filterwarnings(
                 "ignore", message=r".*The \.grad attribute of a Tensor that is not a leaf Tensor is being accessed*"
             )
-            with SummaryWriter(f"{output_dir}/TensorBoard/model/generator") as w:
+            with SummaryWriter(f"{output_dir}/TensorBoard/", filename_suffix=f".gen_graph.step{self.step}") as w:
                 w.add_graph(self.gen, gen_data, use_strict_trace=False)
-            with SummaryWriter(f"{output_dir}/TensorBoard/model/critic") as w:
+            with SummaryWriter(f"{output_dir}/TensorBoard/", filename_suffix=f".crit_graph.step{self.step}") as w:
                 w.add_graph(self.crit, crit_data, use_strict_trace=False)
 
         self.gen.train(was_training[0])
@@ -497,19 +497,22 @@ class GAN:
         if is_ddp_initialized() and os.environ.get("RANK", "0") != "0":
             return
 
-        with (
-            summary_writer
-            if summary_writer
-            else SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".step{self.step}") as w
-        ):
-            for key, value in loss_dict.items():
-                w.add_scalar(key, value, self.step)
+        if should_close := (not summary_writer):
+            summary_writer = SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".step{self.step}")
+            
+        for key, value in loss_dict.items():
+                summary_writer.add_scalar(key, value, self.step)
+        
+        summary_writer.flush()
+        if should_close:
+            summary_writer.close()
 
     def _generate_umap_plots(
         self,
         valid_loader: "SCDataLoader",
         output_dir: Path,
         max_cells: int | None = None,
+        summary_writer: SummaryWriter | None = None,
     ) -> None:
         """
         Generates UMAP plots during training.
@@ -623,10 +626,16 @@ class GAN:
 
         #     pickle.dump({"real": real_embedding, "fake": fake_embedding}, f)
 
-        with SummaryWriter(output_dir / "TensorBoard/UMAP", filename_suffix=f".step{self.step}") as w:
-            w.add_figure("UMAP Scatter", scatter_fig, self.step)
-            w.add_figure("UMAP Histogram", hexbin_fig, self.step)
-            w.add_figure("UMAP Histogram Relative Abundance of Real Cells", hist_diff_fig, self.step)
+        if should_close := (not summary_writer):
+            summary_writer = SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".UMAP.step{self.step}")
+            
+        summary_writer.add_figure("UMAP Scatter", scatter_fig, self.step)
+        summary_writer.add_figure("UMAP Histogram", hexbin_fig, self.step)
+        summary_writer.add_figure("UMAP Histogram Relative Abundance of Real Cells", hist_diff_fig, self.step)
+        summary_writer.flush()
+        
+        if should_close:
+            summary_writer.close()
 
         plt.close("all")
 
@@ -1004,7 +1013,7 @@ class GAN:
         # Main training loop
         losses: list[dict[str, float]] = []
         loss_dict: dict[str, float] = {}
-        rf_auroc = 1.0
+        rf_auroc = float("inf")
         summary_writer = SummaryWriter(output_dir / "TensorBoard/")
         torch.set_float32_matmul_precision("high")
         logger.info("Starting training...")
@@ -1109,7 +1118,7 @@ class GAN:
                         rf_auroc_dir.mkdir(parents=True, exist_ok=True)
                         fig.savefig(rf_auroc_dir / f"step_{self.step}.jpg")
                         with SummaryWriter(
-                            output_dir / "TensorBoard/RF_AUROC", filename_suffix=f".step{self.step}"
+                            output_dir / "TensorBoard/", filename_suffix=f".rf_auroc.step{self.step}"
                         ) as w:
                             w.add_figure("Random Forest AUROC", fig, self.step)
                             w.add_scalar("AUROC", rf_auroc, self.step)
@@ -1140,10 +1149,4 @@ class GAN:
         # # prof.export_memory_timeline("memtrace.html") # Gives unexpected errors
         # prof.export_chrome_trace("trace.json")
 
-        if rf_auroc_freq > 0:
-            ret = rf_auroc
-        elif loss_dict:
-            ret = loss_dict["Validation Total Loss"]
-        else:
-            ret = float("inf")
-        return ret
+        return rf_auroc

@@ -8,6 +8,7 @@ import pandas as pd
 import scanpy as sc
 import sklearn.metrics as metrics
 from matplotlib.figure import Figure
+from randomness import random_seed
 from scipy import sparse
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
@@ -237,13 +238,14 @@ def compute_RF_AUROC(
     y_fake = np.zeros(fake_cells.shape[0])  # pyright: ignore[reportOptionalSubscript]
 
     # perform PCA
-    pca = PCA(n_components=n_components)
+    pca = PCA(n_components=n_components, random_state=random_seed)
 
     # split data into training and testing
     X_train, X_test, y_train, y_test = train_test_split(
         sparse.vstack((real_cells, fake_cells), format="csr"),
         np.hstack((y_real, y_fake)),
         test_size=0.3,
+        random_state=random_seed,
         shuffle=True,
     )
 
@@ -251,7 +253,7 @@ def compute_RF_AUROC(
     X_test = pca.transform(X_test)
 
     # train and test RF
-    rf = RandomForestClassifier(n_estimators=1000, n_jobs=8)
+    rf = RandomForestClassifier(n_estimators=1000, n_jobs=8, random_state=random_seed)
     rf.fit(X_train, y_train)
     preds = rf.predict_proba(X_test)
     fpr, tpr, _ = metrics.roc_curve(y_test, preds[:, 1])

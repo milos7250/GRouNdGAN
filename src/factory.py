@@ -12,6 +12,7 @@ from optuna.pruners import HyperbandPruner
 from optuna.study import Study
 from optuna.trial import TrialState
 from optunahub import load_module
+from randomness import random_seed
 from torch._dynamo import reset as dynamo_reset
 from torch.cuda import empty_cache as empty_cuda_cache
 
@@ -358,7 +359,7 @@ class GANFactory(IGANFactory):
                 fallback=f"sqlite:///{self.parser.get('EXPERIMENT', 'output directory')}/optuna_gan_study.db",
             ),
             study_name=self.parser.get("Hyperparameter Optimization", "study name", fallback="optuna_gan_study"),
-            sampler=AutoSampler(),  # type: ignore
+            sampler=AutoSampler(seed=random_seed),  # type: ignore
             # The max_resource should be equal to the maximum number of steps used in training. The min_resource refers
             # to minimum number of steps after which pruning can start. Here, we set it to maximum steps divided by 10
             # to allow pruning after 10% of training is done. The reduction_factor is set to 2 to create 5 brackets as
@@ -723,7 +724,7 @@ class CausalGANFactory(IGANFactory):
                 fallback=f"sqlite:///{self.parser.get('EXPERIMENT', 'output directory')}/optuna_causalgan_study.db",
             ),
             study_name=self.parser.get("Hyperparameter Optimization", "study name", fallback="optuna_causalgan_study"),
-            sampler=AutoSampler(),  # type: ignore
+            sampler=AutoSampler(seed=random_seed),  # type: ignore
             # The max_resource should be equal to the maximum number of steps used in training. The min_resource refers
             # to minimum number of steps after which pruning can start. Here, we set it to maximum steps divided by 100
             # to allow pruning after 1% of training is done. The reduction_factor is set to 3 to create 5 brackets as

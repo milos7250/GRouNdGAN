@@ -12,8 +12,8 @@ from arboreto.algo import grnboost2
 from scipy import sparse
 
 from loggers import setup_logger
+from randomness import random_seed
 
-from ._random_seeds import RANDOM_SEED
 from .grn_accessor import GRNAccessor
 
 _T = TypeVar("_T")
@@ -69,7 +69,7 @@ def create_GRN(cfg: ConfigParser) -> None:
 
         # we can optionally pass a list of TFs to GRNBoost2
         logger.info(f"Starting GRN inference using {len(TFs) if TFs != 'all' else 'all'} TFs.")
-        inferred_grn = grnboost2(real_cells_df, tf_names=TFs, verbose=True, seed=RANDOM_SEED)  # pyright: ignore[reportArgumentType]
+        inferred_grn = grnboost2(real_cells_df, tf_names=TFs, verbose=True, seed=random_seed)  # pyright: ignore[reportArgumentType]
         inferred_grn.to_csv(cfg.get("GRN Preparation", "Inferred GRN"))
         logger.info(f"Successfully saved GRN inferred by GRNBoost2 GRN to {cfg.get('GRN Preparation', 'Inferred GRN')}")
     else:
@@ -118,15 +118,13 @@ def create_GRN(cfg: ConfigParser) -> None:
 
     # delete targets that are also regulators
     causal_graph = {k: v for (k, v) in causal_graph.items() if k not in tfs}
-    
+
     # handle genes with no regulators
     missing_genes = [gene for gene in gene_names if gene not in causal_graph.keys() and gene not in tfs]
     include_no_reg = cfg.getboolean("GRN Preparation", "include genes with no regulators", fallback=False)
     if missing_genes and include_no_reg:
         logger.info(f"Included {len(missing_genes)} targets with no regulators in the causal graph")
-        causal_graph |= {
-            gene: [] for gene in missing_genes
-        }  # include genes with no regulators
+        causal_graph |= {gene: [] for gene in missing_genes}  # include genes with no regulators
     elif missing_genes:
         logger.warning(
             f"Excluding {len(missing_genes)} targets with no regulators from the causal graph. "
@@ -142,9 +140,7 @@ def create_GRN(cfg: ConfigParser) -> None:
     genes = tfs + targets
     genes = sorted(genes, key=lambda x: gene_names.to_list().index(x))  # sort genes by original order
 
-    if (
-        not genes == gene_names.to_list()
-    ):
+    if not genes == gene_names.to_list():
         # overwrite train, validation, and test datasets when some genes were excluded from the dataset
         real_cells = real_cells[:, genes]
         real_cells.uns["GRouNdGAN_was_subsetted"] = True
@@ -172,7 +168,7 @@ def create_GRN(cfg: ConfigParser) -> None:
             ("GRN density Edges", f"{imposed_edges / possible_edges * 100 if possible_edges > 0 else 0:.1f}%"),
         ]).to_string(index=False, header=False)
     )
-    
+
     # convert gene names to numerical indices
     causal_graph = {
         gene_names.get_loc(gene): {gene_names.get_loc(tf) for tf in tfs}  # pyright: ignore[reportUnhashable]

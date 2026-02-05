@@ -8,8 +8,7 @@ import scanpy as sc
 from scipy.sparse import csr_matrix
 
 from loggers import setup_logger
-
-from ._random_seeds import RANDOM_SEED, rng
+from randomness import random_seed
 
 
 def preprocess(cfg: ConfigParser) -> None:
@@ -34,7 +33,7 @@ def preprocess(cfg: ConfigParser) -> None:
 
     logger.info("Shuffling data...")
     original_order = np.arange(anndata.n_obs)  # Store the original cell order
-    rng.shuffle(original_order)  # Shuffle the indices
+    np.random.default_rng(random_seed).shuffle(original_order)  # Shuffle the indices
     shuffled_order = original_order.copy()
     del original_order
 
@@ -46,8 +45,8 @@ def preprocess(cfg: ConfigParser) -> None:
     ann_clustered = anndata.copy()
     sc.pp.recipe_zheng17(ann_clustered)
     sc.tl.pca(ann_clustered, n_comps=50)
-    sc.pp.neighbors(ann_clustered, n_pcs=50, random_state=RANDOM_SEED)
-    sc.tl.louvain(ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res")), random_state=RANDOM_SEED)
+    sc.pp.neighbors(ann_clustered, n_pcs=50, random_state=random_seed)
+    sc.tl.louvain(ann_clustered, resolution=float(cfg.get("Preprocessing", "louvain res")), random_state=random_seed)
     anndata.obs["cluster"] = ann_clustered.obs["louvain"]
     del ann_clustered
 

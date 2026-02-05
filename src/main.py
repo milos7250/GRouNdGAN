@@ -3,11 +3,14 @@ import os
 import shutil
 from pathlib import Path
 
+import randomness
+
 from custom_parser import get_argparser, get_configparser
 from loggers import setup_logger
 
 # Setup logger
 logger = setup_logger("main")
+
 
 def main():
     """
@@ -29,6 +32,10 @@ def main():
     except shutil.SameFileError:
         pass
 
+    deterministic = cfg_parser.getboolean("EXPERIMENT", "deterministic mode", fallback=False)
+    seed = cfg_parser.getint("EXPERIMENT", "random seed", fallback=None)
+    randomness.set_seeds(seed)
+
     if args.preprocess:
         from preprocessing import preprocess
 
@@ -41,6 +48,8 @@ def main():
 
     if args.train:
         logger.info("Initializing training libraries...")
+        randomness.set_pytorch_seeds(seed, deterministic)
+
         import torch.distributed as dist
 
         from factory import get_factory
@@ -79,6 +88,8 @@ def main():
 
     if args.optimize_hyperparameters:
         logger.info("Initializing training libraries...")
+        randomness.set_pytorch_seeds(seed, deterministic)
+        
         import torch.distributed as dist
 
         from factory import get_factory
@@ -118,6 +129,8 @@ def main():
             logger.info("Finished training")
 
     if args.generate:
+        randomness.set_pytorch_seeds(seed, deterministic)
+        
         import numpy as np
         import scanpy as sc  # type: ignore
         from scipy.sparse import csr_matrix
@@ -161,6 +174,7 @@ def main():
         grn_inference.evaluate(cfg_parser)
 
     if args.perturb:
+        randomness.set_pytorch_seeds(seed, deterministic)
         from perturbation import perturbation
 
         perturbation.perturb(cfg_parser)

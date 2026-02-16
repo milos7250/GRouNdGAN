@@ -499,10 +499,10 @@ class GAN:
 
         if should_close := (not summary_writer):
             summary_writer = SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".step{self.step}")
-            
+
         for key, value in loss_dict.items():
-                summary_writer.add_scalar(key, value, self.step)
-        
+            summary_writer.add_scalar(key, value, self.step)
+
         summary_writer.flush()
         if should_close:
             summary_writer.close()
@@ -628,12 +628,12 @@ class GAN:
 
         if should_close := (not summary_writer):
             summary_writer = SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".UMAP.step{self.step}")
-            
+
         summary_writer.add_figure("UMAP Scatter", scatter_fig, self.step)
         summary_writer.add_figure("UMAP Histogram", hexbin_fig, self.step)
         summary_writer.add_figure("UMAP Histogram Relative Abundance of Real Cells", hist_diff_fig, self.step)
         summary_writer.flush()
-        
+
         if should_close:
             summary_writer.close()
 
@@ -671,14 +671,14 @@ class GAN:
         self.gen.eval(), self.crit.eval()  # pyright: ignore[reportUnusedExpression]
 
         for real_cells, real_labels in valid_loader:
-            with torch.no_grad():
+            with torch.inference_mode():
                 real_cells = real_cells.to(self.device)
                 crit_fake_pred, crit_real_pred, fake_cells = self._critic_step(real_cells, real_labels)
 
             gradient = self._get_gradient(real_cells, fake_cells)
             gp = self._gradient_penalty(gradient)
 
-            with torch.no_grad():
+            with torch.inference_mode():
                 gen_loss = self._generator_loss(crit_fake_pred)
                 crit_loss = self._critic_loss(crit_fake_pred, crit_real_pred, gp, c_lambda=c_lambda)
 
@@ -972,7 +972,7 @@ class GAN:
         )
 
         self.crit_opt = AdamW(
-            self.crit.parameters(),
+            filter(lambda p: p.requires_grad, self.crit.parameters()),
             lr=torch.tensor(crit_alpha_0, device=self.device),
             betas=(beta1, beta2),
             amsgrad=True,
@@ -982,7 +982,7 @@ class GAN:
         # Exponential Learning Rate
         self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps, 0.05)
         self.crit_lr_scheduler = self._set_exponential_lr(
-            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps, 0.05
+            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps, 0.0
         )
 
         if checkpoint is not None:
@@ -990,7 +990,7 @@ class GAN:
                 logger.warning(f"Checkpoint {checkpoint} does not exist.")
             else:
                 self._load(checkpoint, mode="training")
-                return 0.0
+                return np.inf
 
         self.gen.train()
         self.crit.train()

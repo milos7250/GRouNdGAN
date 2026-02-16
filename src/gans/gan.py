@@ -1001,11 +1001,11 @@ class GAN:
 
         torch._inductor.select_algorithm.PRINT_AUTOTUNE = False  # to suppress autotune printing
         if is_ddp_initialized():
-            self.gen = DDP(torch.compile(self.gen, fullgraph=True))
-            self.crit = DDP(torch.compile(self.crit, fullgraph=True))
+            self.gen = DDP(torch.compile(self.gen, fullgraph=True, mode="max-autotune-no-cudagraphs"))
+            self.crit = DDP(torch.compile(self.crit, fullgraph=True, mode="max-autotune-no-cudagraphs"))
         else:
-            self._generator_step = torch.compile(self._generator_step, fullgraph=True)
-            self._critic_step = torch.compile(self._critic_step, fullgraph=True)
+            self._generator_step = torch.compile(self._generator_step, fullgraph=True, mode="max-autotune-no-cudagraphs")
+            self._critic_step = torch.compile(self._critic_step, fullgraph=True, mode="max-autotune-no-cudagraphs")
 
         if self.device == "cpu":
             logger.warning("Training on CPU is not supported and will be very slow.")

@@ -4,7 +4,6 @@ import shutil
 from pathlib import Path
 
 import randomness
-
 from custom_parser import get_argparser, get_configparser
 from loggers import setup_logger
 
@@ -33,7 +32,8 @@ def main():
         pass
 
     deterministic = cfg_parser.getboolean("EXPERIMENT", "deterministic mode", fallback=False)
-    seed = cfg_parser.getint("EXPERIMENT", "random seed", fallback=None)
+    seed = cfg_parser.get("EXPERIMENT", "random seed", fallback=None)
+    seed = int(seed) if seed is not None else None
     randomness.set_seeds(seed)
 
     if args.preprocess:

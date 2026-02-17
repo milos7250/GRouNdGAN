@@ -513,7 +513,7 @@ class CausalGAN(GAN):
         )
 
         self.crit_opt = AdamW(
-            self.crit.parameters(),
+            filter(lambda p: p.requires_grad, self.crit.parameters()),
             lr=torch.tensor(crit_alpha_0),
             betas=(beta1, beta2),
             amsgrad=True,
@@ -521,7 +521,7 @@ class CausalGAN(GAN):
         )
 
         self.labeler_opt = AdamW(
-            self.labeler.parameters(),
+            filter(lambda p: p.requires_grad, self.labeler.parameters()),
             lr=torch.tensor(labeler_alpha),
             betas=(beta1, beta2),
             amsgrad=True,
@@ -529,7 +529,7 @@ class CausalGAN(GAN):
         )
 
         self.antilabeler_opt = AdamW(
-            self.antilabeler.parameters(),
+            filter(lambda p: p.requires_grad, self.antilabeler.parameters()),
             lr=torch.tensor(antilabeler_alpha),
             betas=(beta1, beta2),
             amsgrad=True,
@@ -540,9 +540,9 @@ class CausalGAN(GAN):
         self.mse = torch.nn.MSELoss()
 
         # Exponential Learning Rate
-        self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps, 0.01)
+        self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps, 0.05)
         self.crit_lr_scheduler = self._set_exponential_lr(
-            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps, 0.01
+            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps, 0.00
         )
 
         if checkpoint is not None:
@@ -555,23 +555,27 @@ class CausalGAN(GAN):
         self.labeler.train()
         self.antilabeler.train()
 
-        # logger.info("Saving model graph...")
-        # with torch.compiler.set_stance("force_eager"):
-        #     self.log_tensorboard_graph(output_dir)
+        logger.info("Saving model graph...")
+        with torch.compiler.set_stance("force_eager"):
+            self.log_tensorboard_graph(output_dir)
 
         torch._inductor.select_algorithm.PRINT_AUTOTUNE = False  # to suppress autotune printing
         if is_ddp_initialized():
             logger.info("Distributed Data Parallel (DDP) training active, compiling generator and critic modules")
-            self.gen = DDP(torch.compile(self.gen, fullgraph=True))
-            self.crit = DDP(torch.compile(self.crit, fullgraph=True))
-            # self.labeler = DDP(torch.compile(self.labeler, fullgraph=True))  # Disabled due to issues with cudagraphs
-            # self.antilabeler = DDP(torch.compile(self.antilabeler, fullgraph=True))  # Disabled due to issues with cudagraphs
+            self.gen = DDP(torch.compile(self.gen, fullgraph=True, mode="max-autotune-no-cudagraphs"))
+            self.crit = DDP(torch.compile(self.crit, fullgraph=True, mode="max-autotune-no-cudagraphs"))
+            self.labeler = DDP(torch.compile(self.labeler, fullgraph=True, mode="max-autotune-no-cudagraphs"))
+            self.antilabeler = DDP(torch.compile(self.antilabeler, fullgraph=True, mode="max-autotune-no-cudagraphs"))
         else:
             logger.info("Single-device training active, compiling generator and critic step functions.")
-            self._generator_step = torch.compile(self._generator_step, fullgraph=True, mode="max-autotune")
-            self._critic_step = torch.compile(self._critic_step, fullgraph=True, mode="max-autotune")
-            # self._labeler_step = torch.compile(self._labeler_step, fullgraph=True)  # Disabled due to issues with cudagraphs
-            # self._antilabeler_step = torch.compile(self._antilabeler_step, fullgraph=True)  # Disabled due to issues with cudagraphs
+            self._generator_step = torch.compile(
+                self._generator_step, fullgraph=True, mode="max-autotune-no-cudagraphs"
+            )
+            self._critic_step = torch.compile(self._critic_step, fullgraph=True, mode="max-autotune-no-cudagraphs")
+            self._labeler_step = torch.compile(self._labeler_step, fullgraph=True, mode="max-autotune-no-cudagraphs")
+            self._antilabeler_step = torch.compile(
+                self._antilabeler_step, fullgraph=True, mode="max-autotune-no-cudagraphs"
+            )
 
         if self.device == "cpu":
             logger.warning("Training on CPU is not supported and will be very slow.")
@@ -579,8 +583,12 @@ class CausalGAN(GAN):
         # Main training loop
         losses = []
         loss_dict: dict[str, float] = {}
-        rf_auroc = 1.0
-        summary_writer = SummaryWriter(output_dir / "TensorBoard/")
+        rf_auroc = np.inf
+        summary_writers = {
+            "stats": SummaryWriter(output_dir / "TensorBoard/"),
+            "umap": SummaryWriter(output_dir / "TensorBoard/", filename_suffix=".UMAP"),
+            "rf_auroc": SummaryWriter(output_dir / "TensorBoard/", filename_suffix=".RF_AUROC"),
+        }
         torch.set_float32_matmul_precision("high")
         logger.info("Starting training...")
         with (
@@ -685,7 +693,7 @@ class CausalGAN(GAN):
                         .item(),
                     }
 
-                    self._update_tensorboard(loss_dict | learning_rates_dict, output_dir, summary_writer)
+                    self._update_tensorboard(loss_dict | learning_rates_dict, output_dir, summary_writers["stats"])
                     logger.info(f"Step {self.step}:\n" + pd.Series(loss_dict).to_string(float_format="{:.2g}".format))
                     logger.debug(
                         f"Step {self.step}:\n" + pd.Series(learning_rates_dict).to_string(float_format="{:.2g}".format)
@@ -705,11 +713,9 @@ class CausalGAN(GAN):
                         rf_auroc_dir = output_dir / "RF_AUROC"
                         rf_auroc_dir.mkdir(parents=True, exist_ok=True)
                         fig.savefig(rf_auroc_dir / f"step_{self.step}.jpg")
-                        with SummaryWriter(
-                            output_dir / "TensorBoard/RF_AUROC", filename_suffix=f".step{self.step}"
-                        ) as w:
-                            w.add_figure("Random Forest AUROC", fig, self.step)
-                            w.add_scalar("AUROC", rf_auroc, self.step)
+
+                        summary_writers["rf_auroc"].add_figure("Random Forest AUROC", fig, self.step)
+                        summary_writers["stats"].add_scalar("AUROC", rf_auroc, self.step)
 
                         logger.info(f"Step {self.step}: Computed Random Forest AUROC: {rf_auroc:.3f}")
                         if trial:
@@ -723,7 +729,7 @@ class CausalGAN(GAN):
 
                 if should_run(plt_freq):
                     logger.info(f"Step {self.step}: Generating UMAP plots...")
-                    self._generate_umap_plots(valid_loader, output_dir)
+                    self._generate_umap_plots(valid_loader, output_dir, summary_writer=summary_writers["umap"])
                     logger.info(f"Step {self.step}: Generated and saved UMAP plots to {output_dir}")
 
                 if is_ddp_initialized():
@@ -741,10 +747,4 @@ class CausalGAN(GAN):
         # prof.export_memory_timeline("memtrace.html") # Gives unexpected errors
         # prof.export_chrome_trace(output_dir / "trace.json")
 
-        if rf_auroc_freq > 0:
-            ret = rf_auroc
-        elif loss_dict:
-            ret = loss_dict["Validation Total Loss"]
-        else:
-            ret = float("nan")
-        return ret
+        return rf_auroc

@@ -981,9 +981,7 @@ class GAN:
 
         # Exponential Learning Rate
         self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps, 0.05)
-        self.crit_lr_scheduler = self._set_exponential_lr(
-            self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps, 0.0
-        )
+        self.crit_lr_scheduler = self._set_exponential_lr(self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps, 0.0)
 
         if checkpoint is not None:
             if not Path(checkpoint).exists():
@@ -1004,7 +1002,9 @@ class GAN:
             self.gen = DDP(torch.compile(self.gen, fullgraph=True, mode="max-autotune-no-cudagraphs"))
             self.crit = DDP(torch.compile(self.crit, fullgraph=True, mode="max-autotune-no-cudagraphs"))
         else:
-            self._generator_step = torch.compile(self._generator_step, fullgraph=True, mode="max-autotune-no-cudagraphs")
+            self._generator_step = torch.compile(
+                self._generator_step, fullgraph=True, mode="max-autotune-no-cudagraphs"
+            )
             self._critic_step = torch.compile(self._critic_step, fullgraph=True, mode="max-autotune-no-cudagraphs")
 
         if self.device == "cpu":
@@ -1014,7 +1014,11 @@ class GAN:
         losses: list[dict[str, float]] = []
         loss_dict: dict[str, float] = {}
         rf_auroc = float("inf")
-        summary_writer = SummaryWriter(output_dir / "TensorBoard/")
+        summary_writers = {
+            "stats": SummaryWriter(output_dir / "TensorBoard/"),
+            "umap": SummaryWriter(output_dir / "TensorBoard/", filename_suffix=".UMAP"),
+            "rf_auroc": SummaryWriter(output_dir / "TensorBoard/", filename_suffix=".RF_AUROC"),
+        }
         torch.set_float32_matmul_precision("high")
         logger.info("Starting training...")
         with (
@@ -1097,7 +1101,7 @@ class GAN:
                         .item(),
                     }
 
-                    self._update_tensorboard(loss_dict | learning_rates_dict, output_dir, summary_writer)
+                    self._update_tensorboard(loss_dict | learning_rates_dict, output_dir, summary_writers["stats"])
                     logger.info(f"Step {self.step}:\n" + pd.Series(loss_dict).to_string(float_format="{:.2g}".format))
                     logger.debug(
                         f"Step {self.step}:\n" + pd.Series(learning_rates_dict).to_string(float_format="{:.2g}".format)
@@ -1117,11 +1121,9 @@ class GAN:
                         rf_auroc_dir = output_dir / "RF_AUROC"
                         rf_auroc_dir.mkdir(parents=True, exist_ok=True)
                         fig.savefig(rf_auroc_dir / f"step_{self.step}.jpg")
-                        with SummaryWriter(
-                            output_dir / "TensorBoard/", filename_suffix=f".rf_auroc.step{self.step}"
-                        ) as w:
-                            w.add_figure("Random Forest AUROC", fig, self.step)
-                            w.add_scalar("AUROC", rf_auroc, self.step)
+
+                        summary_writers["rf_auroc"].add_figure("Random Forest AUROC", fig, self.step)
+                        summary_writers["stats"].add_scalar("AUROC", rf_auroc, self.step)
 
                         logger.info(f"Step {self.step}: Computed Random Forest AUROC: {rf_auroc:.3f}")
                         if trial:
@@ -1129,9 +1131,13 @@ class GAN:
                             if trial.should_prune():  # Allow trial pruning before reaching the end of training
                                 raise TrialPruned()
 
+                        if self.step > 20_000 and rf_auroc > 0.99:
+                            logger.info(f"Step {self.step}: Early stopping as RF AUROC > 0.99 (AUROC: {rf_auroc:.3f})")
+                            break
+
                 if should_run(plt_freq):
                     logger.info(f"Step {self.step}: Generating UMAP plots...")
-                    self._generate_umap_plots(valid_loader, output_dir)
+                    self._generate_umap_plots(valid_loader, output_dir, summary_writer=summary_writers["umap"])
                     logger.info(f"Step {self.step}: Generated and saved UMAP plots to {output_dir}")
 
                 if is_ddp_initialized():

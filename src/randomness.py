@@ -22,7 +22,7 @@ def set_seeds(seed: int | None = None) -> None:
 
     random.seed(random_seed)
     np.random.seed(random_seed)
-    logger.info(f"Deterministic mode enabled, using seed {random_seed}.")
+    logger.info(f"Using seed {random_seed} for Python and NumPy random number generation.")
 
 
 def set_pytorch_seeds(seed: int | None = None, deterministic: bool = False) -> None:
@@ -39,6 +39,7 @@ def set_pytorch_seeds(seed: int | None = None, deterministic: bool = False) -> N
     import torch
 
     torch.manual_seed(random_seed)
+    logger.info(f"Using seed {random_seed} for PyTorch random number generation.")
 
     if deterministic:
         torch.use_deterministic_algorithms(True)

@@ -620,13 +620,7 @@ class GAN:
 
         plt.savefig(umap_path / f"step_{self.step}_hist_real_relative.jpg")
 
-        # TODO: REMOVE
-        # with open(umap_path / f"step_{self.step}-embeddings.pkl", "wb") as f:
-        #     import pickle
-
-        #     pickle.dump({"real": real_embedding, "fake": fake_embedding}, f)
-
-        if should_close := (not summary_writer):
+        if should_close := (summary_writer is None):
             summary_writer = SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".UMAP.step{self.step}")
 
         summary_writer.add_figure("UMAP Scatter", scatter_fig, self.step)

@@ -56,6 +56,7 @@ class ConditionalGAN(GAN, ABC):
         valid_loader: "SCDataLoader",
         output_dir: "Path",
         max_cells: int | None = None,
+        summary_writer: SummaryWriter | None = None,
     ) -> None:
         """
         Generate t-SNE plot during training.
@@ -66,6 +67,10 @@ class ConditionalGAN(GAN, ABC):
             Validation set DataLoader.
         output_dir : Path
             Directory to save the t-SNE plots.
+        max_cells : int | None, optional
+            Maximum number of cells to use for UMAP visualization. If None, use all cells in the validation set. Default is None.
+        summary_writer : SummaryWriter | None, optional
+            TensorBoard SummaryWriter to log the UMAP plots. If None, a summary writer will be created for the UMAP plots. Default is None.
         """
         no_of_cells = min(max_cells, len(valid_loader.dataset)) if max_cells else len(valid_loader.dataset)
 
@@ -178,9 +183,14 @@ class ConditionalGAN(GAN, ABC):
 
         plt.savefig(umap_path / f"step_{self.step}_hist_diff.jpg")
 
-        with SummaryWriter(output_dir / "TensorBoard/UMAP", filename_suffix=f".step{self.step}") as w:
-            w.add_figure("UMAP Scatter", scatter_fig, self.step)
-            w.add_figure("UMAP Histogram", hexbin_fig, self.step)
-            w.add_figure("UMAP Histogram Difference", hist_diff_fig, self.step)
+        if should_close := (summary_writer is None):
+            summary_writer = SummaryWriter(output_dir / "TensorBoard/", filename_suffix=f".UMAP.step{self.step}")
+            
+        summary_writer.add_figure("UMAP Scatter", scatter_fig, self.step)
+        summary_writer.add_figure("UMAP Histogram", hexbin_fig, self.step)
+        summary_writer.add_figure("UMAP Histogram Difference", hist_diff_fig, self.step)
+        
+        if should_close:
+            summary_writer.close()
 
         plt.close("all")

@@ -645,6 +645,7 @@ class CausalGAN(GAN):
                         "val_crit_fake_loss": "Validation Critic Fake Loss",
                         "val_crit_gp_loss": "Validation Critic Gradient Penalty Loss",
                         "val_crit_total_loss": "Validation Critic Total Loss",
+                        "val_total_loss": "Validation Total Loss",
                     }
                     val_loss = {val_loss_display_names.get(k, k): v for k, v in val_loss.items()}
                     loss_dict_display_names = {

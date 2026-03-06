@@ -36,7 +36,7 @@ class Generator(nn.Module):
         library_size : int | None
             Total number of counts per generated cell. If None, no LSN layer is added. Default is None.
         """
-        super(Generator, self).__init__()
+        super().__init__()
 
         self.z_input = z_input
         self.output_cells_dim = output_cells_dim
@@ -166,7 +166,7 @@ class ConditionalGenerator(Generator):
         """
         self.num_classes = num_classes
 
-        super(ConditionalGenerator, self).__init__(z_input, output_cells_dim, gen_layers, library_size)
+        super().__init__(z_input, output_cells_dim, gen_layers, library_size)
 
     def forward(self, noise: "Tensor", labels: "Tensor | None" = None, *args: "Any", **kwargs: "Any") -> "Tensor":
         """

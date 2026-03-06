@@ -17,7 +17,7 @@ class Labeler(nn.Module):
             List of integers corresponding to the number of neurons
             at each deep layer of the labeler.
         """
-        super(Labeler, self).__init__()
+        super().__init__()
 
         self.num_genes = num_genes
         self.num_tfs = num_tfs

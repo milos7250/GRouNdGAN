@@ -22,7 +22,7 @@ class Critic(nn.Module):
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
         """
-        super(Critic, self).__init__()
+        super().__init__()
 
         self.x_input = x_input
         self.critic_layers = critic_layers
@@ -110,7 +110,7 @@ class ConditionalCritic(Critic):
         """
         self.num_classes = num_classes
 
-        super(ConditionalCritic, self).__init__(x_input, critic_layers)
+        super().__init__(x_input, critic_layers)
 
     def forward(self, data: "Tensor", labels: "Tensor | None" = None, *args: "Any", **kwargs: "Any") -> "Tensor":
         """
@@ -179,7 +179,7 @@ class ConditionalCriticProj(Critic):
         """
         self.num_classes = num_classes
 
-        super(ConditionalCriticProj, self).__init__(x_input, critic_layers)
+        super().__init__(x_input, critic_layers)
 
     def forward(self, data: "Tensor", labels: "Tensor | None" = None, *args: "Any", **kwargs: "Any") -> "Tensor":
         """

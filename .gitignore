@@ -43,3 +43,6 @@ data/
 # figures
 *.svg
 *.png
+
+# generated coverage files
+*.coverage

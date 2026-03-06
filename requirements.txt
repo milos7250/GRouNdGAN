@@ -10,13 +10,12 @@ optuna-dashboard~=0.20
 optunahub~=0.4
 pandas~=2.3
 rich~=14.2
+rich-click~=1.9
 scanpy~=1.11
 scikit-learn~=1.7
 scipy~=1.16
 seaborn~=0.13
-sparselinear~=0.0
+setuptools<82  # for compatibility with tensorboard
 tensorboard~=2.20
-torch_scatter~=2.1  # dependency of sparselinear
-torch_sparse~=0.6  # dependency of sparselinear
 tqdm~=4.67
 umap-learn~=0.5

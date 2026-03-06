@@ -1,0 +1,9 @@
+[run]
+omit = ./tests/*
+branch = True
+concurrency = multiprocessing
+sigterm = True
+source = ./src
+
+[lcov]
+output = lcov.info

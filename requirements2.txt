@@ -1,0 +1,3 @@
+sparselinear~=0.0
+torch_scatter~=2.1  # dependency of sparselinear
+torch_sparse~=0.6  # dependency of sparselinear

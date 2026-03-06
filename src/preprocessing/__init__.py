@@ -1,5 +1,3 @@
-from .grn_accessor import GRNAccessor
-from .grn_creation import create_GRN
-from .preprocess import preprocess
-
-__all__ = ["preprocess", "create_GRN", "GRNAccessor"]
+from .grn_accessor import GRNAccessor as GRNAccessor
+from .grn_creation import create_GRN as create_GRN
+from .preprocess import preprocess as preprocess

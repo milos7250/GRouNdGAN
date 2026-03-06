@@ -12,7 +12,6 @@ from optuna.pruners import HyperbandPruner
 from optuna.study import Study
 from optuna.trial import TrialState
 from optunahub import load_module
-from randomness import random_seed
 from torch._dynamo import reset as dynamo_reset
 from torch.cuda import empty_cache as empty_cuda_cache
 
@@ -21,6 +20,7 @@ from gans.conditional_gan_cat import ConditionalCatGAN
 from gans.conditional_gan_proj import ConditionalProjGAN
 from gans.gan import GAN
 from loggers import setup_logger
+from randomness import random_seed
 
 if TYPE_CHECKING:
     from typing import Any, TypeVar
@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial, Trial
 
     _T = TypeVar("_T", int, float, str)
+
+# TODO: Factory functions are not yet adapted to new trainer classes.
+raise NotImplementedError("Factory functions need to be adapted to new trainer classes after refactor.")
 
 
 def parse_list(str_list: str, _type: "type[_T]") -> "list[_T]":

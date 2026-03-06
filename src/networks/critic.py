@@ -158,11 +158,14 @@ class ConditionalCritic(Critic):
         self._critic.append(proj_layer)
 
 
+# Currently not used in any of the GAN implementations
 class ConditionalCriticProj(Critic):
     def __init__(self, x_input: int, critic_layers: list[int], num_classes: int) -> None:
         """
         Conditional Critic's constructor using a modified implementation of
         Projection Discriminator (Marouf et al, 2020).
+        
+        Currently not used in any of the GAN implementations.
 
         Parameters
         ----------

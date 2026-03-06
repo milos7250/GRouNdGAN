@@ -51,11 +51,11 @@ def read_datasets(cfg: ConfigParser) -> tuple[sparse.csr_matrix, sparse.csr_matr
     fake_cells = sc.read_h5ad(fake_cells_path)
 
     if not isinstance(real_cells.X, sparse.csr_matrix):  # pyright: ignore[reportUnknownMemberType]
-        raise ValueError("The real data matrix is not in sparse csr format. Please preprocess the data accordingly.")
+        raise TypeError("The real data matrix is not in sparse csr format. Please preprocess the data accordingly.")
     else:
         real_cells = real_cells.X
     if not isinstance(fake_cells.X, sparse.csr_matrix):  # pyright: ignore[reportUnknownMemberType]
-        raise ValueError("The fake data matrix is not in sparse csr format. Please preprocess the data accordingly.")
+        raise TypeError("The fake data matrix is not in sparse csr format. Please preprocess the data accordingly.")
     else:
         fake_cells = fake_cells.X
 

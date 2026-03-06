@@ -42,15 +42,13 @@ if __name__ == "__main__":
     def to_bipartite(ctx: click.Context) -> pd.DataFrame:
         """Filter the GRN into a bipartite graph based on importance of edges."""
         grn: GRNAccessor = ctx.obj
-        filtered_grn = grn.to_bipartite()
-        return filtered_grn
+        return grn.to_bipartite()
     
     @cli.command("to-undirected")
     @click.pass_context
     def to_undirected(ctx: click.Context) -> pd.DataFrame:
         """Convert the GRN into an undirected graph."""
         grn: GRNAccessor = ctx.obj
-        undirected_grn = grn.to_undirected()
-        return undirected_grn
+        return grn.to_undirected()
 
     cli()

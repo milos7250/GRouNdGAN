@@ -29,11 +29,11 @@ class SCDataset(Dataset["tuple[Tensor, Tensor]"]):
         # data = sc.read_h5ad(path, backed="r") # for larger-than-memory datasets, unsure what performance impact is
 
         if not isinstance(data.X, sparse.csr_matrix):
-            raise ValueError("The data matrix is not in sparse csr format. Please preprocess the data accordingly.")
+            raise TypeError("The data matrix is not in sparse csr format. Please preprocess the data accordingly.")
         else:
             self.cells = data.X
         if "cluster" not in data.obs:
-            raise ValueError("Cluster labels not found in the data. Please preprocess the data accordingly.")
+            raise KeyError("Cluster labels not found in the data. Please preprocess the data accordingly.")
         else:
             self.clusters = from_numpy(data.obs["cluster"].to_numpy(dtype=int))
 

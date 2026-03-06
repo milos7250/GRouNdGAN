@@ -7,15 +7,17 @@ from typing import TYPE_CHECKING
 from matplotlib import pyplot as plt
 from rich.console import Console
 from rich.logging import RichHandler
+from tqdm import TqdmExperimentalWarning
+from tqdm import tqdm as std_tqdm
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from logging import Logger, LogRecord
     from typing import Any
 
-    from tqdm import tqdm as std_tqdm
-
 FORMAT = "([green]%(name)s[/green]) %(message)s "
+
+__set_up = False
 
 
 def __get_handler(rank: str | None = None) -> RichHandler:
@@ -83,15 +85,18 @@ def setup_logger(name: str | None = None) -> "Logger":
     """
     logger = logging.getLogger(name)
 
-    logger.propagate = False
+    logger.propagate = True  # False messes up pytest caplog
     logger.setLevel(os.environ.get("GROUNDGAN_LOGLEVEL", "INFO"))
+    
+    if name is not None:
+        for handler in logger.handlers:
+            handler.close()
+            logger.removeHandler(handler)
 
-    for handler in logger.handlers:
-        handler.close()
-        logger.removeHandler(handler)
-
-    if os.environ.get("RANK", "0") == "0" or logger.level <= logging.DEBUG:
-        logger.addHandler(__get_handler(os.environ.get("RANK", None)))
+    if os.environ.get("RANK", "0") != "0" and logger.level > logging.DEBUG:
+        logger.propagate = False
+    
+    if logger.level <= logging.DEBUG:
         logger.debug(f"Logger {name} initialized.")
 
     return logger
@@ -149,34 +154,40 @@ def tqdm_logging_redirect(
                 if handler.emit.__name__ == "new_emit":
                     handler.emit = handler.old_emit  # type: ignore
 
+def setup_logging() -> None:
+    # Set up basic configuration for unmanaged loggers
+    logging.basicConfig(
+        level=os.environ.get("LOGLEVEL", "WARNING"),
+        force=True, # True messes up pytest caplog
+        format=FORMAT,
+        datefmt="[%X]",
+        handlers=[__get_handler(rank=os.environ.get("RANK", None))],
+    )
 
-# Set up basic configuration for unmanaged loggers
-logging.basicConfig(
-    level=os.environ.get("LOGLEVEL", "WARNING"),
-    force=True,
-    format=FORMAT,
-    datefmt="[%X]",
-    handlers=[__get_handler()],
-)
+if not __set_up:
+    setup_logging()
 
-# Set up specific loggers
-setup_logger("optuna")
+    # Suppress specific warnings
+    warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API.*", category=UserWarning, module="louvain")
+    warnings.filterwarnings("ignore", message=".*GPSampler is experimental.*")
+    warnings.filterwarnings("ignore", message=".*dynamo_pgo force disabled by torch.compiler.config.force_disable_caches*")
+    warnings.filterwarnings("ignore", message=".*Using an existing study with name .* instead of creating a new one.*")
+    warnings.filterwarnings("ignore", message=".*Trial [0-9]+ pruned.*")
+    warnings.filterwarnings("ignore", message=".*Rich is experimental/alpha.*", category=TqdmExperimentalWarning)
 
-# Suppress specific warnings
-warnings.filterwarnings("ignore", message=".*UserWarning: pkg_resources is deprecated as an API.*")
-warnings.filterwarnings("ignore", message=".*GPSampler is experimental.*")
-warnings.filterwarnings("ignore", message=".*dynamo_pgo force disabled by torch.compiler.config.force_disable_caches*")
-warnings.filterwarnings("ignore", message=".*Using an existing study with name .* instead of creating a new one.*")
-warnings.filterwarnings("ignore", message=".*Trial [0-9]+ pruned.*")
+    # Setup plotting variables
+    plt.rcParams.update({
+        "savefig.facecolor": (0.0, 0.0, 0.0, 0.0),
+        "axes.facecolor": (0.0, 0.0, 0.0, 0.0),
+        "legend.facecolor": (0.0, 0.0, 0.0, 0.1),
+        "legend.framealpha": 0.1,
+        "savefig.transparent": True,
+        "savefig.bbox": "tight",
+        "savefig.pad_inches": 0,
+        "savefig.dpi": 300,
+    })
 
-# Setup plotting variables
-plt.rcParams.update({
-    "savefig.facecolor": (0.0, 0.0, 0.0, 0.0),
-    "axes.facecolor": (0.0, 0.0, 0.0, 0.0),
-    "legend.facecolor": (0.0, 0.0, 0.0, 0.1),
-    "legend.framealpha": 0.1,
-    "savefig.transparent": True,
-    "savefig.bbox": "tight",
-    "savefig.pad_inches": 0,
-    "savefig.dpi": 300,
-})
+    # Set up specific loggers
+    setup_logger("optuna")
+    
+    __set_up = True

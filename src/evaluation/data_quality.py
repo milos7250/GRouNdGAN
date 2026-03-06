@@ -6,19 +6,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import sklearn.metrics as metrics
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from randomness import random_seed
 from scipy import sparse
+from sklearn import metrics
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
 from sklearn.model_selection import train_test_split
 from umap import UMAP
 
-import evaluation.MMD as MMD
+from evaluation import MMD
 from evaluation.lisi import compute_lisi
 from loggers import setup_logger
+from randomness import random_seed
 
 logger = setup_logger("evaluate")
 
@@ -65,12 +66,9 @@ def read_datasets(cfg: ConfigParser) -> tuple[sparse.csr_matrix, sparse.csr_matr
 
     return real_cells, fake_cells
 
-
-def plot_UMAP(
-    real: np.ndarray | sparse.csr_matrix, fake: np.ndarray | sparse.csr_matrix, output_dir: Path | None
-) -> tuple[np.ndarray, np.ndarray]:
+def get_UMAP_embeddings(real : np.ndarray | sparse.csr_matrix, fake: np.ndarray | sparse.csr_matrix) -> tuple[np.ndarray, np.ndarray]:
     """
-    Perform UMAP embedding on real and fake cell data and save a scatter plot.
+    Compute UMAP embeddings for real and fake cell data.
 
     Parameters
     ----------
@@ -78,9 +76,6 @@ def plot_UMAP(
         A NumPy array of real cell data with shape (n_real_cells, n_features).
     fake : np.ndarray | sparse.csr_matrix
         A NumPy array of fake/generated cell data with shape (n_fake_cells, n_features).
-    output_dir : Path | None
-        Path to the directory where the UMAP plot image will be saved.
-        If empty, the plot is not saved.
 
     Returns
     -------
@@ -93,9 +88,28 @@ def plot_UMAP(
     real_embedding = np.array(umap.transform(real))
     fake_embedding = np.array(umap.transform(fake))
 
-    if not output_dir:
-        return real_embedding, fake_embedding
+    return real_embedding, fake_embedding
 
+def plot_UMAP(
+    real_embedding: np.ndarray, fake_embedding: np.ndarray
+) -> tuple[Figure, Figure, Figure]:
+    """
+    Perform UMAP embedding on real and fake cell data and save a scatter plot.
+
+    Parameters
+    ----------
+    real : np.ndarray | sparse.csr_matrix
+        A NumPy array of real cell data with shape (n_real_cells, n_features).
+    fake : np.ndarray | sparse.csr_matrix
+        A NumPy array of fake/generated cell data with shape (n_fake_cells, n_features).
+    output_dir : Path | None
+
+    Returns
+    -------
+    tuple[Figure, Figure, Figure]
+        A tuple containing the matplotlib Figure objects for the scatter plot, hexbin plot, and histogram
+        difference plot, respectively.
+    """
     extent = np.array([
         [
             min(min(real_embedding[:, 0]), min(fake_embedding[:, 0])),
@@ -135,47 +149,41 @@ def plot_UMAP(
     plt.title("UMAP Projection of Real and Generated Cells")
     plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=8, bbox_to_anchor=(0, 0))
 
-    hexbin_fig, ax = plt.subplots(1, 2, figsize=(13, 5))
-    ax[0].hexbin(
-        real_embedding[:, 0], real_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds"
+    hexbin_fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+    ax1: Axes
+    ax2: Axes
+    
+    ax1.hexbin(
+        real_embedding[:, 0], real_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds" # pyright: ignore[reportArgumentType]
     )
-    ax[0].set_title("Real Cells")
-    plt.colorbar(ax[0].collections[0], ax=ax[0])
+    ax1.set_title("Real Cells")
+    plt.colorbar(ax1.collections[0], ax=ax1)
 
-    ax[1].hexbin(
-        fake_embedding[:, 0], fake_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds"
+    ax2.hexbin(
+        fake_embedding[:, 0], fake_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds" # pyright: ignore[reportArgumentType]
     )
-    ax[1].set_title("Generated Cells")
-    plt.colorbar(ax[1].collections[0], ax=ax[1])
+    ax2.set_title("Generated Cells")
+    plt.colorbar(ax2.collections[0], ax=ax2)
     plt.suptitle("UMAP Histograms")
 
-    H_real, xedges, yedges = np.histogram2d(real_embedding[:, 0], real_embedding[:, 1], bins=100, range=extent)
-    H_fake, _, _ = np.histogram2d(fake_embedding[:, 0], fake_embedding[:, 1], bins=100, range=extent)
-    H_diff = H_real - H_fake
+    H_real, xedges, yedges = np.histogram2d(real_embedding[:, 0], real_embedding[:, 1], bins=80, range=extent)
+    H_fake, _, _ = np.histogram2d(fake_embedding[:, 0], fake_embedding[:, 1], bins=80, range=extent)
+    H_real[H_real == 0] = np.nan
+    H_rel = H_real / (H_real + H_fake)  # relative density difference
     X, Y = np.meshgrid(xedges, yedges)
-    v_bound = np.max(np.abs(H_diff))
+    v_bound = np.nanmax(np.abs(H_rel - 0.5))
 
-    hist_diff_fig = plt.figure(figsize=(5, 5))
+    hist_rel_abun_fig = plt.figure(figsize=(5, 5))
+    plt.pcolormesh(X, Y, H_rel.T, shading="auto", cmap="coolwarm", vmin=0.5 - v_bound, vmax=0.5 + v_bound)
 
-    H_diff[H_diff == 0] = np.nan
-    plt.pcolormesh(X, Y, H_diff.T, shading="auto", cmap="coolwarm", vmin=-v_bound, vmax=v_bound)
-
-    plt.title("UMAP Histogram Difference (Real - Generated)")
+    plt.title("UMAP Histogram Relative Abundance of Real Cells")
 
     plt.subplots_adjust(left=0.15, right=0.85, top=0.85, bottom=0.15)  # shrink fig so cbar is visible
     # make new ax object for the cbar
-    cbar_ax = hist_diff_fig.add_axes((0.87, 0.15, 0.02, 0.7))  # x, y, width, height
+    cbar_ax = hist_rel_abun_fig.add_axes((0.87, 0.15, 0.02, 0.7))  # x, y, width, height
     plt.colorbar(cax=cbar_ax)
 
-    umap_path = output_dir / "UMAP"
-    umap_path.mkdir(parents=True, exist_ok=True)
-    scatter_fig.savefig(umap_path / "UMAP Scatter.jpg")
-    hexbin_fig.savefig(umap_path / "UMAP Histogram.jpg")
-    hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.jpg")
-
-    plt.close("all")
-
-    return real_embedding, fake_embedding
+    return scatter_fig, hexbin_fig, hist_rel_abun_fig
 
 
 def compute_distances(
@@ -262,7 +270,7 @@ def compute_RF_AUROC(
     # plot ROC
     plt.figure(figsize=(5, 5))
     plt.title("Receiver Operating Characteristic")
-    plt.plot(fpr, tpr, "b", label="AUC = %0.2f" % roc_auc)
+    plt.plot(fpr, tpr, "b", label=f"AUC = {roc_auc:0.2f}")
     plt.legend(loc="lower right")
     plt.plot([0, 1], [0, 1], "r--")
     plt.xlim([0, 1])
@@ -307,8 +315,15 @@ def evaluate(cfg: ConfigParser) -> None:
     real_cells_ctr2 = real_cells[half:, :]
 
     if cfg.getboolean("Evaluation", "plot umap") or cfg.getboolean("Evaluation", "compute miLISI"):
-        umap_real, umap_generated = plot_UMAP(real_cells, fake_cells, output_dir)
-
+        real_embedding, fake_embedding = get_UMAP_embeddings(real_cells, fake_cells)
+        scatter_fig, hexbin_fig, hist_diff_fig = plot_UMAP(real_embedding, fake_embedding)
+        
+        umap_path = output_dir / "UMAP"
+        umap_path.mkdir(parents=True, exist_ok=True)
+        scatter_fig.savefig(umap_path / "UMAP Scatter.jpg")
+        hexbin_fig.savefig(umap_path / "UMAP Histogram.jpg")
+        hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.jpg")
+        
     if cfg.getboolean("Evaluation", "compute euclidean distance") or cfg.getboolean(
         "Evaluation", "compute cosine distance"
     ):
@@ -351,9 +366,9 @@ def evaluate(cfg: ConfigParser) -> None:
         }
 
     if cfg.getboolean("Evaluation", "compute miLISI"):
-        umap_real_ctr1, umap_real_ctr2 = plot_UMAP(real_cells_ctr1, real_cells_ctr2, None)
+        umap_real_ctr1, umap_real_ctr2 = get_UMAP_embeddings(real_cells_ctr1, real_cells_ctr2)
 
-        umap_coords = np.vstack((umap_real, umap_generated))  # pyright: ignore[reportPossiblyUnboundVariable]
+        umap_coords = np.vstack((real_embedding, fake_embedding))  # pyright: ignore[reportPossiblyUnboundVariable]
         umap_coords_ctr = np.vstack((umap_real_ctr1, umap_real_ctr2))
 
         metadata = pd.DataFrame(

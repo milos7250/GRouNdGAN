@@ -11,9 +11,8 @@ from .gan import GANTrainer
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from optuna import Trial
     from torch import Tensor
-    
+
     from gans import CausalGAN
 
     from .dicts import CausalGANTrainingArgs, SummaryArgs
@@ -27,10 +26,9 @@ class CausalGANTrainer(GANTrainer):
         valid_file: "Path",
         training_args: "CausalGANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
-        trial: "Trial | None" = None,
+        output_dir: "Path"
     ) -> None:
-        super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir, trial)
+        super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
         self.training_args = training_args
 

@@ -7,7 +7,6 @@ from .conditional_gan import ConditionalGANTrainer
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from optuna import Trial
     from torch import Tensor
     
     from gans import ConditionalProjGAN
@@ -23,10 +22,9 @@ class ConditionalProjGANTrainer(ConditionalGANTrainer):
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
-        trial: "Trial | None" = None,
+        output_dir: "Path"
     ) -> None:
-        super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir, trial)
+        super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
 
     def _get_gradient(self, real: "Tensor", fake: "Tensor", real_labels: "Tensor") -> "Tensor":

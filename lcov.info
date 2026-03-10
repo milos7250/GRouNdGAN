@@ -1,3 +1,27 @@
+SF:get_labels_and_ratios.py
+DA:2,0
+DA:3,0
+DA:6,0
+DA:11,0
+DA:13,0
+DA:14,0
+DA:16,0
+DA:18,0
+DA:20,0
+DA:21,0
+DA:22,0
+DA:23,0
+LF:12
+LH:0
+FN:6,18,conditional_labels_and_ratios
+FNDA:0,conditional_labels_and_ratios
+FNF:1
+FNH:0
+BRDA:20,0,jump to line 21,-
+BRDA:20,0,exit the module,-
+BRF:2
+BRH:0
+end_of_record
 SF:src/__init__.py
 DA:1,0
 DA:2,0
@@ -7,34 +31,71 @@ LF:4
 LH:0
 end_of_record
 SF:src/custom_parser.py
-DA:1,0
-DA:2,0
-DA:3,0
-DA:6,0
-DA:14,0
-DA:23,0
-DA:32,0
-DA:38,0
-DA:39,0
-DA:40,0
-DA:42,0
-DA:44,0
-DA:52,0
-DA:60,0
-DA:68,0
-DA:76,0
-DA:84,0
-DA:92,0
-DA:100,0
-DA:108,0
-LF:20
-LH:0
-FN:6,20,get_configparser
-FNDA:0,get_configparser
-FN:23,108,get_argparser
-FNDA:0,get_argparser
-FNF:2
-FNH:0
+DA:1,1
+DA:2,1
+DA:3,1
+DA:4,1
+DA:5,1
+DA:6,1
+DA:8,1
+DA:11,1
+DA:14,1
+DA:15,1
+DA:16,1
+DA:17,1
+DA:18,1
+DA:19,1
+DA:20,1
+DA:21,1
+DA:22,1
+DA:23,1
+DA:24,1
+DA:25,1
+DA:26,1
+DA:27,1
+DA:35,1
+DA:36,1
+DA:37,1
+DA:40,1
+DA:48,1
+DA:57,1
+DA:63,0
+DA:105,0
+DA:106,0
+DA:107,1
+DA:110,1
+LF:33
+LH:30
+FN:14,27,MyConfigParser.save_interpolated
+FNDA:1,MyConfigParser.save_interpolated
+FN:30,30,MyConfigParser.getpath
+FNDA:0,MyConfigParser.getpath
+FN:32,32,MyConfigParser.getpath
+FNDA:0,MyConfigParser.getpath
+FN:34,34,MyConfigParser.getpath
+FNDA:0,MyConfigParser.getpath
+FN:35,37,MyConfigParser.getpath
+FNDA:1,MyConfigParser.getpath
+FN:40,54,get_configparser
+FNDA:1,get_configparser
+FN:57,107,click_options
+FNDA:1,click_options
+FNF:7
+FNH:4
+BRDA:17,0,jump to line 18,1
+BRDA:17,0,jump to line 23,1
+BRDA:18,0,jump to line 17,1
+BRDA:18,0,jump to line 19,1
+BRDA:19,0,jump to line 20,1
+BRDA:19,0,jump to line 21,1
+BRDA:21,0,jump to line 18,1
+BRDA:21,0,jump to line 22,1
+BRDA:23,0,jump to line 24,1
+BRDA:23,0,jump to line 25,1
+BRDA:105,0,jump to line 106,-
+BRDA:105,0,jump to line 107,-
+BRF:12
+BRH:10
 end_of_record
 SF:src/evaluation/MMD.py
 DA:1,1
@@ -569,235 +630,146 @@ BRF:24
 BRH:0
 end_of_record
 SF:src/factory.py
-DA:1,0
-DA:2,0
-DA:3,0
-DA:4,0
-DA:5,0
-DA:6,0
-DA:7,0
-DA:8,0
-DA:10,0
-DA:11,0
-DA:12,0
-DA:13,0
-DA:14,0
-DA:15,0
-DA:16,0
-DA:18,0
-DA:19,0
-DA:20,0
-DA:21,0
-DA:22,0
-DA:23,0
-DA:35,0
-DA:51,0
-DA:54,0
-DA:80,0
-DA:81,0
-DA:82,0
-DA:83,0
-DA:84,0
-DA:85,0
-DA:86,0
-DA:87,0
-DA:88,0
-DA:91,0
-DA:117,0
-DA:118,0
-DA:121,0
-DA:136,0
-DA:137,0
-DA:138,0
-DA:139,0
-DA:142,0
-DA:144,0
+DA:1,1
+DA:2,1
+DA:3,1
+DA:20,1
+DA:36,1
+DA:39,1
+DA:45,1
+DA:54,1
+DA:56,1
+DA:60,1
+DA:62,1
+DA:74,1
+DA:78,1
+DA:80,1
+DA:87,1
+DA:88,1
+DA:98,1
+DA:99,1
+DA:110,1
+DA:111,1
+DA:112,1
+DA:114,1
+DA:124,1
+DA:125,1
+DA:127,1
+DA:129,1
+DA:138,1
+DA:145,1
+DA:146,1
 DA:147,0
+DA:149,0
+DA:161,1
 DA:162,0
-DA:163,0
 DA:164,0
-DA:166,0
-DA:167,0
-DA:168,0
-DA:169,0
-DA:170,0
-DA:171,0
-DA:174,0
-DA:176,0
-DA:179,0
-DA:185,0
-DA:194,0
-DA:196,0
-DA:197,0
-DA:206,0
-DA:208,0
-DA:209,0
-DA:218,0
-DA:220,0
-DA:221,0
-DA:230,0
-DA:233,0
-DA:234,0
-DA:235,0
-DA:245,0
-DA:246,0
-DA:247,0
-DA:269,0
-DA:270,0
-DA:271,0
-DA:274,0
-DA:275,0
-DA:276,0
-DA:279,0
-DA:297,0
-DA:353,0
-DA:354,0
-DA:376,0
-DA:379,0
-DA:382,0
-DA:384,0
-DA:392,0
-DA:395,0
-DA:396,0
-DA:397,0
-DA:409,0
-DA:410,0
-DA:411,0
-DA:432,0
-DA:433,0
-DA:436,0
-DA:437,0
-DA:438,0
-DA:450,0
-DA:451,0
-DA:452,0
-DA:473,0
-DA:474,0
-DA:477,0
-DA:478,0
-DA:479,0
-DA:489,0
-DA:490,0
-DA:491,0
-DA:493,0
-DA:517,0
-DA:518,0
-DA:519,0
-DA:547,0
-DA:548,0
-DA:550,0
-DA:556,0
-DA:586,0
-DA:587,0
-DA:588,0
-DA:591,0
-DA:592,0
-DA:593,0
-DA:596,0
-DA:597,0
-DA:600,0
-DA:644,0
-DA:718,0
-DA:719,0
-DA:741,0
-DA:744,0
-DA:747,0
-DA:749,0
-DA:760,0
-DA:763,0
-DA:783,0
-DA:784,0
-DA:791,0
-DA:792,0
-DA:793,0
-LF:141
-LH:0
-FN:35,51,parse_list
-FNDA:0,parse_list
-FN:54,88,suggest_from_tuple
-FNDA:0,suggest_from_tuple
-FN:91,118,suggest_list_from_tuples
-FNDA:0,suggest_list_from_tuples
-FN:121,144,max_trial_callback
-FNDA:0,max_trial_callback
-FN:136,142,max_trial_callback.max_trial_callback
-FNDA:0,max_trial_callback.max_trial_callback
-FN:147,176,manual_off_switch_callback
-FNDA:0,manual_off_switch_callback
-FN:166,174,manual_off_switch_callback.manual_off_switch_callback
-FNDA:0,manual_off_switch_callback.manual_off_switch_callback
-FN:185,194,IGANFactory.__init__
-FNDA:0,IGANFactory.__init__
-FN:197,206,IGANFactory.get_gan
+DA:166,1
+DA:175,1
+DA:182,1
+DA:183,1
+DA:184,1
+DA:186,1
+DA:198,1
+DA:199,1
+DA:201,1
+DA:203,1
+DA:212,1
+DA:219,1
+DA:220,1
+DA:221,1
+DA:223,1
+DA:224,1
+DA:226,1
+DA:227,1
+DA:234,1
+DA:251,1
+DA:252,1
+DA:254,1
+DA:255,1
+DA:260,1
+DA:262,1
+DA:263,1
+DA:264,1
+DA:266,1
+DA:276,1
+DA:277,1
+DA:279,1
+DA:291,1
+DA:292,1
+DA:294,1
+DA:301,1
+DA:302,1
+DA:304,1
+DA:306,1
+DA:315,1
+DA:321,1
+DA:322,1
+DA:324,1
+DA:326,1
+DA:335,1
+DA:341,1
+DA:342,1
+DA:344,1
+DA:346,1
+DA:353,1
+DA:373,1
+DA:374,1
+DA:381,1
+DA:382,1
+DA:383,0
+LF:88
+LH:83
+FN:20,36,parse_list
+FNDA:1,parse_list
+FN:45,54,IGANFactory.__init__
+FNDA:1,IGANFactory.__init__
+FN:56,72,IGANFactory.get_training_args
+FNDA:1,IGANFactory.get_training_args
+FN:74,85,IGANFactory.get_summary_args
+FNDA:1,IGANFactory.get_summary_args
+FN:88,96,IGANFactory.get_gan
 FNDA:0,IGANFactory.get_gan
-FN:209,218,IGANFactory.get_trainer
+FN:99,107,IGANFactory.get_trainer
 FNDA:0,IGANFactory.get_trainer
-FN:221,230,IGANFactory.run_optuna_study
-FNDA:0,IGANFactory.run_optuna_study
-FN:234,243,GANFactory.get_gan
-FNDA:0,GANFactory.get_gan
-FN:245,267,GANFactory.get_trainer
-FNDA:0,GANFactory.get_trainer
-FN:269,392,GANFactory.run_optuna_study
-FNDA:0,GANFactory.run_optuna_study
-FN:270,351,GANFactory.run_optuna_study.objective
-FNDA:0,GANFactory.run_optuna_study.objective
-FN:396,407,ConditionalCatGANFactory.get_gan
+FN:111,122,GANFactory.get_gan
+FNDA:1,GANFactory.get_gan
+FN:124,142,GANFactory.get_trainer
+FNDA:1,GANFactory.get_trainer
+FN:146,159,ConditionalCatGANFactory.get_gan
 FNDA:0,ConditionalCatGANFactory.get_gan
-FN:409,430,ConditionalCatGANFactory.get_trainer
-FNDA:0,ConditionalCatGANFactory.get_trainer
-FN:432,433,ConditionalCatGANFactory.run_optuna_study
-FNDA:0,ConditionalCatGANFactory.run_optuna_study
-FN:437,448,ConditionalProjGANFactory.get_gan
-FNDA:0,ConditionalProjGANFactory.get_gan
-FN:450,471,ConditionalProjGANFactory.get_trainer
-FNDA:0,ConditionalProjGANFactory.get_trainer
-FN:473,474,ConditionalProjGANFactory.run_optuna_study
-FNDA:0,ConditionalProjGANFactory.run_optuna_study
-FN:478,487,CausalGANFactory.get_cc
-FNDA:0,CausalGANFactory.get_cc
-FN:489,515,CausalGANFactory.get_gan
-FNDA:0,CausalGANFactory.get_gan
-FN:517,584,CausalGANFactory.get_trainer
-FNDA:0,CausalGANFactory.get_trainer
-FN:518,545,CausalGANFactory.get_trainer.gan_train
-FNDA:0,CausalGANFactory.get_trainer.gan_train
-FN:586,760,CausalGANFactory.run_optuna_study
-FNDA:0,CausalGANFactory.run_optuna_study
-FN:587,716,CausalGANFactory.run_optuna_study.objective
-FNDA:0,CausalGANFactory.run_optuna_study.objective
-FN:763,793,get_factory
-FNDA:0,get_factory
-FNF:28
-FNH:0
-BRDA:81,0,jump to line 82,-
-BRDA:81,0,jump to line 83,-
-BRDA:84,0,jump to line 85,-
-BRDA:84,0,jump to line 86,-
-BRDA:86,0,jump to line 87,-
-BRDA:86,0,jump to line 88,-
-BRDA:138,0,jump to line 139,-
-BRDA:138,0,return from function 'max_trial_callback',-
-BRDA:162,0,jump to line 163,-
-BRDA:162,0,jump to line 166,-
-BRDA:167,0,jump to line 168,-
-BRDA:167,0,return from function 'manual_off_switch_callback',-
-BRDA:170,0,jump to line 171,-
-BRDA:170,0,return from function 'manual_off_switch_callback',-
-BRDA:271,0,jump to line 274,-
-BRDA:271,0,jump to line 275,-
-BRDA:376,0,jump to line 379,-
-BRDA:376,0,jump to line 384,-
-BRDA:547,0,jump to line 548,-
-BRDA:547,0,jump to line 550,-
-BRDA:588,0,jump to line 591,-
-BRDA:588,0,jump to line 592,-
-BRDA:741,0,jump to line 744,-
-BRDA:741,0,jump to line 749,-
-BRDA:791,0,jump to line 792,-
-BRDA:791,0,jump to line 793,-
-BRF:26
-BRH:0
+FN:161,179,ConditionalCatGANFactory.get_trainer
+FNDA:1,ConditionalCatGANFactory.get_trainer
+FN:183,196,ConditionalProjGANFactory.get_gan
+FNDA:1,ConditionalProjGANFactory.get_gan
+FN:198,216,ConditionalProjGANFactory.get_trainer
+FNDA:1,ConditionalProjGANFactory.get_trainer
+FN:220,249,CausalGANFactory.get_gan
+FNDA:1,CausalGANFactory.get_gan
+FN:251,260,CausalGANFactory.get_training_args
+FNDA:1,CausalGANFactory.get_training_args
+FN:262,350,CausalGANFactory.get_trainer
+FNDA:1,CausalGANFactory.get_trainer
+FN:263,274,CausalGANFactory.get_trainer.get_cc
+FNDA:1,CausalGANFactory.get_trainer.get_cc
+FN:276,289,CausalGANFactory.get_trainer.get_cc_training_args
+FNDA:1,CausalGANFactory.get_trainer.get_cc_training_args
+FN:291,299,CausalGANFactory.get_trainer.get_cc_summary_args
+FNDA:1,CausalGANFactory.get_trainer.get_cc_summary_args
+FN:301,319,CausalGANFactory.get_trainer.get_cc_trainer
+FNDA:1,CausalGANFactory.get_trainer.get_cc_trainer
+FN:321,339,CausalGANFactory.get_trainer._get_trainer
+FNDA:1,CausalGANFactory.get_trainer._get_trainer
+FN:353,383,get_factory
+FNDA:1,get_factory
+FNF:21
+FNH:18
+BRDA:341,0,jump to line 342,1
+BRDA:341,0,jump to line 344,1
+BRDA:381,0,jump to line 382,1
+BRDA:381,0,jump to line 383,0
+BRF:4
+BRH:3
 end_of_record
 SF:src/gans/__init__.py
 DA:1,1
@@ -906,7 +878,7 @@ DA:62,1
 DA:63,1
 DA:65,1
 DA:92,1
-DA:93,0
+DA:93,1
 DA:95,1
 DA:96,1
 DA:97,1
@@ -925,7 +897,7 @@ DA:110,1
 DA:111,1
 DA:113,1
 LF:41
-LH:37
+LH:38
 FN:19,27,ConditionalCatGAN._build_model
 FNDA:1,ConditionalCatGAN._build_model
 FN:29,46,ConditionalCatGAN.cat_one_hot_labels
@@ -936,14 +908,14 @@ FN:65,116,ConditionalCatGAN.generate_cells
 FNDA:1,ConditionalCatGAN.generate_cells
 FNF:4
 FNH:4
-BRDA:92,0,jump to line 93,0
+BRDA:92,0,jump to line 93,1
 BRDA:92,0,jump to line 95,1
 BRDA:101,0,jump to line 102,1
 BRDA:101,0,jump to line 111,1
 BRDA:103,0,jump to line 104,1
 BRDA:103,0,jump to line 106,0
 BRF:6
-BRH:4
+BRH:5
 end_of_record
 SF:src/gans/conditional_gan_proj.py
 DA:1,1
@@ -966,7 +938,7 @@ DA:45,1
 DA:46,1
 DA:48,1
 DA:75,1
-DA:76,0
+DA:76,1
 DA:78,1
 DA:79,1
 DA:80,1
@@ -985,7 +957,7 @@ DA:93,1
 DA:94,1
 DA:96,1
 LF:38
-LH:34
+LH:35
 FN:19,29,ConditionalProjGAN._build_model
 FNDA:1,ConditionalProjGAN._build_model
 FN:31,46,ConditionalProjGAN._generate_gen_and_crit_data
@@ -994,14 +966,14 @@ FN:48,99,ConditionalProjGAN.generate_cells
 FNDA:1,ConditionalProjGAN.generate_cells
 FNF:3
 FNH:3
-BRDA:75,0,jump to line 76,0
+BRDA:75,0,jump to line 76,1
 BRDA:75,0,jump to line 78,1
 BRDA:84,0,jump to line 85,1
 BRDA:84,0,jump to line 94,1
 BRDA:86,0,jump to line 87,1
 BRDA:86,0,jump to line 89,0
 BRF:6
-BRH:4
+BRH:5
 end_of_record
 SF:src/gans/gan.py
 DA:1,1
@@ -1015,99 +987,317 @@ DA:9,1
 DA:10,1
 DA:11,1
 DA:12,1
+DA:13,1
 DA:14,1
-DA:15,1
 DA:16,1
-DA:24,1
-DA:25,1
+DA:17,1
+DA:18,1
+DA:19,1
 DA:27,1
-DA:58,1
-DA:60,1
+DA:28,1
+DA:30,1
 DA:61,1
-DA:62,1
 DA:63,1
 DA:64,1
 DA:65,1
 DA:66,1
+DA:67,1
 DA:68,1
-DA:70,1
+DA:69,1
 DA:71,1
-DA:72,1
 DA:73,1
 DA:74,1
+DA:75,1
 DA:76,1
-DA:78,1
+DA:77,1
 DA:79,1
 DA:81,1
 DA:82,1
-DA:100,1
-DA:102,1
-DA:128,1
-DA:129,1
+DA:84,1
+DA:85,1
+DA:103,1
+DA:105,1
+DA:131,1
 DA:132,1
-DA:134,1
 DA:135,1
-DA:136,1
 DA:137,1
 DA:138,1
 DA:139,1
 DA:140,1
 DA:141,1
+DA:142,1
 DA:143,1
-DA:145,1
-DA:154,1
-DA:155,1
-DA:163,1
-DA:173,0
-DA:175,0
-DA:176,0
-DA:178,1
-DA:191,1
-DA:192,1
-DA:193,1
-DA:194,1
+DA:144,1
+DA:146,1
+DA:166,1
 DA:196,1
-DA:197,1
+DA:200,0
+DA:202,0
+DA:203,0
+DA:204,0
+DA:207,1
+DA:208,1
+DA:211,0
+DA:212,1
+DA:213,1
+DA:214,1
+DA:215,1
+DA:217,0
+DA:218,1
+DA:219,1
+DA:221,1
+DA:223,1
+DA:232,1
+DA:233,1
+DA:241,1
+DA:251,0
+DA:253,0
+DA:254,0
+DA:256,1
+DA:269,1
+DA:270,1
+DA:271,1
+DA:272,1
+DA:274,1
+DA:275,1
+DA:284,1
+DA:285,1
+DA:286,1
+DA:288,1
+DA:290,1
+DA:291,1
+DA:292,1
+DA:296,1
+DA:299,1
+DA:300,1
+DA:301,1
+DA:302,1
+DA:304,1
+DA:305,1
+LF:98
+LH:89
+FN:30,77,GAN.__init__
+FNDA:1,GAN.__init__
+FN:79,82,GAN._build_model
+FNDA:1,GAN._build_model
+FN:85,103,GAN.generate_noise
+FNDA:1,GAN.generate_noise
+FN:105,146,GAN.generate_cells
+FNDA:1,GAN.generate_cells
+FN:149,149,GAN.generate_h5ad
+FNDA:0,GAN.generate_h5ad
+FN:151,151,GAN.generate_h5ad
+FNDA:0,GAN.generate_h5ad
+FN:153,155,GAN.generate_h5ad
+FNDA:0,GAN.generate_h5ad
+FN:157,157,GAN.generate_h5ad
+FNDA:0,GAN.generate_h5ad
+FN:159,161,GAN.generate_h5ad
+FNDA:0,GAN.generate_h5ad
+FN:163,165,GAN.generate_h5ad
+FNDA:0,GAN.generate_h5ad
+FN:166,221,GAN.generate_h5ad
+FNDA:1,GAN.generate_h5ad
+FN:223,239,GAN.save
+FNDA:1,GAN.save
+FN:241,254,GAN.load
+FNDA:0,GAN.load
+FN:256,272,GAN._generate_gen_and_crit_data
+FNDA:1,GAN._generate_gen_and_crit_data
+FN:275,305,GAN.log_tensorboard_graph
+FNDA:1,GAN.log_tensorboard_graph
+FNF:15
+FNH:8
+BRDA:131,0,jump to line 132,0
+BRDA:131,0,jump to line 135,1
+BRDA:141,0,jump to line 142,1
+BRDA:141,0,jump to line 144,1
+BRDA:207,0,jump to line 208,1
+BRDA:207,0,jump to line 211,0
+BRDA:211,0,jump to line 212,-
+BRDA:211,0,jump to line 213,-
+BRDA:213,0,jump to line 214,1
+BRDA:213,0,jump to line 217,0
+BRDA:217,0,jump to line 218,-
+BRDA:217,0,jump to line 221,-
+BRF:12
+BRH:5
+end_of_record
+SF:src/hyperparameter_optimization.py
+DA:1,1
+DA:2,1
+DA:3,1
+DA:4,1
+DA:6,1
+DA:7,1
+DA:8,1
+DA:9,1
+DA:10,1
+DA:11,1
+DA:13,1
+DA:14,1
+DA:15,1
+DA:30,1
+DA:32,1
+DA:58,1
+DA:59,1
+DA:60,0
+DA:61,1
+DA:62,1
+DA:63,0
+DA:64,1
+DA:65,1
+DA:66,1
+DA:69,1
+DA:95,1
+DA:96,1
+DA:99,1
+DA:114,1
+DA:115,1
+DA:116,1
+DA:117,1
+DA:120,1
+DA:122,1
+DA:125,1
+DA:140,1
+DA:141,1
+DA:142,1
+DA:144,1
+DA:145,1
+DA:146,1
+DA:147,1
+DA:148,1
+DA:149,0
+DA:152,0
+DA:154,1
+DA:157,1
+DA:158,1
+DA:159,1
+DA:161,1
+DA:162,1
+DA:163,1
+DA:164,1
+DA:166,1
+DA:169,1
+DA:171,1
+DA:172,1
+DA:173,1
+DA:174,1
+DA:175,1
+DA:176,1
+DA:178,1
+DA:179,1
+DA:187,1
+DA:190,1
+DA:191,1
+DA:199,1
+DA:201,1
 DA:206,1
 DA:207,1
 DA:208,1
 DA:210,1
+DA:211,1
 DA:212,1
-DA:213,1
-DA:214,1
-DA:218,1
-DA:221,1
+DA:215,1
+DA:216,1
+DA:217,1
+DA:219,1
+DA:220,1
 DA:222,1
 DA:223,1
 DA:224,1
-DA:226,1
-DA:227,1
-LF:78
-LH:75
-FN:27,74,GAN.__init__
-FNDA:1,GAN.__init__
-FN:76,79,GAN._build_model
-FNDA:1,GAN._build_model
-FN:82,100,GAN.generate_noise
-FNDA:1,GAN.generate_noise
-FN:102,143,GAN.generate_cells
-FNDA:1,GAN.generate_cells
-FN:145,161,GAN.save
-FNDA:1,GAN.save
-FN:163,176,GAN.load
-FNDA:0,GAN.load
-FN:178,194,GAN._generate_gen_and_crit_data
-FNDA:1,GAN._generate_gen_and_crit_data
-FN:197,227,GAN.log_tensorboard_graph
-FNDA:1,GAN.log_tensorboard_graph
-FNF:8
-FNH:7
-BRDA:128,0,jump to line 129,1
-BRDA:128,0,jump to line 132,1
-BRDA:138,0,jump to line 139,1
-BRDA:138,0,jump to line 141,1
-BRF:4
-BRH:4
+DA:242,1
+DA:245,0
+DA:248,0
+DA:250,1
+LF:86
+LH:80
+FN:32,66,suggest_from_tuple
+FNDA:1,suggest_from_tuple
+FN:69,96,suggest_list_from_tuples
+FNDA:1,suggest_list_from_tuples
+FN:99,122,max_trial_callback
+FNDA:1,max_trial_callback
+FN:114,120,max_trial_callback.max_trial_callback
+FNDA:1,max_trial_callback.max_trial_callback
+FN:125,154,manual_off_switch_callback
+FNDA:1,manual_off_switch_callback
+FN:144,152,manual_off_switch_callback.manual_off_switch_callback
+FNDA:1,manual_off_switch_callback.manual_off_switch_callback
+FN:157,208,resolve_hyperparameters
+FNDA:1,resolve_hyperparameters
+FN:158,159,resolve_hyperparameters.is_log
+FNDA:1,resolve_hyperparameters.is_log
+FN:161,164,resolve_hyperparameters.get_step
+FNDA:1,resolve_hyperparameters.get_step
+FN:166,169,resolve_hyperparameters.float_or_int
+FNDA:1,resolve_hyperparameters.float_or_int
+FN:210,259,optuna_trainer
+FNDA:1,optuna_trainer
+FN:211,220,optuna_trainer.objective
+FNDA:1,optuna_trainer.objective
+FNF:12
+FNH:12
+BRDA:59,0,jump to line 60,0
+BRDA:59,0,jump to line 61,1
+BRDA:62,0,jump to line 63,0
+BRDA:62,0,jump to line 64,1
+BRDA:64,0,jump to line 65,1
+BRDA:64,0,jump to line 66,1
+BRDA:116,0,jump to line 117,1
+BRDA:116,0,return from function 'max_trial_callback',1
+BRDA:140,0,jump to line 141,1
+BRDA:140,0,jump to line 144,0
+BRDA:145,0,jump to line 146,1
+BRDA:145,0,return from function 'manual_off_switch_callback',0
+BRDA:148,0,jump to line 149,0
+BRDA:148,0,return from function 'manual_off_switch_callback',1
+BRDA:162,0,jump to line 163,1
+BRDA:162,0,jump to line 164,1
+BRDA:172,0,jump to line 173,1
+BRDA:172,0,jump to line 201,1
+BRDA:173,0,jump to line 172,1
+BRDA:173,0,jump to line 174,1
+BRDA:174,0,jump to line 172,1
+BRDA:174,0,jump to line 175,1
+BRDA:175,0,jump to line 174,1
+BRDA:175,0,jump to line 176,1
+BRDA:176,0,jump to line 178,1
+BRDA:176,0,jump to line 190,1
+BRDA:212,0,jump to line 215,1
+BRDA:212,0,jump to line 216,0
+BRDA:242,0,jump to line 245,0
+BRDA:242,0,jump to line 250,1
+BRF:30
+BRH:23
+end_of_record
+SF:src/init_ddp.py
+DA:1,1
+DA:2,1
+DA:3,1
+DA:5,1
+DA:13,1
+DA:14,1
+DA:15,0
+DA:16,0
+DA:17,0
+DA:18,0
+DA:19,0
+DA:22,0
+DA:24,0
+DA:27,0
+DA:28,0
+DA:29,0
+DA:31,0
+DA:32,0
+DA:34,0
+DA:35,0
+LF:20
+LH:6
+FN:14,35,with_ddp
+FNDA:0,with_ddp
+FNF:1
+FNH:0
 end_of_record
 SF:src/layers/__init__.py
 end_of_record
@@ -1297,248 +1487,204 @@ DA:72,1
 DA:86,1
 DA:88,1
 DA:89,1
+DA:91,1
+DA:92,1
+DA:93,1
+DA:94,1
+DA:96,1
+DA:97,0
 DA:99,1
 DA:100,0
-DA:101,0
-DA:103,1
-DA:104,0
+DA:102,1
+DA:105,1
 DA:106,1
-DA:107,0
-DA:109,1
-DA:112,1
-DA:113,1
-DA:137,1
-DA:138,0
-DA:139,1
-DA:140,0
+DA:130,1
+DA:131,0
+DA:132,1
+DA:133,0
+DA:134,1
+DA:135,1
+DA:136,1
+DA:140,1
 DA:141,1
-DA:142,1
-DA:143,1
-DA:147,1
-DA:148,1
+DA:142,0
+DA:144,0
+DA:145,0
+DA:146,0
+DA:148,0
 DA:149,0
-DA:151,0
-DA:152,0
-DA:153,0
+DA:150,1
+DA:152,1
+DA:153,1
+DA:154,0
 DA:155,0
-DA:156,0
 DA:157,1
 DA:159,1
-DA:160,1
-DA:161,0
-DA:162,0
-DA:164,1
-DA:166,1
+DA:167,1
+DA:168,1
+DA:171,1
+DA:172,1
+DA:173,1
 DA:174,1
 DA:175,1
-DA:178,1
+DA:176,1
 DA:179,1
-DA:180,1
-DA:181,1
-DA:182,1
-DA:183,1
-DA:186,1
-DA:198,1
-DA:200,1
-LF:70
-LH:51
+DA:191,1
+DA:193,1
+LF:71
+LH:54
 FN:23,49,__get_handler
 FNDA:1,__get_handler
 FN:53,69,with_log_level
 FNDA:0,with_log_level
-FN:72,109,setup_logger
+FN:72,102,setup_logger
 FNDA:1,setup_logger
-FN:113,162,tqdm_logging_redirect
+FN:106,155,tqdm_logging_redirect
 FNDA:1,tqdm_logging_redirect
-FN:151,153,tqdm_logging_redirect.new_emit
+FN:144,146,tqdm_logging_redirect.new_emit
 FNDA:0,tqdm_logging_redirect.new_emit
-FN:164,172,setup_logging
+FN:157,165,setup_logging
 FNDA:1,setup_logging
 FNF:6
 FNH:4
+BRDA:91,0,jump to line 92,1
+BRDA:91,0,jump to line 96,0
+BRDA:92,0,jump to line 93,1
+BRDA:92,0,jump to line 96,1
+BRDA:96,0,jump to line 97,0
+BRDA:96,0,jump to line 99,1
 BRDA:99,0,jump to line 100,0
-BRDA:99,0,jump to line 103,1
-BRDA:103,0,jump to line 104,0
-BRDA:103,0,jump to line 106,1
-BRDA:106,0,jump to line 107,0
-BRDA:106,0,jump to line 109,1
-BRDA:137,0,jump to line 138,0
-BRDA:137,0,jump to line 139,1
-BRDA:139,0,jump to line 140,0
-BRDA:139,0,jump to line 141,1
-BRDA:147,0,jump to line 148,1
-BRDA:147,0,jump to line 157,1
-BRDA:148,0,jump to line 147,1
-BRDA:148,0,jump to line 149,0
-BRDA:159,0,jump to line 160,1
-BRDA:159,0,return from function 'tqdm_logging_redirect',1
-BRDA:160,0,jump to line 159,1
-BRDA:160,0,jump to line 161,0
-BRDA:161,0,jump to line 160,-
-BRDA:161,0,jump to line 162,-
-BRDA:174,0,jump to line 175,1
-BRDA:174,0,exit the module,0
-BRF:22
-BRH:12
+BRDA:99,0,jump to line 102,1
+BRDA:130,0,jump to line 131,0
+BRDA:130,0,jump to line 132,1
+BRDA:132,0,jump to line 133,0
+BRDA:132,0,jump to line 134,1
+BRDA:140,0,jump to line 141,1
+BRDA:140,0,jump to line 150,1
+BRDA:141,0,jump to line 140,1
+BRDA:141,0,jump to line 142,0
+BRDA:152,0,jump to line 153,1
+BRDA:152,0,return from function 'tqdm_logging_redirect',1
+BRDA:153,0,jump to line 152,1
+BRDA:153,0,jump to line 154,0
+BRDA:154,0,jump to line 153,-
+BRDA:154,0,jump to line 155,-
+BRDA:167,0,jump to line 168,1
+BRDA:167,0,exit the module,0
+BRF:24
+BRH:14
 end_of_record
 SF:src/main.py
-DA:2,0
-DA:3,0
-DA:4,0
-DA:6,0
-DA:7,0
-DA:8,0
-DA:11,0
-DA:14,0
-DA:19,0
-DA:20,0
-DA:22,0
-DA:23,0
-DA:26,0
-DA:27,0
-DA:29,0
-DA:30,0
-DA:31,0
-DA:32,0
-DA:34,0
-DA:35,0
-DA:36,0
-DA:37,0
-DA:39,0
-DA:40,0
-DA:42,0
-DA:44,0
-DA:45,0
-DA:47,0
-DA:49,0
-DA:50,0
-DA:51,0
-DA:53,0
-DA:55,0
-DA:57,0
-DA:59,0
-DA:60,0
-DA:61,0
-DA:62,0
-DA:63,0
-DA:66,0
+DA:2,1
+DA:3,1
+DA:5,1
+DA:7,1
+DA:8,1
+DA:9,1
+DA:17,1
+DA:35,1
+DA:50,1
+DA:51,1
+DA:54,1
+DA:55,1
+DA:57,1
+DA:59,1
+DA:61,1
+DA:62,1
+DA:63,1
+DA:64,1
+DA:66,1
 DA:67,0
 DA:69,0
-DA:70,0
-DA:71,0
+DA:71,1
 DA:72,0
-DA:73,0
 DA:74,0
-DA:75,0
-DA:76,0
-DA:77,0
-DA:78,0
-DA:79,0
-DA:83,0
+DA:76,1
+DA:77,1
+DA:78,1
+DA:80,1
+DA:82,1
+DA:84,1
 DA:85,0
 DA:86,0
-DA:87,0
-DA:89,0
-DA:90,0
-DA:91,0
-DA:93,0
-DA:95,0
-DA:97,0
-DA:99,0
-DA:100,0
-DA:101,0
+DA:88,1
+DA:90,1
+DA:91,1
+DA:93,1
+DA:94,1
+DA:95,1
+DA:97,1
+DA:99,1
+DA:101,1
 DA:102,0
-DA:103,0
-DA:107,0
-DA:108,0
-DA:110,0
-DA:111,0
-DA:112,0
-DA:113,0
-DA:114,0
-DA:115,0
+DA:104,0
+DA:106,0
+DA:109,0
+DA:110,1
 DA:116,0
-DA:120,0
-DA:122,0
+DA:117,0
 DA:123,0
-DA:127,0
+DA:125,1
+DA:126,0
 DA:128,0
-DA:129,0
+DA:130,1
 DA:131,0
-DA:132,0
-DA:134,0
-DA:135,0
+DA:133,0
+DA:135,1
 DA:136,0
-DA:138,0
-DA:140,0
-DA:142,0
-DA:143,0
-DA:144,0
+DA:137,0
+DA:139,0
+DA:141,1
+DA:144,1
+DA:145,0
+DA:147,1
 DA:148,0
-DA:150,0
-DA:151,0
-DA:152,0
-DA:155,0
-DA:156,0
-DA:159,0
+DA:149,1
 DA:160,0
-DA:161,0
-DA:163,0
-DA:164,0
-DA:166,0
-DA:167,0
-DA:169,0
-DA:171,0
-DA:172,0
-DA:174,0
-DA:176,0
-DA:177,0
+DA:161,1
+DA:165,0
+DA:166,1
 DA:178,0
+DA:179,0
 DA:180,0
-DA:183,0
-DA:184,0
-DA:185,0
-DA:186,0
-DA:187,0
-DA:188,0
-LF:119
-LH:0
-FN:14,180,main
+LF:72
+LH:45
+FN:21,21,main
 FNDA:0,main
-FNF:1
-FNH:0
-BRDA:39,0,jump to line 40,-
-BRDA:39,0,jump to line 44,-
-BRDA:44,0,jump to line 45,-
-BRDA:44,0,jump to line 49,-
-BRDA:49,0,jump to line 50,-
-BRDA:49,0,jump to line 89,-
-BRDA:59,0,jump to line 60,-
-BRDA:59,0,jump to line 85,-
-BRDA:78,0,jump to line 79,-
-BRDA:78,0,jump to line 83,-
-BRDA:89,0,jump to line 90,-
-BRDA:89,0,jump to line 131,-
-BRDA:99,0,jump to line 100,-
-BRDA:99,0,jump to line 122,-
-BRDA:115,0,jump to line 116,-
-BRDA:115,0,jump to line 120,-
-BRDA:122,0,jump to line 123,-
-BRDA:122,0,jump to line 127,-
-BRDA:131,0,jump to line 132,-
-BRDA:131,0,jump to line 166,-
+FN:23,34,main
+FNDA:0,main
+FN:35,141,main
+FNDA:1,main
+FN:149,176,_main
+FNDA:1,_main
+FNF:4
+FNH:2
+BRDA:66,0,jump to line 67,0
+BRDA:66,0,jump to line 71,1
+BRDA:71,0,jump to line 72,0
+BRDA:71,0,jump to line 76,1
+BRDA:76,0,jump to line 77,1
+BRDA:76,0,jump to line 93,1
+BRDA:84,0,jump to line 85,0
+BRDA:84,0,jump to line 88,1
+BRDA:90,0,jump to line 91,1
+BRDA:90,0,jump to line 93,0
+BRDA:93,0,jump to line 94,1
+BRDA:93,0,jump to line 101,0
+BRDA:101,0,jump to line 102,0
+BRDA:101,0,jump to line 125,1
+BRDA:125,0,jump to line 126,0
+BRDA:125,0,jump to line 130,1
+BRDA:130,0,jump to line 131,0
+BRDA:130,0,jump to line 135,1
+BRDA:135,0,jump to line 136,0
+BRDA:135,0,jump to line 141,1
+BRDA:144,0,jump to line 145,0
+BRDA:144,0,exit the module,1
 BRDA:160,0,jump to line 161,-
-BRDA:160,0,jump to line 163,-
-BRDA:166,0,jump to line 167,-
-BRDA:166,0,jump to line 171,-
-BRDA:171,0,jump to line 172,-
-BRDA:171,0,jump to line 176,-
-BRDA:176,0,jump to line 177,-
-BRDA:176,0,return from function 'main',-
-BRDA:183,0,jump to line 184,-
-BRDA:183,0,exit the module,-
-BRF:30
-BRH:0
+BRDA:160,0,jump to line 166,-
+BRF:24
+BRH:12
 end_of_record
 SF:src/networks/__init__.py
 end_of_record
@@ -1593,30 +1739,30 @@ DA:153,1
 DA:156,1
 DA:157,1
 DA:158,1
-DA:161,1
 DA:162,1
-DA:177,0
-DA:179,0
-DA:181,1
-DA:201,0
-DA:202,0
-DA:203,0
+DA:163,1
+DA:180,0
+DA:182,0
+DA:184,1
+DA:204,0
 DA:205,0
 DA:206,0
-DA:207,0
 DA:208,0
-DA:210,1
-DA:212,0
-DA:213,0
-DA:214,0
+DA:209,0
+DA:210,0
+DA:211,0
+DA:213,1
 DA:215,0
 DA:216,0
+DA:217,0
+DA:218,0
 DA:219,0
-DA:220,0
-DA:221,0
+DA:222,0
+DA:223,0
 DA:224,0
-DA:225,0
-DA:226,0
+DA:227,0
+DA:228,0
+DA:229,0
 LF:74
 LH:54
 FN:13,30,Critic.__init__
@@ -1633,11 +1779,11 @@ FN:115,142,ConditionalCritic.forward
 FNDA:1,ConditionalCritic.forward
 FN:144,158,ConditionalCritic._create_critic
 FNDA:1,ConditionalCritic._create_critic
-FN:162,179,ConditionalCriticProj.__init__
+FN:163,182,ConditionalCriticProj.__init__
 FNDA:0,ConditionalCriticProj.__init__
-FN:181,208,ConditionalCriticProj.forward
+FN:184,211,ConditionalCriticProj.forward
 FNDA:0,ConditionalCriticProj.forward
-FN:210,226,ConditionalCriticProj._create_critic
+FN:213,229,ConditionalCriticProj._create_critic
 FNDA:0,ConditionalCriticProj._create_critic
 FNF:10
 FNH:7
@@ -1649,10 +1795,10 @@ BRDA:136,0,jump to line 137,1
 BRDA:136,0,jump to line 139,1
 BRDA:148,0,jump to line 149,1
 BRDA:148,0,jump to line 153,1
-BRDA:202,0,jump to line 203,-
-BRDA:202,0,jump to line 205,-
-BRDA:214,0,jump to line 215,-
-BRDA:214,0,jump to line 219,-
+BRDA:205,0,jump to line 206,-
+BRDA:205,0,jump to line 208,-
+BRDA:217,0,jump to line 218,-
+BRDA:217,0,jump to line 222,-
 BRF:12
 BRH:8
 end_of_record
@@ -2113,8 +2259,7 @@ SF:src/preprocessing/__init__.py
 DA:1,0
 DA:2,0
 DA:3,0
-DA:5,0
-LF:4
+LF:3
 LH:0
 end_of_record
 SF:src/preprocessing/filter_grn.py
@@ -2504,42 +2649,42 @@ DA:9,1
 DA:10,1
 DA:11,1
 DA:14,1
-DA:20,0
+DA:20,1
 DA:21,0
-DA:23,0
-DA:24,0
-DA:25,0
+DA:23,1
+DA:24,1
+DA:25,1
 DA:28,1
-DA:32,0
+DA:32,1
 DA:33,0
-DA:36,0
+DA:36,1
 DA:37,0
-DA:39,0
-DA:41,0
-DA:42,0
-DA:44,0
+DA:39,1
+DA:41,1
+DA:42,1
+DA:44,1
 DA:45,0
 DA:46,0
 DA:47,0
 DA:48,0
 LF:27
-LH:10
+LH:20
 FN:14,25,set_seeds
-FNDA:0,set_seeds
+FNDA:1,set_seeds
 FN:28,48,set_pytorch_seeds
-FNDA:0,set_pytorch_seeds
+FNDA:1,set_pytorch_seeds
 FNF:2
-FNH:0
-BRDA:20,0,jump to line 21,-
-BRDA:20,0,jump to line 23,-
-BRDA:32,0,jump to line 33,-
-BRDA:32,0,jump to line 36,-
-BRDA:36,0,jump to line 37,-
-BRDA:36,0,jump to line 39,-
-BRDA:44,0,jump to line 45,-
-BRDA:44,0,return from function 'set_pytorch_seeds',-
+FNH:2
+BRDA:20,0,jump to line 21,0
+BRDA:20,0,jump to line 23,1
+BRDA:32,0,jump to line 33,0
+BRDA:32,0,jump to line 36,1
+BRDA:36,0,jump to line 37,0
+BRDA:36,0,jump to line 39,1
+BRDA:44,0,jump to line 45,0
+BRDA:44,0,return from function 'set_pytorch_seeds',1
 BRF:8
-BRH:0
+BRH:4
 end_of_record
 SF:src/sc_dataset.py
 DA:1,1
@@ -2619,11 +2764,12 @@ BRH:4
 end_of_record
 SF:src/training/__init__.py
 DA:1,1
-DA:2,1
 DA:3,1
 DA:4,1
-LF:4
-LH:4
+DA:5,1
+DA:6,1
+LF:5
+LH:5
 end_of_record
 SF:src/training/causal_gan.py
 DA:1,1
@@ -2633,113 +2779,113 @@ DA:5,1
 DA:6,1
 DA:8,1
 DA:9,1
+DA:21,1
 DA:22,1
-DA:23,1
+DA:31,1
+DA:32,1
 DA:33,1
-DA:34,1
 DA:35,1
+DA:36,1
 DA:37,1
 DA:38,1
 DA:39,1
-DA:40,1
 DA:41,1
-DA:43,1
+DA:42,1
 DA:44,1
+DA:45,1
 DA:46,1
-DA:47,1
-DA:48,1
-DA:55,1
+DA:53,1
+DA:61,1
+DA:62,1
 DA:63,1
 DA:64,1
-DA:65,1
-DA:66,1
-DA:69,1
+DA:67,1
+DA:70,1
 DA:72,1
-DA:74,0
-DA:76,1
-DA:94,1
+DA:74,1
+DA:92,1
+DA:93,1
 DA:95,1
 DA:97,1
-DA:99,1
-DA:117,1
+DA:115,1
+DA:116,1
 DA:118,1
 DA:120,1
-DA:122,1
+DA:134,1
 DA:136,1
+DA:137,1
 DA:138,1
-DA:139,1
 DA:140,1
 DA:142,1
+DA:143,1
 DA:144,1
 DA:145,1
 DA:146,1
-DA:147,1
-DA:148,1
+DA:149,1
+DA:150,1
 DA:151,1
 DA:152,1
 DA:153,1
-DA:154,1
-DA:155,1
+DA:156,1
+DA:157,1
 DA:158,1
 DA:159,1
 DA:160,1
-DA:161,1
 DA:162,1
 DA:164,1
-DA:166,1
+DA:173,1
 DA:175,1
 DA:177,1
-DA:179,1
+DA:178,1
 DA:180,1
-DA:182,1
-DA:183,1
-DA:190,1
+DA:181,1
+DA:188,1
+DA:191,1
 DA:193,1
 DA:195,1
-DA:197,1
+DA:199,1
 DA:201,1
-DA:203,1
+DA:202,1
 DA:204,1
-DA:206,1
+DA:210,1
 DA:212,1
-DA:214,1
-DA:215,1
-DA:220,1
-DA:230,1
+DA:213,1
+DA:218,1
+DA:228,1
 LF:80
-LH:79
-FN:23,44,CausalGANTrainer.__init__
+LH:80
+FN:22,42,CausalGANTrainer.__init__
 FNDA:1,CausalGANTrainer.__init__
-FN:46,61,CausalGANTrainer._init_optimizers
+FN:44,59,CausalGANTrainer._init_optimizers
 FNDA:1,CausalGANTrainer._init_optimizers
-FN:63,74,CausalGANTrainer._compile_and_ddp
+FN:61,72,CausalGANTrainer._compile_and_ddp
 FNDA:1,CausalGANTrainer._compile_and_ddp
-FN:76,97,CausalGANTrainer._antilabeler_step
+FN:74,95,CausalGANTrainer._antilabeler_step
 FNDA:1,CausalGANTrainer._antilabeler_step
-FN:99,120,CausalGANTrainer._labeler_step
+FN:97,118,CausalGANTrainer._labeler_step
 FNDA:1,CausalGANTrainer._labeler_step
-FN:122,164,CausalGANTrainer._train_labelers
+FN:120,162,CausalGANTrainer._train_labelers
 FNDA:1,CausalGANTrainer._train_labelers
-FN:166,195,CausalGANTrainer._train_generator
+FN:164,193,CausalGANTrainer._train_generator
 FNDA:1,CausalGANTrainer._train_generator
-FN:197,212,CausalGANTrainer._training_step
+FN:195,210,CausalGANTrainer._training_step
 FNDA:1,CausalGANTrainer._training_step
-FN:214,218,CausalGANTrainer._get_learning_rates_dict
+FN:212,216,CausalGANTrainer._get_learning_rates_dict
 FNDA:1,CausalGANTrainer._get_learning_rates_dict
-FN:220,230,CausalGANTrainer._ignore_first_n_in_running_average
+FN:218,228,CausalGANTrainer._ignore_first_n_in_running_average
 FNDA:1,CausalGANTrainer._ignore_first_n_in_running_average
 FNF:10
 FNH:10
-BRDA:43,0,jump to line 44,1
-BRDA:43,0,return from function '__init__',1
-BRDA:64,0,jump to line 65,1
-BRDA:64,0,jump to line 74,0
-BRDA:65,0,jump to line 66,1
-BRDA:65,0,jump to line 72,1
-BRDA:203,0,jump to line 204,1
-BRDA:203,0,jump to line 206,1
+BRDA:41,0,jump to line 42,1
+BRDA:41,0,return from function '__init__',1
+BRDA:62,0,jump to line 63,1
+BRDA:62,0,jump to line 72,0
+BRDA:63,0,jump to line 64,0
+BRDA:63,0,jump to line 70,1
+BRDA:201,0,jump to line 202,1
+BRDA:201,0,jump to line 204,1
 BRF:8
-BRH:7
+BRH:6
 end_of_record
 SF:src/training/conditional_gan.py
 DA:1,1
@@ -2747,119 +2893,119 @@ DA:2,1
 DA:4,1
 DA:5,1
 DA:7,1
+DA:20,1
 DA:21,1
-DA:22,1
-DA:32,1
+DA:30,1
+DA:31,1
 DA:33,1
 DA:35,1
-DA:37,1
+DA:36,0
 DA:38,1
+DA:39,0
 DA:40,1
-DA:41,1
 DA:42,1
-DA:44,1
-DA:45,0
-DA:47,1
+DA:43,0
+DA:45,1
+DA:55,0
+DA:56,0
 DA:57,1
-DA:58,1
 DA:59,1
-DA:61,1
+DA:60,0
 DA:62,1
-DA:64,1
-DA:65,1
-DA:69,1
+DA:63,0
+DA:67,0
+DA:68,0
 DA:70,1
-DA:72,1
+DA:78,0
+DA:79,0
 DA:80,1
 DA:81,1
-DA:82,1
 DA:83,1
+DA:84,0
 DA:85,1
-DA:86,1
-DA:87,1
+DA:93,0
+DA:94,0
 DA:95,1
 DA:96,1
-DA:97,1
 DA:98,1
 DA:100,1
-DA:102,1
-DA:106,1
-DA:109,1
+DA:104,1
+DA:107,1
+DA:108,0
 DA:110,1
-DA:112,1
+DA:113,1
+DA:114,0
 DA:115,1
-DA:116,1
 DA:117,1
+DA:118,0
 DA:119,1
 DA:120,1
 DA:121,1
 DA:122,1
-DA:123,1
 DA:124,1
-DA:126,1
+DA:125,0
 DA:127,1
 DA:129,1
 DA:131,1
-DA:133,1
+DA:132,0
 DA:134,1
-DA:136,1
 LF:61
-LH:60
-FN:22,33,ConditionalGANTrainer.__init__
+LH:42
+FN:21,31,ConditionalGANTrainer.__init__
 FNDA:1,ConditionalGANTrainer.__init__
-FN:35,38,ConditionalGANTrainer._init_umap
+FN:33,36,ConditionalGANTrainer._init_umap
 FNDA:1,ConditionalGANTrainer._init_umap
-FN:40,136,ConditionalGANTrainer._generate_umap_figures
+FN:38,134,ConditionalGANTrainer._generate_umap_figures
 FNDA:1,ConditionalGANTrainer._generate_umap_figures
 FNF:3
 FNH:3
-BRDA:44,0,jump to line 45,0
-BRDA:44,0,jump to line 47,1
-BRDA:69,0,jump to line 70,1
-BRDA:69,0,jump to line 80,1
-BRDA:85,0,jump to line 86,1
-BRDA:85,0,jump to line 95,1
+BRDA:42,0,jump to line 43,-
+BRDA:42,0,jump to line 45,-
+BRDA:67,0,jump to line 68,-
+BRDA:67,0,jump to line 78,-
+BRDA:83,0,jump to line 84,-
+BRDA:83,0,jump to line 93,-
 BRF:6
-BRH:5
+BRH:0
 end_of_record
 SF:src/training/conditional_gan_cat.py
 DA:1,1
 DA:3,1
 DA:5,1
+DA:17,1
 DA:18,1
-DA:19,1
-DA:29,1
+DA:27,1
+DA:28,1
 DA:30,1
 DA:32,1
+DA:33,0
 DA:34,1
-DA:35,1
-DA:36,1
-DA:39,1
-DA:46,1
+DA:37,1
+DA:44,1
+DA:50,1
 DA:52,1
-DA:54,1
-DA:63,1
+DA:61,0
+DA:62,0
 DA:64,1
-DA:66,1
+DA:65,0
 DA:67,1
 DA:69,1
 DA:71,1
+DA:72,0
 DA:73,1
 DA:74,1
-DA:75,1
 DA:76,1
-DA:78,1
+DA:77,0
 DA:79,1
-DA:81,1
 LF:28
-LH:28
-FN:19,30,ConditionalCatGANTrainer.__init__
+LH:22
+FN:18,28,ConditionalCatGANTrainer.__init__
 FNDA:1,ConditionalCatGANTrainer.__init__
-FN:32,52,ConditionalCatGANTrainer._get_gradient
+FN:30,50,ConditionalCatGANTrainer._get_gradient
 FNDA:1,ConditionalCatGANTrainer._get_gradient
-FN:54,71,ConditionalCatGANTrainer._generator_step
+FN:52,69,ConditionalCatGANTrainer._generator_step
 FNDA:1,ConditionalCatGANTrainer._generator_step
-FN:73,81,ConditionalCatGANTrainer._critic_step
+FN:71,79,ConditionalCatGANTrainer._critic_step
 FNDA:1,ConditionalCatGANTrainer._critic_step
 FNF:4
 FNH:4
@@ -2868,40 +3014,40 @@ SF:src/training/conditional_gan_proj.py
 DA:1,1
 DA:3,1
 DA:5,1
+DA:17,1
 DA:18,1
-DA:19,1
-DA:29,1
+DA:27,1
+DA:28,1
 DA:30,1
 DA:32,1
+DA:33,0
 DA:34,1
-DA:35,1
-DA:36,1
-DA:39,1
-DA:42,1
+DA:37,0
+DA:40,1
+DA:46,1
 DA:48,1
-DA:50,1
-DA:59,1
+DA:57,0
+DA:58,0
 DA:60,1
-DA:62,1
+DA:61,0
 DA:63,1
 DA:65,1
 DA:67,1
+DA:68,0
 DA:69,1
 DA:70,1
-DA:71,1
 DA:72,1
-DA:74,1
+DA:73,0
 DA:75,1
-DA:77,1
 LF:28
-LH:28
-FN:19,30,ConditionalProjGANTrainer.__init__
+LH:21
+FN:18,28,ConditionalProjGANTrainer.__init__
 FNDA:1,ConditionalProjGANTrainer.__init__
-FN:32,48,ConditionalProjGANTrainer._get_gradient
+FN:30,46,ConditionalProjGANTrainer._get_gradient
 FNDA:1,ConditionalProjGANTrainer._get_gradient
-FN:50,67,ConditionalProjGANTrainer._generator_step
+FN:48,65,ConditionalProjGANTrainer._generator_step
 FNDA:1,ConditionalProjGANTrainer._generator_step
-FN:69,77,ConditionalProjGANTrainer._critic_step
+FN:67,75,ConditionalProjGANTrainer._critic_step
 FNDA:1,ConditionalProjGANTrainer._critic_step
 FNF:4
 FNH:4
@@ -2950,7 +3096,7 @@ DA:90,1
 DA:92,1
 DA:93,1
 DA:94,1
-DA:95,0
+DA:95,1
 DA:96,1
 DA:97,1
 DA:98,1
@@ -2959,17 +3105,17 @@ DA:100,1
 DA:101,1
 DA:102,1
 LF:51
-LH:50
+LH:51
 FN:93,102,LossList.avg
 FNDA:1,LossList.avg
 FNF:1
 FNH:1
-BRDA:94,0,jump to line 95,0
+BRDA:94,0,jump to line 95,1
 BRDA:94,0,jump to line 96,1
 BRDA:98,0,jump to line 99,1
 BRDA:98,0,jump to line 102,1
 BRF:4
-BRH:3
+BRH:4
 end_of_record
 SF:src/training/gan.py
 DA:1,1
@@ -2997,459 +3143,455 @@ DA:47,1
 DA:48,1
 DA:49,1
 DA:51,1
+DA:60,1
 DA:61,1
 DA:62,1
 DA:63,1
 DA:64,1
 DA:65,1
-DA:66,1
-DA:67,1
+DA:68,1
+DA:69,1
 DA:70,1
 DA:71,1
 DA:72,1
-DA:73,1
-DA:74,1
+DA:82,1
+DA:83,1
 DA:84,1
-DA:85,1
 DA:86,1
+DA:87,1
 DA:88,1
-DA:89,1
-DA:90,1
+DA:91,1
 DA:93,1
+DA:94,1
 DA:95,1
-DA:96,1
-DA:97,1
-DA:105,1
+DA:103,1
+DA:111,1
+DA:112,1
 DA:113,1
-DA:114,1
-DA:115,1
-DA:122,1
+DA:120,1
+DA:128,1
 DA:130,1
+DA:131,1
 DA:132,1
 DA:133,1
-DA:134,1
 DA:135,1
+DA:136,1
 DA:137,1
 DA:138,1
 DA:139,1
 DA:140,1
 DA:141,1
 DA:142,1
-DA:143,1
-DA:144,1
+DA:145,1
+DA:146,0
 DA:147,1
-DA:148,0
-DA:149,0
+DA:151,1
+DA:152,0
 DA:153,1
-DA:154,0
+DA:154,1
 DA:155,0
 DA:156,1
-DA:157,0
-DA:158,0
-DA:162,0
+DA:160,0
+DA:161,1
 DA:163,1
+DA:164,1
 DA:165,1
-DA:166,1
 DA:167,1
+DA:168,1
 DA:169,1
 DA:170,1
 DA:171,1
 DA:172,1
-DA:173,1
 DA:174,1
+DA:175,0
 DA:176,1
 DA:177,0
 DA:178,0
-DA:179,0
 DA:180,0
 DA:182,0
+DA:183,0
 DA:184,0
-DA:185,0
-DA:186,0
-DA:192,0
+DA:190,0
+DA:193,0
+DA:194,0
 DA:195,0
 DA:196,0
 DA:197,0
-DA:198,0
-DA:199,0
+DA:199,1
+DA:200,1
 DA:201,1
 DA:202,1
-DA:203,1
 DA:204,1
-DA:206,0
+DA:206,1
+DA:207,1
 DA:208,1
 DA:209,1
 DA:210,1
 DA:211,1
 DA:212,1
-DA:213,1
 DA:214,1
-DA:216,1
+DA:215,1
 DA:217,1
+DA:218,1
 DA:219,1
 DA:220,1
-DA:221,0
 DA:222,1
-DA:224,1
-DA:225,1
+DA:223,1
+DA:237,1
 DA:239,1
-DA:241,1
-DA:242,1
+DA:240,1
+DA:267,1
 DA:269,1
-DA:271,1
-DA:272,1
+DA:270,1
+DA:296,1
+DA:297,1
 DA:298,1
-DA:299,1
-DA:300,1
-DA:303,1
-DA:306,1
+DA:301,1
+DA:304,1
+DA:310,1
 DA:312,1
-DA:314,1
-DA:315,1
-DA:330,1
+DA:313,1
+DA:328,1
+DA:329,1
 DA:331,1
 DA:333,1
-DA:335,1
+DA:349,1
+DA:350,1
 DA:351,1
-DA:352,1
 DA:353,1
-DA:355,1
+DA:354,1
 DA:356,1
 DA:358,1
-DA:360,1
+DA:381,1
 DA:383,1
+DA:384,1
 DA:385,1
-DA:386,1
 DA:387,1
-DA:389,1
-DA:390,1
-DA:398,1
+DA:388,1
+DA:396,1
+DA:399,1
 DA:401,1
 DA:403,1
-DA:405,1
+DA:412,1
 DA:414,1
-DA:416,1
+DA:415,1
 DA:417,1
 DA:419,1
 DA:421,1
-DA:423,1
+DA:435,1
 DA:437,1
-DA:439,1
-DA:440,1
-DA:444,1
+DA:438,1
+DA:442,1
+DA:445,1
 DA:447,1
 DA:449,1
-DA:451,1
+DA:476,1
+DA:477,1
 DA:478,1
 DA:479,1
 DA:480,1
-DA:481,1
 DA:482,1
 DA:484,1
 DA:486,1
-DA:488,1
+DA:493,1
+DA:494,1
 DA:495,1
-DA:496,1
-DA:497,1
+DA:502,1
 DA:504,1
 DA:506,1
-DA:508,1
+DA:516,1
+DA:517,1
 DA:518,1
-DA:519,1
 DA:520,1
+DA:521,1
 DA:522,1
 DA:523,1
 DA:524,1
 DA:525,1
-DA:526,1
 DA:527,1
-DA:529,1
+DA:528,1
 DA:530,1
+DA:531,1
 DA:532,1
-DA:533,1
-DA:534,1
-DA:538,1
+DA:536,1
+DA:548,1
 DA:550,1
-DA:552,1
+DA:551,1
 DA:553,1
-DA:555,1
-DA:556,1
+DA:554,1
+DA:559,1
+DA:560,1
 DA:561,1
-DA:562,1
 DA:563,1
-DA:565,1
-DA:566,0
-DA:568,1
+DA:564,0
+DA:566,1
+DA:569,1
 DA:571,1
-DA:573,1
-DA:578,1
-DA:579,1
+DA:576,1
+DA:577,1
+DA:580,1
+DA:581,1
 DA:582,1
-DA:583,1
 DA:584,1
-DA:586,1
-DA:603,1
+DA:601,1
+DA:602,1
 DA:604,1
-DA:606,1
+DA:614,1
+DA:615,1
 DA:616,1
-DA:617,1
 DA:618,1
+DA:619,1
 DA:620,1
-DA:621,1
 DA:622,1
+DA:623,1
 DA:624,1
 DA:625,1
 DA:626,1
-DA:627,1
 DA:628,1
+DA:629,1
 DA:630,1
-DA:631,1
-DA:632,1
+DA:633,1
 DA:635,1
-DA:637,1
+DA:649,1
 DA:651,1
+DA:652,1
 DA:653,1
 DA:654,1
-DA:655,1
 DA:656,1
+DA:657,1
 DA:658,1
 DA:659,1
-DA:660,1
 DA:661,1
-DA:663,1
+DA:662,1
 DA:664,1
-DA:666,1
+DA:674,1
 DA:676,1
+DA:677,1
 DA:678,1
-DA:679,1
 DA:680,1
+DA:681,1
 DA:682,1
 DA:683,1
 DA:684,1
-DA:685,0
-DA:686,0
+DA:686,1
+DA:687,1
 DA:688,1
 DA:689,1
 DA:690,1
-DA:691,0
-DA:692,0
+DA:692,1
+DA:693,1
 DA:694,1
 DA:695,1
 DA:696,1
-DA:697,0
-DA:698,0
+DA:698,1
+DA:699,1
 DA:700,1
 DA:701,1
 DA:702,1
-DA:703,0
-DA:704,0
+DA:704,1
 DA:706,1
+DA:707,1
 DA:708,1
 DA:709,1
 DA:710,1
-DA:711,1
 DA:712,1
+DA:713,1
 DA:714,1
 DA:715,1
-DA:716,1
 DA:717,1
-DA:719,1
-DA:720,0
+DA:718,0
+DA:721,1
 DA:723,1
+DA:724,1
 DA:725,1
 DA:726,1
 DA:727,1
 DA:728,1
 DA:729,1
 DA:730,1
-DA:731,1
-DA:732,1
+DA:735,1
+DA:736,1
 DA:737,1
 DA:738,1
 DA:739,1
 DA:740,1
 DA:741,1
-DA:742,1
-DA:743,1
+DA:742,0
 DA:744,1
-DA:746,1
+DA:745,1
 DA:747,1
-DA:749,1
+DA:750,1
 DA:752,1
+DA:753,0
 DA:754,1
-DA:755,0
-DA:756,1
-DA:757,1
-DA:760,1
-DA:764,1
+DA:755,1
+DA:758,1
+DA:762,1
+DA:765,1
+DA:766,1
 DA:767,1
-DA:768,0
-DA:769,0
 DA:770,0
 DA:773,0
-DA:776,0
-DA:777,0
+DA:774,1
+DA:775,0
+DA:777,1
 DA:778,0
+DA:779,1
 DA:780,1
-DA:781,0
 DA:782,1
 DA:783,1
+DA:784,0
 DA:785,1
 DA:786,0
 DA:787,0
 DA:788,0
 DA:789,0
 DA:790,0
-DA:791,0
-DA:792,0
-DA:793,0
-DA:795,1
-LF:332
-LH:282
-FN:51,86,GANTrainer.__init__
+DA:792,1
+LF:330
+LH:299
+FN:51,84,GANTrainer.__init__
 FNDA:1,GANTrainer.__init__
-FN:88,93,GANTrainer._init_loaders
+FN:86,91,GANTrainer._init_loaders
 FNDA:1,GANTrainer._init_loaders
-FN:95,111,GANTrainer._init_optimizers
+FN:93,109,GANTrainer._init_optimizers
 FNDA:1,GANTrainer._init_optimizers
-FN:113,128,GANTrainer._init_schedulers
+FN:111,126,GANTrainer._init_schedulers
 FNDA:1,GANTrainer._init_schedulers
-FN:130,135,GANTrainer._init_umap
+FN:128,133,GANTrainer._init_umap
 FNDA:1,GANTrainer._init_umap
-FN:137,163,GANTrainer._compile_and_ddp
+FN:135,161,GANTrainer._compile_and_ddp
 FNDA:1,GANTrainer._compile_and_ddp
-FN:166,167,GANTrainer.training_mode
+FN:164,165,GANTrainer.training_mode
 FNDA:1,GANTrainer.training_mode
-FN:170,174,GANTrainer.training_mode
+FN:168,172,GANTrainer.training_mode
 FNDA:1,GANTrainer.training_mode
-FN:176,199,GANTrainer._load_checkpoint
-FNDA:0,GANTrainer._load_checkpoint
-FN:201,217,GANTrainer._save_checkpoint
+FN:174,197,GANTrainer._load_checkpoint
+FNDA:1,GANTrainer._load_checkpoint
+FN:199,215,GANTrainer._save_checkpoint
 FNDA:1,GANTrainer._save_checkpoint
-FN:219,222,GANTrainer._should_run
+FN:217,220,GANTrainer._should_run
 FNDA:1,GANTrainer._should_run
-FN:225,239,GANTrainer._generator_loss
+FN:223,237,GANTrainer._generator_loss
 FNDA:1,GANTrainer._generator_loss
-FN:242,269,GANTrainer._critic_loss
+FN:240,267,GANTrainer._critic_loss
 FNDA:1,GANTrainer._critic_loss
-FN:272,312,GANTrainer._get_gradient
+FN:270,310,GANTrainer._get_gradient
 FNDA:1,GANTrainer._get_gradient
-FN:315,333,GANTrainer._gradient_penalty
+FN:313,331,GANTrainer._gradient_penalty
 FNDA:1,GANTrainer._gradient_penalty
-FN:335,358,GANTrainer._critic_step
+FN:333,356,GANTrainer._critic_step
 FNDA:1,GANTrainer._critic_step
-FN:360,403,GANTrainer._train_critic
+FN:358,401,GANTrainer._train_critic
 FNDA:1,GANTrainer._train_critic
-FN:405,421,GANTrainer._generator_step
+FN:403,419,GANTrainer._generator_step
 FNDA:1,GANTrainer._generator_step
-FN:423,449,GANTrainer._train_generator
+FN:421,447,GANTrainer._train_generator
 FNDA:1,GANTrainer._train_generator
-FN:451,506,GANTrainer._training_step
+FN:449,504,GANTrainer._training_step
 FNDA:1,GANTrainer._training_step
-FN:508,553,GANTrainer._get_validation_loss
+FN:506,551,GANTrainer._get_validation_loss
 FNDA:1,GANTrainer._get_validation_loss
-FN:555,559,GANTrainer._get_learning_rates_dict
+FN:553,557,GANTrainer._get_learning_rates_dict
 FNDA:1,GANTrainer._get_learning_rates_dict
-FN:561,584,GANTrainer._log_stats
+FN:559,582,GANTrainer._log_stats
 FNDA:1,GANTrainer._log_stats
-FN:586,604,GANTrainer._generate_umap_figures
+FN:584,602,GANTrainer._generate_umap_figures
 FNDA:1,GANTrainer._generate_umap_figures
-FN:606,635,GANTrainer._log_umap_plots
+FN:604,633,GANTrainer._log_umap_plots
 FNDA:1,GANTrainer._log_umap_plots
-FN:637,664,GANTrainer._rf_auroc
+FN:635,662,GANTrainer._rf_auroc
 FNDA:1,GANTrainer._rf_auroc
-FN:666,676,GANTrainer._ignore_first_n_in_running_average
+FN:664,674,GANTrainer._ignore_first_n_in_running_average
 FNDA:1,GANTrainer._ignore_first_n_in_running_average
-FN:678,706,GANTrainer.eval_hooks
+FN:676,704,GANTrainer.eval_hooks
 FNDA:1,GANTrainer.eval_hooks
-FN:708,795,GANTrainer.train
+FN:706,792,GANTrainer.train
 FNDA:1,GANTrainer.train
 FNF:29
-FNH:28
-BRDA:138,0,jump to line 139,1
-BRDA:138,0,jump to line 162,0
-BRDA:139,0,jump to line 140,1
-BRDA:139,0,jump to line 142,1
-BRDA:142,0,jump to line 143,1
-BRDA:142,0,jump to line 147,1
-BRDA:147,0,jump to line 148,0
-BRDA:147,0,jump to line 153,1
-BRDA:148,0,jump to line 149,-
-BRDA:148,0,jump to line 153,-
-BRDA:153,0,jump to line 154,0
-BRDA:153,0,jump to line 156,1
-BRDA:154,0,jump to line 155,-
-BRDA:154,0,jump to line 156,-
-BRDA:156,0,jump to line 157,0
-BRDA:156,0,jump to line 163,1
-BRDA:157,0,jump to line 158,-
-BRDA:157,0,jump to line 163,-
+FNH:29
+BRDA:136,0,jump to line 137,1
+BRDA:136,0,jump to line 160,0
+BRDA:137,0,jump to line 138,0
+BRDA:137,0,jump to line 140,1
+BRDA:140,0,jump to line 141,1
+BRDA:140,0,jump to line 145,1
+BRDA:145,0,jump to line 146,0
+BRDA:145,0,jump to line 151,1
+BRDA:146,0,jump to line 147,-
+BRDA:146,0,jump to line 151,-
+BRDA:151,0,jump to line 152,0
+BRDA:151,0,jump to line 154,1
+BRDA:152,0,jump to line 153,-
+BRDA:152,0,jump to line 154,-
+BRDA:154,0,jump to line 155,0
+BRDA:154,0,jump to line 161,1
+BRDA:155,0,jump to line 156,-
+BRDA:155,0,jump to line 161,-
+BRDA:169,0,jump to line 170,1
+BRDA:169,0,jump to line 171,1
 BRDA:171,0,jump to line 172,1
-BRDA:171,0,jump to line 173,1
-BRDA:173,0,jump to line 174,1
-BRDA:173,0,return from function 'training_mode',1
-BRDA:179,0,jump to line 180,-
-BRDA:179,0,jump to line 185,-
-BRDA:180,0,jump to line 182,-
-BRDA:180,0,jump to line 184,-
-BRDA:185,0,jump to line 186,-
-BRDA:185,0,return from function '_load_checkpoint',-
-BRDA:186,0,jump to line 192,-
-BRDA:186,0,jump to line 195,-
+BRDA:171,0,return from function 'training_mode',1
+BRDA:177,0,jump to line 178,-
+BRDA:177,0,jump to line 183,-
+BRDA:178,0,jump to line 180,-
+BRDA:178,0,jump to line 182,-
+BRDA:183,0,jump to line 184,-
+BRDA:183,0,return from function '_load_checkpoint',-
+BRDA:184,0,jump to line 190,-
+BRDA:184,0,jump to line 193,-
+BRDA:194,0,jump to line 195,-
+BRDA:194,0,jump to line 196,-
 BRDA:196,0,jump to line 197,-
-BRDA:196,0,jump to line 198,-
-BRDA:198,0,jump to line 199,-
-BRDA:198,0,return from function '_load_checkpoint',-
-BRDA:203,0,jump to line 204,1
-BRDA:203,0,jump to line 209,1
-BRDA:204,0,jump to line 206,0
-BRDA:204,0,jump to line 208,1
+BRDA:196,0,return from function '_load_checkpoint',-
+BRDA:201,0,jump to line 202,1
+BRDA:201,0,jump to line 207,1
+BRDA:202,0,jump to line 204,0
+BRDA:202,0,jump to line 206,1
+BRDA:207,0,jump to line 208,1
+BRDA:207,0,jump to line 214,0
 BRDA:209,0,jump to line 210,1
-BRDA:209,0,jump to line 216,0
+BRDA:209,0,jump to line 211,1
 BRDA:211,0,jump to line 212,1
-BRDA:211,0,jump to line 213,1
-BRDA:213,0,jump to line 214,1
-BRDA:213,0,jump to line 216,1
-BRDA:220,0,jump to line 221,0
-BRDA:220,0,jump to line 222,1
+BRDA:211,0,jump to line 214,1
+BRDA:218,0,jump to line 219,0
+BRDA:218,0,jump to line 220,1
+BRDA:476,0,jump to line 477,1
+BRDA:476,0,jump to line 486,1
 BRDA:478,0,jump to line 479,1
-BRDA:478,0,jump to line 488,1
-BRDA:480,0,jump to line 481,1
-BRDA:480,0,jump to line 484,1
-BRDA:523,0,jump to line 524,1
-BRDA:523,0,jump to line 550,1
-BRDA:565,0,jump to line 566,0
-BRDA:565,0,jump to line 568,1
-BRDA:582,0,jump to line 583,1
-BRDA:582,0,jump to line 584,1
-BRDA:683,0,jump to line 684,1
-BRDA:683,0,jump to line 688,1
-BRDA:689,0,jump to line 690,1
-BRDA:689,0,jump to line 694,1
-BRDA:695,0,jump to line 696,1
-BRDA:695,0,jump to line 700,1
-BRDA:701,0,jump to line 702,1
-BRDA:701,0,jump to line 706,1
-BRDA:714,0,jump to line 715,1
-BRDA:714,0,jump to line 719,0
-BRDA:719,0,jump to line 720,0
-BRDA:719,0,jump to line 723,1
-BRDA:738,0,jump to line 739,1
-BRDA:738,0,jump to line 785,1
-BRDA:754,0,jump to line 755,0
-BRDA:754,0,jump to line 756,1
-BRDA:767,0,jump to line 768,0
-BRDA:767,0,jump to line 780,1
-BRDA:768,0,jump to line 769,-
-BRDA:768,0,jump to line 777,-
-BRDA:770,0,jump to line 773,-
-BRDA:770,0,jump to line 777,-
-BRDA:777,0,jump to line 778,-
-BRDA:777,0,jump to line 780,-
-BRDA:780,0,jump to line 781,0
-BRDA:780,0,jump to line 782,1
-BRF:82
-BRH:45
+BRDA:478,0,jump to line 482,1
+BRDA:521,0,jump to line 522,1
+BRDA:521,0,jump to line 548,1
+BRDA:563,0,jump to line 564,0
+BRDA:563,0,jump to line 566,1
+BRDA:580,0,jump to line 581,1
+BRDA:580,0,jump to line 582,1
+BRDA:681,0,jump to line 682,1
+BRDA:681,0,jump to line 686,1
+BRDA:687,0,jump to line 688,1
+BRDA:687,0,jump to line 692,1
+BRDA:693,0,jump to line 694,1
+BRDA:693,0,jump to line 698,1
+BRDA:699,0,jump to line 700,1
+BRDA:699,0,jump to line 704,1
+BRDA:712,0,jump to line 713,1
+BRDA:712,0,jump to line 717,0
+BRDA:717,0,jump to line 718,0
+BRDA:717,0,jump to line 721,1
+BRDA:736,0,jump to line 737,1
+BRDA:736,0,jump to line 782,1
+BRDA:752,0,jump to line 753,0
+BRDA:752,0,jump to line 754,1
+BRDA:765,0,jump to line 766,1
+BRDA:765,0,jump to line 777,1
+BRDA:767,0,jump to line 770,0
+BRDA:767,0,jump to line 774,1
+BRDA:774,0,jump to line 775,0
+BRDA:774,0,jump to line 777,1
+BRDA:777,0,jump to line 778,0
+BRDA:777,0,jump to line 779,1
+BRF:80
+BRH:47
 end_of_record
 SF:src/training/helpers.py
 DA:1,1

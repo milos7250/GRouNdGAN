@@ -55,8 +55,7 @@ class GANTrainer:
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
-        trial: "Trial | None" = None,
+        output_dir: "Path"
     ) -> None:
         self.gan = gan
         self.train_file = train_file
@@ -64,7 +63,6 @@ class GANTrainer:
         self.training_args = training_args
         self.summary_args = summary_args
         self.output_dir = output_dir
-        self.trial = trial
 
         # self.modules keys need to match attribute names of the GAN class
         self.modules: dict[str, Module] = {"gen": self.gan.gen, "crit": self.gan.crit}
@@ -705,7 +703,7 @@ class GANTrainer:
 
         return hook_results
 
-    def train(self, checkpoint_path: "Path | None" = None, compile_modules: bool = True) -> float:
+    def train(self, checkpoint_path: "Path | None" = None, compile_modules: bool = True, trial: "Trial | None" = None) -> float:
         self.logger.info("Initializing training...")
         self._init_loaders()
         self._init_optimizers()
@@ -763,19 +761,18 @@ class GANTrainer:
 
                     eval_hook_results = self.eval_hooks(losses)
 
-                    # Allow trial pruning before reaching the end of training
-                    if self.trial is not None:
-                        if "rf_auroc" in eval_hook_results:
-                            self.trial.report(eval_hook_results["rf_auroc"], step=self.step)
+                    # Allow trial pruning before reaching the end of training based on rf_auroc values
+                    if trial is not None and "rf_auroc" in eval_hook_results:
+                            trial.report(eval_hook_results["rf_auroc"], step=self.step)
                             if (
-                                eval_hook_results["rf_auroc"] > 0.99
-                            ):  # If the RF AUROC is very high, the generator is likely not learning and we can stop early
+                                eval_hook_results["rf_auroc"] > 0.99 and self.step > 10_000
+                            ):  # If the RF AUROC is very high after a considerable number of steps, the generator is likely not learning and we can stop early
                                 self.logger.error(
                                     f"Step {self.step}: RF AUROC is very high ({eval_hook_results['rf_auroc']:.3f}), stopping early."
                                 )
                                 raise TrialPruned()
-                        if self.trial.should_prune():
-                            raise TrialPruned()
+                            if trial.should_prune():
+                                raise TrialPruned()
 
                     if is_ddp_initialized():
                         barrier()

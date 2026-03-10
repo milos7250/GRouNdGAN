@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
-    from optuna import Trial
 
     from gans.conditional_gan import ConditionalGAN
 
@@ -26,10 +25,9 @@ class ConditionalGANTrainer(GANTrainer, ABC):
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
-        trial: "Trial | None" = None,
+        output_dir: "Path"
     ) -> None:
-        super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir, trial)
+        super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
 
     def _init_umap(self) -> None:

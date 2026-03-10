@@ -146,13 +146,14 @@ class TestDDPTrainers:
         scope="session",
     )
     def test_gan(self, compile: bool, tmp_path: Path) -> None:
-        from torch.cuda import device_count
+        from torch.cuda import device_count, empty_cache
         from torch.multiprocessing.spawn import spawn
 
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["MASTER_PORT"] = "29500"
         world_size = device_count()
         spawn(gan_process, args=(world_size, compile, tmp_path), nprocs=world_size, join=True)
+        empty_cache()  # Clean up GPU memory after test
 
     @pytest.mark.dependency(
         depends=[
@@ -179,11 +180,11 @@ class TestDDPTrainers:
         cc_gan_checkpoint = make_gan_checkpoint(cc_gan)
         os.environ["GROUNDGAN_LOGLEVEL"] = orig_loglevel
 
-        from torch.cuda import device_count
+        from torch.cuda import device_count, empty_cache
         from torch.multiprocessing.spawn import spawn
 
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["MASTER_PORT"] = "29500"
         world_size = device_count()
-        # logging_queue = None
         spawn(causalgan_process, args=(world_size, compile, tmp_path, cc_gan_checkpoint), nprocs=world_size, join=True)
+        empty_cache()  # Clean up GPU memory after test

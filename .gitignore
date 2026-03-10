@@ -45,4 +45,4 @@ data/
 *.png
 
 # generated coverage files
-*.coverage
+*.coverage.*

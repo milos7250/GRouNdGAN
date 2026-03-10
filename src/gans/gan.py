@@ -1,9 +1,11 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 from warnings import catch_warnings, filterwarnings
 
 import numpy as np
+import scanpy as sc
 import torch
+from scipy.sparse import csr_matrix
 from torch.cuda import empty_cache as empty_cuda_cache
 from torch.cuda import is_available as is_cuda_available
 from torch.optim import Optimizer
@@ -11,6 +13,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard import SummaryWriter
 from umap import UMAP
 
+from loggers import setup_logger
 from networks.critic import Critic
 from networks.generator import Generator
 from training.dicts import GANTrainingArgs
@@ -141,6 +144,81 @@ class GAN:
         self.gen.train(was_training)
 
         return np.concatenate(fake_cells)[:cells_no], None
+
+    @overload
+    def generate_h5ad(self, cells_no: int, *, checkpoint: Path | None = None) -> sc.AnnData: ...
+    @overload
+    def generate_h5ad(self, cells_no: int, *, gene_names: list[str], checkpoint: Path | None = None) -> sc.AnnData: ...
+    @overload
+    def generate_h5ad(
+        self, cells_no: int, *, reference_dataset: Path, checkpoint: Path | None = None
+    ) -> sc.AnnData: ...
+    @overload
+    def generate_h5ad(self, cells_no: int, save_path: Path, *, checkpoint: Path | None = None) -> None: ...
+    @overload
+    def generate_h5ad(
+        self, cells_no: int, save_path: Path, *, gene_names: list[str], checkpoint: Path | None = None
+    ) -> None: ...
+    @overload
+    def generate_h5ad(
+        self, cells_no: int, save_path: Path, *, reference_dataset: Path, checkpoint: Path | None = None
+    ) -> None: ...
+    def generate_h5ad(
+        self,
+        cells_no: int,
+        save_path: Path | None = None,
+        *,
+        gene_names: list[str] | None = None,
+        reference_dataset: Path | None = None,
+        checkpoint: Path | None = None,
+    ) -> sc.AnnData | None:
+        """
+        Generates an h5ad file containing the generated cells.
+
+        Parameters
+        ----------
+        cells_no : int
+            Number of cells to generate.
+        save_path : Path | None, optional
+            Path to save the generated h5ad file, by default None, iin which case the AnnData object will not be saved to disk.
+        gene_names : list[str] | None, optional
+            List of gene names to use as variable names in the generated h5ad file. If None, gene names will be taken from the reference dataset, by default None.
+        reference_dataset : Path | None, optional
+            Path to the reference dataset h5ad file to take gene names from if gene_names is None, by default None.
+        checkpoint : Path | None, optional
+            Path to the saved trained model, by default None.
+
+        Returns
+        -------
+        sc.AnnData
+            An AnnData object containing the generated cells.
+        """
+        generated_cells = self.generate_cells(
+            cells_no,
+            checkpoint,
+        )[0]
+        generated_cells = csr_matrix(generated_cells)
+
+        generated_h5ad = sc.AnnData(generated_cells)
+        generated_h5ad.obs_names = np.repeat("fake", generated_h5ad.shape[0]).tolist()
+        generated_h5ad.obs_names_make_unique()
+
+        # Add variable names
+        if gene_names and reference_dataset:
+            setup_logger(__name__).warning(
+                "Both gene_names and reference_dataset provided. gene_names will be used for variable names."
+            )
+        if gene_names:
+            generated_h5ad.var_names = gene_names
+        elif reference_dataset:
+            train_var_names = sc.read_h5ad(reference_dataset, backed="r").var_names
+            generated_h5ad.var_names = train_var_names.tolist()
+
+        if save_path:
+            generated_h5ad.write(save_path)
+            return None
+        else:
+            return generated_h5ad
 
     def save(self, path: Path) -> None:
         """

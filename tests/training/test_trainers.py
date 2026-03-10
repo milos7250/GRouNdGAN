@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from loggers import setup_logger
 from tests.resources.constants import CAUSAL_GRAPH_FILE, TRAIN_FILE, VALID_FILE
 
 from .. import pytestmark  # pyright: ignore[reportUnusedImport]  # noqa: F401
@@ -14,6 +13,18 @@ if TYPE_CHECKING:
 
     from gans import GAN, CausalGAN, ConditionalCatGAN, ConditionalProjGAN
 
+def check_num_outputs(output_dir: Path, expected_num_checkpoints: int, expected_num_event_files: int, expected_num_umaps: int, expected_num_rf_auroc_plots: int) -> None:
+    assert len(list(output_dir.glob("checkpoints/*.pth"))) == expected_num_checkpoints
+    assert len(list(output_dir.glob("TensorBoard/events.*"))) == expected_num_event_files  # umaps, auroc, losses, and gen/cricic graphs
+    assert len(list(output_dir.glob("UMAP/*.jpg"))) == expected_num_umaps  # 3 graphs per log
+    assert len(list(output_dir.glob("RF_AUROC/*.jpg"))) == expected_num_rf_auroc_plots  # 1 graph per log
+
+def check_short_outputs(output_dir: Path) -> None:
+    """
+    Assumes test was run with SummaryArgs(summary_freq=1, plt_freq=2, save_freq=3, rf_auroc_freq=5) and max_steps=8,
+    so that we have 3 checkpoints, 5 TensorBoard event files, 12 UMAP plots, and 2 RF AUROC plots.
+    """
+    check_num_outputs(output_dir, 3, 5, 12, 2)
 
 @pytest.fixture(scope="session", params=[pytest.param("cuda", marks=pytest.mark.gpu)], ids=["cuda"])
 def trained_gan(gan_complex_factory: "Callable[[], GAN]", tmp_path_factory: pytest.TempPathFactory, request: pytest.FixtureRequest) -> Path:
@@ -23,6 +34,7 @@ def trained_gan(gan_complex_factory: "Callable[[], GAN]", tmp_path_factory: pyte
     subsequent test runs.
     """
 
+    from loggers import setup_logger
     from training.dicts import GANTrainingArgs, SummaryArgs
     from training.gan import GANTrainer
 
@@ -77,7 +89,7 @@ def trained_gan(gan_complex_factory: "Callable[[], GAN]", tmp_path_factory: pyte
     assert 0.499 <= rf_auroc <= 0.9, f"RF AUROC out of expected range: {rf_auroc}"
 
     gan_trainer.gan.save(checkpoint_path)
-    setup_logger("trained_gan_fixture").info(f"Saved trained GAN checkpoint to {checkpoint_path}")
+    logger.info(f"Saved trained GAN checkpoint to {checkpoint_path}")
     return checkpoint_path
 
 

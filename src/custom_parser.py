@@ -1,15 +1,16 @@
 from collections.abc import Callable
-from configparser import ConfigParser, ExtendedInterpolation
+from configparser import _UNSET, ConfigParser, ExtendedInterpolation  # pyright: ignore[reportAttributeAccessIssue]
 from copy import deepcopy
 from os import environ
 from pathlib import Path
-from typing import Any
+from typing import Any, overload
 
 import click
 
 
 class MyConfigParser(ConfigParser):
     """Custom ConfigParser that adds an option to save interpolated version."""
+
     def save_interpolated(self, file_path: Path) -> None:
         cfg_parser = deepcopy(self)
         default_keys = list(cfg_parser.defaults().keys())
@@ -17,10 +18,24 @@ class MyConfigParser(ConfigParser):
             for key, value in cfg_parser.items(section):
                 if key not in default_keys:
                     cfg_parser.set(section, key, value)
+                if value == "":
+                    cfg_parser.remove_option(section, key)
         for option in list(cfg_parser.defaults().keys()):
             cfg_parser.remove_option("DEFAULT", option)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with file_path.open("w") as cfg_file:
             cfg_parser.write(cfg_file)
+
+    @overload
+    def getpath(self, section: str, option: str) -> Path: ...
+    @overload
+    def getpath(self, section: str, option: str, fallback: Path | str) -> Path: ...
+    @overload
+    def getpath(self, section: str, option: str, fallback: None) -> Path | None: ...
+    def getpath(self, section: str, option: str, fallback: Path | None | str | object = _UNSET) -> Path | None:
+        value = self.get(section, option, fallback=fallback)
+        return Path(value) if value is not None else None # pyright: ignore[reportArgumentType]
+
 
 def get_configparser() -> MyConfigParser:
     """
@@ -46,7 +61,12 @@ def click_options(func: Callable[..., Any]) -> Callable[..., Any]:
     `config, preprocess, create_grn, train, optimize_hyperparameters, generate, evaluate, benchmark_grn, perturb`.
     """
     options = [
-        click.option("--config", required=True, type=click.Path(exists=True, dir_okay=False), help="Path to the configuration file"),
+        click.option(
+            "--config",
+            required=True,
+            type=click.Path(exists=True, dir_okay=False),
+            help="Path to the configuration file",
+        ),
         click.option("--preprocess", is_flag=True, default=False, help="Preprocess raw data for GAN training"),
         click.option(
             "--create-grn",

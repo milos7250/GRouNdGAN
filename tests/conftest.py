@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from loggers import setup_logger
-
 from . import pytestmark  # pyright: ignore[reportUnusedImport]  # noqa: F401
 from .resources.constants import CAUSAL_GRAPH_FILE, TRAIN_FILE
 
@@ -33,6 +31,8 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     items.sort(key=lambda item: "long" not in item.nodeid, reverse=True)
     # Run DDP trainer tests very last
     items.sort(key=lambda item: "TestDDPTrainers" not in item.nodeid, reverse=True)
+    # Run config parser tests last since they expect previous tests to pass
+    items.sort(key=lambda item: "test_config_parser.py" not in item.nodeid, reverse=True)
 
 
 MakeGanCheckpoint: "TypeAlias" = "Callable[[GAN], Path]"
@@ -69,13 +69,14 @@ def device(request: pytest.FixtureRequest) -> "Generator[str, None, None]":
 
         empty_cache()  # Clear GPU memory after tests that use CUDA
 
-
 @pytest.fixture(params=[False, True], ids=["no_compile", "compile"])
 def compile(request: pytest.FixtureRequest, caplog: pytest.LogCaptureFixture) -> "Generator[bool, None, None]":
     """
     Provides a boolean indicating whether to compile the model with torch.compile. If True, the fixture will reset
     torch._dynamo after the test to avoid side effects on other tests.
     """
+    from loggers import setup_logger
+
     _compile: bool = request.param
     yield _compile
     if _compile:

@@ -1,6 +1,6 @@
 import os
 
-os.environ["GROUNDGAN_LOGLEVEL"] = os.environ.get("GROUNDGAN_LOGLEVEL", "WARNING")
+os.environ["GROUNDGAN_LOGLEVEL"] = os.environ.get("GROUNDGAN_LOGLEVEL", "INFO")
 
 import pytest
 
@@ -24,4 +24,10 @@ pytestmark = [
         "torch.jit._trace.TracerWarning",
         "torch_sparse",
     ),
+    ignore_warning(
+        "ignore",
+        r"GPSampler is experimental \(supported from v3\.6\.0\). The interface can change in the future\.",
+        "optuna.exceptions.ExperimentalWarning",
+        ""
+    )
 ]

@@ -34,41 +34,42 @@ class CausalGAN(GAN):
 
         Parameters
         ----------
-        genes_no : int
+        genes_no
             Number of genes in the dataset.
-        batch_size : int
+        batch_size
             Training batch size.
-        latent_dim : int
+        latent_dim
             Dimension of the latent space from which the noise vector used by the causal controller is sampled.
-        noise_per_gene : int
+        noise_per_gene
             Dimension of the latent space from which the noise vectors used by target generators is sampled.
-        depth_per_gene : int
+        depth_per_gene
             Depth of the target generator networks.
-        width_per_gene : int
+        width_per_gene
             The width scale used for the target generator networks.
-        cc_latent_dim : int
+        cc_latent_dim
             Dimension of the latent space from which the noise vector to the causal controller is sampled.
-        cc_layers : list[int]
+        cc_layers
             list of integers corresponding to the number of neurons of each causal controller layer.
-        cc_pretrained_checkpoint : Path
+        cc_pretrained_checkpoint
             Path to the  pretrained causal controller.
-        crit_layers : list[int]
+        crit_layers
             list of integers corresponding to the number of neurons of each critic layer.
-        causal_graph : dict[int, set[int]]
+        causal_graph
             The causal graph is a dictionary representing the TRN to impose. It has the following format:
             {target gene index: {TF1 index, TF2 index, ...}}. This causal graph has to be acyclic and bipartite.
             A TF cannot be regulated by another TF.
-            Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
-            Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
-            Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
+
+            - Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
+            - Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
+            - Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
 
             Valid causal graph example: {1: {2, 3, 4}, 6: {5, 4, 2}, ...}
-        labeler_layers : list[int]
+        labeler_layers
             list of integers corresponding to the width of each labeler layer.
-        device : str | None, optional
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default 20000.
         """
 
@@ -125,7 +126,7 @@ class CausalGAN(GAN):
 
         Parameters
         ----------
-        path : Path
+        path
             Path to save the model. The model will be saved in .pth format.
         """
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -148,7 +149,7 @@ class CausalGAN(GAN):
 
         Parameters
         ----------
-        path : Path
+        path
             Path to the saved model .pth file.
         """
 

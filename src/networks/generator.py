@@ -26,14 +26,14 @@ class Generator(nn.Module):
 
         Parameters
         ----------
-        z_input : int
+        z_input
             The dimension of the noise tensor.
-        output_cells_dim : int
+        output_cells_dim
             The dimension of the output cells (number of genes).
-        gen_layers : list[int]
+        gen_layers
             List of integers corresponding to the number of neurons
             at each hidden layer of the generator.
-        library_size : int | None
+        library_size
             Total number of counts per generated cell. If None, no LSN layer is added. Default is None.
         """
         super().__init__()
@@ -51,7 +51,7 @@ class Generator(nn.Module):
 
         Parameters
         ----------
-        noise : Tensor
+        noise
             The noise used as input by the generator.
         *args
             Variable length argument list.
@@ -100,15 +100,15 @@ class Generator(nn.Module):
 
         Parameters
         ----------
-        input_dim : int
+        input_dim
             The block's input dimensions.
-        output_dim : int
+        output_dim
             The block's output dimensions.
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default None.
-        final_layer : bool | None, optional
+        final_layer
             Indicates if the block contains the final layer, by default False.
-        **kwargs: "Any"
+        **kwargs
             Arbitrary keyword arguments.
 
         Returns
@@ -152,16 +152,16 @@ class ConditionalGenerator(Generator):
 
         Parameters
         ----------
-        z_input : int
+        z_input
             The dimension of the noise tensor.
-        output_cells_dim : int
+        output_cells_dim
             The dimension of the output cells (number of genes).
-        num_classes : int
+        num_classes
             Number of clusters.
-        gen_layers : list[int]
+        gen_layers
             List of integers corresponding to the number of neurons
             at each hidden layer of the generator.
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default None.
         """
         self.num_classes = num_classes
@@ -174,9 +174,9 @@ class ConditionalGenerator(Generator):
 
         Parameters
         ----------
-        noise : Tensor
+        noise
             The noise used as input by the generator.
-        labels : Tensor
+        labels
             Tensor containing labels corresponding to cells to generate.
         *args
             Variable length argument list.
@@ -236,15 +236,15 @@ class ConditionalGenerator(Generator):
 
         Parameters
         ----------
-        input_dim : int
+        input_dim
             The block's input dimensions.
-        output_dim : int
+        output_dim
             The block's output dimensions.
-        num_classes : int
+        num_classes
             Number of clusters.
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default None.
-        final_layer : bool | None, optional
+        final_layer
             Indicates if the block contains the final layer, by default False.
         **kwargs
             Arbitrary keyword arguments.

@@ -3,13 +3,14 @@ import warnings
 from typing import TYPE_CHECKING
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 if TYPE_CHECKING:
     from torch import Tensor
 
 
 # These classes are now deprecated in favour of SparseLinear from sparselinear package
+
 
 class MaskedLinearFunction(torch.autograd.Function):
     """
@@ -92,7 +93,7 @@ class MaskedLinear(nn.Module):
             "MaskedLinear is deprecated. Please use SparseLinear from the sparselinear package instead. It provides the same functionality with better performance.",
             DeprecationWarning,
         )
-        super(MaskedLinear, self).__init__()
+        super().__init__()
         self.input_features = mask.shape[0]
         self.output_features = mask.shape[1]
         self.device = device

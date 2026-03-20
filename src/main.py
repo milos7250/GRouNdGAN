@@ -95,7 +95,7 @@ def main(
         randomness.set_pytorch_seeds(seed, deterministic)
 
         from hyperparameter_optimization import optuna_trainer
-        
+
         optuna_trainer(cfg_parser)()
 
     if generate:

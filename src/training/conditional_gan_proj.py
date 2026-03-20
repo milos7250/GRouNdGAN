@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from torch import Tensor
-    
+
     from gans import ConditionalProjGAN
 
     from .dicts import GANTrainingArgs, SummaryArgs
@@ -22,7 +22,7 @@ class ConditionalProjGANTrainer(ConditionalGANTrainer):
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path"
+        output_dir: "Path",
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
@@ -44,7 +44,7 @@ class ConditionalProjGANTrainer(ConditionalGANTrainer):
             create_graph=True,
         )[0]
         return gradient  # noqa: RET504
-    
+
     def _generator_step(self) -> tuple["Tensor", "Tensor", "Tensor"]:
         """
         Performs a forward pass of the generator and critic and computes the generator loss.
@@ -63,7 +63,7 @@ class ConditionalProjGANTrainer(ConditionalGANTrainer):
         gen_loss = self._generator_loss(crit_fake_pred)
 
         return gen_loss, crit_fake_pred, fake
-    
+
     def _critic_step(self, real_cells: "Tensor", real_labels: "Tensor") -> tuple["Tensor", "Tensor", "Tensor"]:
         with torch.no_grad():
             fake_noise = self.gan.generate_noise(len(real_cells), self.gan.latent_dim, self.gan.device)
@@ -73,4 +73,3 @@ class ConditionalProjGANTrainer(ConditionalGANTrainer):
         crit_real_pred = self.modules["crit"](real_cells, real_labels)
 
         return crit_fake_pred, crit_real_pred, fake_cells
-

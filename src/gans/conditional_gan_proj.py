@@ -44,7 +44,7 @@ class ConditionalProjGAN(ConditionalGAN):
             gen_cells = self.gen(gen_noise, gen_labels)
             crit_inputs = (gen_cells, gen_labels)
         return gen_inputs, crit_inputs
-    
+
     def generate_cells(
         self,
         cells_no: int,
@@ -57,14 +57,14 @@ class ConditionalProjGAN(ConditionalGAN):
 
         Parameters
         ----------
-        cells_no : int
+        cells_no
             Number of cells to generate.
-        checkpoint : Path | None, optional
+        checkpoint
             Path to the saved trained model. Default is None.
-        class_: int | None, optional
+        class_
             Class of the cells to generate. If None, cells with the same ratio per class
             will be generated. Default is None.
-        **kwargs: Any
+        **kwargs
             Additional keyword arguments to pass to the generator (not used here).
 
         Returns

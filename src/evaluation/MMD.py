@@ -7,6 +7,7 @@ from loggers import setup_logger
 
 logger = setup_logger(__name__)
 
+
 class MMD:
     """
     Maximum Mean Discrepancy (MMD) class for computing distribution similarity
@@ -20,7 +21,7 @@ class MMD:
 
         Parameters
         ----------
-        real_cells : np.ndarray | csr_matrix
+        real_cells
             A NumPy array representing real cell data (cells x features).
         """
         n_neighbors = 25
@@ -51,9 +52,9 @@ class MMD:
 
         Parameters
         ----------
-        x : csr_matrix
+        x
             Input matrix of shape (n, d).
-        y : csr_matrix
+        y
             Input matrix of shape (m, d).
 
         Returns
@@ -74,9 +75,9 @@ class MMD:
 
         Parameters
         ----------
-        a : csr_matrix
+        a
             Input matrix of shape (n, d).
-        b : csr_matrix
+        b
             Input matrix of shape (m, d).
 
         Returns
@@ -84,7 +85,7 @@ class MMD:
         np.ndarray
             A matrix of shape (n, m) representing the Gaussian kernel matrix.
         """
-        numerator = self.squared_distance(a, b)[np.newaxis, :, :] # shape: (1, n, m)
+        numerator = self.squared_distance(a, b)[np.newaxis, :, :]  # shape: (1, n, m)
         kernel = np.sum(self.weights * np.exp(-numerator / (self.scales**2)), axis=0)
         return kernel
 
@@ -98,9 +99,9 @@ class MMD:
 
         Parameters
         ----------
-        a : csr_matrix
+        a
             First sample of shape (n, d).
-        b : csr_matrix
+        b
             Second sample of shape (m, d).
 
         Returns

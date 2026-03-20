@@ -42,20 +42,20 @@ class GAN:
 
         Parameters
         ----------
-        genes_no : int
+        genes_no
             Number of genes in the dataset.
-        batch_size : int
+        batch_size
             Training batch size.
-        latent_dim : int
+        latent_dim
             Dimension of the latent space from which the noise vector is sampled.
-        gen_layers : list[int]
+        gen_layers
             list of integers corresponding to the number of neurons of each generator layer.
-        crit_layers : list[int]
+        crit_layers
             list of integers corresponding to the number of neurons of each critic layer.
-        device : str | None, optional
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if is_cuda_available() else"cpu".
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default 20000.
         """
         empty_cuda_cache()
@@ -84,15 +84,15 @@ class GAN:
     @staticmethod
     def generate_noise(batch_size: int, latent_dim: int, device: str) -> "Tensor":
         """
-        Function for creating noise vectors: Given the dimensions (batch_size, latent_dim).
+        Function for creating noise vectors
 
         Parameters
         ----------
-        batch_size : int
+        batch_size
             The number of samples to generate (normally equal to training batch size).
-        latent_dim : int
+        latent_dim
             Dimension of the latent space to sample from.
-        device : str
+        device
             The device type.
 
         Returns
@@ -114,13 +114,13 @@ class GAN:
 
         Parameters
         ----------
-        cells_no : int
+        cells_no
             Number of cells to generate.
-        checkpoint : Path | None, optional
+        checkpoint
             Path to the saved trained model, by default None.
-        *args : Any
+        *args
             Additional positional arguments (not used).
-        kwargs : Any
+        kwargs
             Additional keyword arguments (not used).
 
         Returns
@@ -177,15 +177,15 @@ class GAN:
 
         Parameters
         ----------
-        cells_no : int
+        cells_no
             Number of cells to generate.
-        save_path : Path | None, optional
+        save_path
             Path to save the generated h5ad file, by default None, iin which case the AnnData object will not be saved to disk.
-        gene_names : list[str] | None, optional
+        gene_names
             List of gene names to use as variable names in the generated h5ad file. If None, gene names will be taken from the reference dataset, by default None.
-        reference_dataset : Path | None, optional
+        reference_dataset
             Path to the reference dataset h5ad file to take gene names from if gene_names is None, by default None.
-        checkpoint : Path | None, optional
+        checkpoint
             Path to the saved trained model, by default None.
 
         Returns
@@ -226,7 +226,7 @@ class GAN:
 
         Parameters
         ----------
-        path : Path
+        path
             Path to save the model. The model will be saved in .pth format.
         """
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -244,7 +244,7 @@ class GAN:
 
         Parameters
         ----------
-        path : Path
+        path
             Path to the saved model .pth file.
         """
 
@@ -278,7 +278,7 @@ class GAN:
 
         Parameters
         ----------
-        output_dir : Path
+        output_dir
             Directory to save the tfevents.
         """
         was_training = (self.gen.training, self.crit.training)

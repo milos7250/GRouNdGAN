@@ -22,7 +22,7 @@ class SCDataset(Dataset["tuple[Tensor, Tensor]"]):
 
         Parameters
         ----------
-        path : Union[str, bytes, os.PathLike]
+        path
             Path to the h5ad file.
         """
         data = sc.read_h5ad(path)
@@ -41,7 +41,7 @@ class SCDataset(Dataset["tuple[Tensor, Tensor]"]):
         """
         Parameters
         ----------
-        index : int
+        index
 
         Returns
         -------
@@ -55,7 +55,7 @@ class SCDataset(Dataset["tuple[Tensor, Tensor]"]):
         """
         Parameters
         ----------
-        indices : list[int]
+        indices
 
         Returns
         -------
@@ -107,16 +107,16 @@ def get_loader(
 
     Parameters
     ----------
-    file_path : Path
+    file_path
         Path to the h5ad file.
-    batch_size : int | None
+    batch_size
         Training batch size. If not specified, the entire dataset
         is returned at each load. Default is None.
-    shuffle : bool
+    shuffle
         Whether to shuffle the data in the loader. Default is False.
-    drop_last : bool
+    drop_last
         Whether to drop the last incomplete batch. Default is False.
-    deterministic : bool | None
+    deterministic
         Whether to use deterministic data loading. Default is based on calling torch.are_deterministic_algorithms_enabled().
 
     Returns
@@ -146,7 +146,7 @@ def get_loader(
 
         import numpy
         import torch
-        
+
         def seed_worker(_) -> None:
             worker_seed = torch.initial_seed() % 2**32
             numpy.random.seed(worker_seed)
@@ -154,7 +154,7 @@ def get_loader(
 
         g = torch.Generator()
         g.manual_seed(0)
-        
+
         return SCDataLoader(
             dataset,
             batch_size,

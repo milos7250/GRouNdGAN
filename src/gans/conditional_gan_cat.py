@@ -32,9 +32,9 @@ class ConditionalCatGAN(ConditionalGAN):
 
         Parameters
         ----------
-        cells : Tensor
+        cells
             Tensor to which to concatenate one-hot encoded class labels.
-        labels : Tensor
+        labels
             Class labels to concatenate.
 
         Returns
@@ -55,13 +55,13 @@ class ConditionalCatGAN(ConditionalGAN):
             A batch of noise and the corresponding generated fake cells.
         """
         with torch.no_grad():
-            gen_noise = self.generate_noise(self.batch_size , self.latent_dim, self.device)
+            gen_noise = self.generate_noise(self.batch_size, self.latent_dim, self.device)
             gen_labels = self.sample_pseudo_labels(self.batch_size, self.label_ratios).to(self.device)
             gen_data = self.cat_one_hot_labels(gen_noise, gen_labels)
             gen_cells = self.gen(gen_data)
             crit_data = self.cat_one_hot_labels(gen_cells, gen_labels)
         return gen_data, crit_data
-    
+
     def generate_cells(
         self,
         cells_no: int,
@@ -74,14 +74,14 @@ class ConditionalCatGAN(ConditionalGAN):
 
         Parameters
         ----------
-        cells_no : int
+        cells_no
             Number of cells to generate.
-        checkpoint : Path | None
+        checkpoint
             Path to the saved trained model, by default None.
-        class_: int | None = None
+        class_
             Class of the cells to generate. If None, cells with the same ratio per class
             will be generated.
-        kwargs : Any
+        kwargs
             Additional keyword arguments (not used).
 
         Returns

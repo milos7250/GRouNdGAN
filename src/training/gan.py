@@ -55,7 +55,7 @@ class GANTrainer:
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path"
+        output_dir: "Path",
     ) -> None:
         self.gan = gan
         self.train_file = train_file
@@ -226,7 +226,7 @@ class GANTrainer:
 
         Parameters
         ----------
-        crit_fake_pred : Tensor
+        crit_fake_pred
             The critic's score on fake generated cells.
 
         Returns
@@ -249,13 +249,13 @@ class GANTrainer:
 
         Parameters
         ----------
-        crit_fake_pred : Tensor
+        crit_fake_pred
             Critic's score on fake cells.
-        crit_real_pred : Tensor
+        crit_real_pred
             Critic's score on real cells.
-        gp : Tensor
+        gp
             Unweighted gradient penalty
-        c_lambda : float
+        c_lambda
             Regularization hyper-parameter to be used with the gradient penalty
             in the WGAN loss.
 
@@ -279,13 +279,13 @@ class GANTrainer:
 
         Parameters
         ----------
-        real : Tensor
+        real
             A batch of real cells.
-        fake : Tensor
+        fake
             A batch of fake cells.
-        real_labels : Tensor
+        real_labels
             A batch of real labels (corresponding to real_cells). Not used in non-conditional GAN.
-        
+
         Returns
         -------
         Tensor
@@ -316,7 +316,7 @@ class GANTrainer:
 
         Parameters
         ----------
-        gradient : Tensor
+        gradient
             The gradient of the critic's score with respect to
             the interpolated data.
 
@@ -336,9 +336,9 @@ class GANTrainer:
 
         Parameters
         ----------
-        real_cells : Tensor
+        real_cells
             Tensor containing a batch of real cells.
-        real_labels : Tensor
+        real_labels
             Tensor containing a batch of real labels (corresponding to real_cells). Not used in non-conditional GAN.
 
         Returns
@@ -361,11 +361,11 @@ class GANTrainer:
 
         Parameters
         ----------
-        real_cells : Tensor
+        real_cells
             Tensor containing a batch of real cells.
-        real_labels : Tensor
+        real_labels
             Tensor containing a batch of real labels (corresponding to real_cells).
-        c_lambda : float
+        c_lambda
             Regularization hyper-parameter for gradient penalty.
 
         Returns
@@ -450,17 +450,17 @@ class GANTrainer:
         self, real_cells: "Tensor", real_labels: "Tensor", critic_iter: int, c_lambda: float
     ) -> GANLosses:
         """
-        Performs one training step: multiple critic updates followed by one generator update.
+        Performs one training step
 
         Parameters
         ----------
-        real_cells : Tensor
+        real_cells
             Tensor containing a batch of real cells.
-        real_labels : Tensor
+        real_labels
             Tensor containing a batch of real labels (corresponding to real_cells). Not used in non-conditional GAN.
-        critic_iter : int
+        critic_iter
             Number of training iterations of the critic for each iteration on the generator.
-        c_lambda : float
+        c_lambda
             Regularization hyper-parameter for gradient penalty.
 
         Returns
@@ -581,34 +581,40 @@ class GANTrainer:
             self.summary_writers["stats"].add_scalar(key, value, self.step)
         self.summary_writers["stats"].flush()
 
-    def _generate_umap_figures(self, fake_embedding: np.ndarray, fake_labels: np.ndarray | None) -> tuple["Figure", "Figure", "Figure"]:
+    def _generate_umap_figures(
+        self, fake_embedding: np.ndarray, fake_labels: np.ndarray | None
+    ) -> tuple["Figure", "Figure", "Figure"]:
         """
-         Generates UMAP figures comparing the real and fake cells in the validation set. This class uses the same
-         method as the evaluation code.
+        Generates UMAP figures comparing the real and fake cells in the validation set. This class uses the same
+        method as the evaluation code.
 
         Parameters
         ----------
-        fake_embedding : np.ndarray
+        fake_embedding
             The generated fake cell embeddings to be compared against the real cell embeddings from the validation set.
-        fake_labels : np.ndarray
-            The generated fake cell labels corresponding to fake_embedding. (not used in non-conditional GAN)
+        fake_labels
+            The generated fake cell labels corresponding to `fake_embedding`. (not used in non-conditional GAN)
 
         Returns
         -------
-        tuple[Figure, Figure, Figure]
-            A tuple containing the generated UMAP scatter plot figure, hexbin plot figure, and histogram of relative abundance of real cells figure.
+        scatter_fig
+            Generated UMAP scatter plot figure comparing real and fake cells in the validation set.
+        hexbin_fig
+            Generated UMAP hexbin plot figure comparing real and fake cells in the validation set.
+        hist_rel_abun_fig
+            Generated histogram figure of the relative abundance of real cells in the validation set compared to fake cells in the UMAP space.
         """
         scatter_fig, hexbin_fig, hist_rel_abun_fig = plot_UMAP(self.real_embedding, fake_embedding)
         return scatter_fig, hexbin_fig, hist_rel_abun_fig
-    
+
     def _log_umap_plots(self, fake_cells: np.ndarray, fake_labels: np.ndarray | None) -> None:
         """Generates and saves UMAP plots comparing the real and fake cells in the validation set.
 
         Parameters
         ----------
-        fake_cells : np.ndarray
+        fake_cells
             The generated fake cells to be compared against the real cells from the validation set.
-        fake_labels : np.ndarray
+        fake_labels
             The generated fake cell labels corresponding to fake_cells.
         """
         self.logger.debug("Generating UMAP plots...")
@@ -638,7 +644,7 @@ class GANTrainer:
 
         Parameters
         ----------
-        fake_cells : np.ndarray
+        fake_cells
             The generated fake cells to be compared against the real cells from the validation set.
 
         Returns
@@ -703,7 +709,9 @@ class GANTrainer:
 
         return hook_results
 
-    def train(self, checkpoint_path: "Path | None" = None, compile_modules: bool = True, trial: "Trial | None" = None) -> float:
+    def train(
+        self, checkpoint_path: "Path | None" = None, compile_modules: bool = True, trial: "Trial | None" = None
+    ) -> float:
         self.logger.info("Initializing training...")
         self._init_loaders()
         self._init_optimizers()
@@ -763,16 +771,16 @@ class GANTrainer:
 
                     # Allow trial pruning before reaching the end of training based on rf_auroc values
                     if trial is not None and "rf_auroc" in eval_hook_results:
-                            trial.report(eval_hook_results["rf_auroc"], step=self.step)
-                            if (
-                                eval_hook_results["rf_auroc"] > 0.99 and self.step > 10_000
-                            ):  # If the RF AUROC is very high after a considerable number of steps, the generator is likely not learning and we can stop early
-                                self.logger.error(
-                                    f"Step {self.step}: RF AUROC is very high ({eval_hook_results['rf_auroc']:.3f}), stopping early."
-                                )
-                                raise TrialPruned()
-                            if trial.should_prune():
-                                raise TrialPruned()
+                        trial.report(eval_hook_results["rf_auroc"], step=self.step)
+                        if (
+                            eval_hook_results["rf_auroc"] > 0.99 and self.step > 10_000
+                        ):  # If the RF AUROC is very high after a considerable number of steps, the generator is likely not learning and we can stop early
+                            self.logger.error(
+                                f"Step {self.step}: RF AUROC is very high ({eval_hook_results['rf_auroc']:.3f}), stopping early."
+                            )
+                            raise TrialPruned()
+                        if trial.should_prune():
+                            raise TrialPruned()
 
                     if is_ddp_initialized():
                         barrier()

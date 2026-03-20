@@ -26,12 +26,12 @@ def __get_handler(rank: str | None = None) -> RichHandler:
 
     Parameters
     ----------
-    rank : str | None, optional
+    rank
         Rank of the process in distributed training. If None, no rank is displayed.
 
     Returns
     -------
-    handler : RichHandler
+    handler
         Configured RichHandler instance.
     """
     handler = RichHandler(
@@ -56,9 +56,9 @@ def with_log_level(logger: "Logger", level: int) -> "Iterator[None]":
 
     Parameters
     ----------
-    logger : Logger
+    logger
         The logger whose level is to be set.
-    level : int
+    level
         The log level to set temporarily.
     """
     old_level = logger.getEffectiveLevel()
@@ -75,19 +75,19 @@ def setup_logger(name: str | None = None) -> "Logger":
 
     Parameters
     ----------
-    name  : str, optional
+    name
         Name of the logger. If None, the root logger is used.
 
     Returns
     -------
-    logger : Logger
+    logger
         Configured logger instance.
     """
     logger = logging.getLogger(name)
 
     logger.propagate = True  # False messes up pytest caplog
     logger.setLevel(os.environ.get("GROUNDGAN_LOGLEVEL", "INFO"))
-    
+
     if name is not None:
         for handler in logger.handlers:
             handler.close()
@@ -95,7 +95,7 @@ def setup_logger(name: str | None = None) -> "Logger":
 
     if os.environ.get("RANK", "0") != "0" and logger.level > logging.DEBUG:
         logger.propagate = False
-    
+
     if logger.level <= logging.DEBUG:
         logger.debug(f"Logger {name} initialized.")
 
@@ -114,16 +114,16 @@ def tqdm_logging_redirect(
 
     Parameters
     ----------
-    loggers  : list[Logger], optional
+    loggers
         List of loggers to redirect. If None, defaults to [logging.root].
-    tqdm_class  : type[std_tqdm], optional
+    tqdm_class
         The `tqdm` class to use for progress bars. If None, defaults to standard `tqdm`.
-    *tqdm_args: Any, **tqdm_kwargs: Any
+    *tqdm_args
         Additional arguments and keyword arguments to pass to the `tqdm` class.
 
     Yields
     ------
-    pbar : tqdm_class[Any] instance
+    pbar
         The progress bar instance created by `tqdm_class`.
     """
     # TODO: currently does not support tqdm.rich, is only tested with standard tqdm
@@ -154,23 +154,29 @@ def tqdm_logging_redirect(
                 if handler.emit.__name__ == "new_emit":
                     handler.emit = handler.old_emit  # type: ignore
 
+
 def setup_logging() -> None:
     # Set up basic configuration for unmanaged loggers
     logging.basicConfig(
         level=os.environ.get("LOGLEVEL", "WARNING"),
-        force=True, # True messes up pytest caplog
+        force=True,  # True messes up pytest caplog
         format=FORMAT,
         datefmt="[%X]",
         handlers=[__get_handler(rank=os.environ.get("RANK", None))],
     )
 
+
 if not __set_up:
     setup_logging()
 
     # Suppress specific warnings
-    warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API.*", category=UserWarning, module="louvain")
+    warnings.filterwarnings(
+        "ignore", message=".*pkg_resources is deprecated as an API.*", category=UserWarning, module="louvain"
+    )
     warnings.filterwarnings("ignore", message=".*GPSampler is experimental.*")
-    warnings.filterwarnings("ignore", message=".*dynamo_pgo force disabled by torch.compiler.config.force_disable_caches*")
+    warnings.filterwarnings(
+        "ignore", message=".*dynamo_pgo force disabled by torch.compiler.config.force_disable_caches*"
+    )
     warnings.filterwarnings("ignore", message=".*Using an existing study with name .* instead of creating a new one.*")
     warnings.filterwarnings("ignore", message=".*Trial [0-9]+ pruned.*")
     warnings.filterwarnings("ignore", message=".*Rich is experimental/alpha.*", category=TqdmExperimentalWarning)
@@ -189,5 +195,5 @@ if not __set_up:
 
     # Set up specific loggers
     setup_logger("optuna")
-    
+
     __set_up = True

@@ -10,6 +10,7 @@ class SummaryArgs(TypedDict):
     save_freq: int
     rf_auroc_freq: int
 
+
 class GANTrainingArgs(TypedDict):
     gen_alpha_0: float
     gen_alpha_final: float
@@ -21,10 +22,12 @@ class GANTrainingArgs(TypedDict):
     beta2: float
     c_lambda: float
 
+
 class CausalGANTrainingArgs(GANTrainingArgs):
     labeler_alpha: float
     antilabeler_alpha: float
     labeler_training_interval: int
+
 
 __GANGenLosses = TypedDict(
     "__GANGenLosses",
@@ -72,22 +75,31 @@ CausalGANLabelerLosses = TypedDict(
 class GANGenLosses(__GANGenLosses):
     pass
 
+
 class GANCritLosses(__GANCritLosses):
     pass
+
 
 class GANLosses(GANGenLosses, GANCritLosses, __GANLosses):
     pass
 
+
 class CausalGANGenLosses(GANGenLosses, __CausalGANGenLosses):
     pass
+
 
 class CausalGANCritLosses(GANCritLosses):
     pass
 
+
 class CausalGANLosses(CausalGANGenLosses, CausalGANCritLosses, CausalGANLabelerLosses, __GANLosses):
     pass
 
-Losses = TypeVar("Losses", GANGenLosses, GANCritLosses, GANLosses, CausalGANGenLosses, CausalGANCritLosses, CausalGANLosses)
+
+Losses = TypeVar(
+    "Losses", GANGenLosses, GANCritLosses, GANLosses, CausalGANGenLosses, CausalGANCritLosses, CausalGANLosses
+)
+
 
 class LossList(list[Losses]):
     def avg(self, last_n: int | None = None) -> Losses:

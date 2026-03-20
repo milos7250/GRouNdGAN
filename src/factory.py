@@ -25,9 +25,9 @@ def parse_list(str_list: str, _type: "type[_T]") -> "list[_T]":
 
     Parameters
     ----------
-    str_list : str
+    str_list
         String representation of a list (e.g., "0.1 0.2 0.3"). Note: No enclosing brackets.
-    _type : type[_T]
+    _type
         The type of the values inside the tuple.
 
     Returns
@@ -50,7 +50,7 @@ class IGANFactory(ABC):
 
         Parameters
         ----------
-        parser : MyConfigParser
+        parser
             Parser for config file containing GAN model and training params.
         """
         self.parser = parser
@@ -358,7 +358,7 @@ def get_factory(cfg: "MyConfigParser") -> IGANFactory:
 
     Parameters
     ----------
-    cfg : MyConfigParser
+    cfg
         Parser for config file containing GAN model and training params.
 
     Returns

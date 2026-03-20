@@ -16,9 +16,9 @@ class Critic(nn.Module):
 
         Parameters
         ----------
-        x_input : int
+        x_input
             The dimension of the input tensor.
-        critic_layers : list[int]
+        critic_layers
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
         """
@@ -35,7 +35,7 @@ class Critic(nn.Module):
 
         Parameters
         ----------
-        data : Tensor
+        data
             Tensor containing gene expression of (fake/real) cells.
         *args
             Variable length argument list.
@@ -69,11 +69,11 @@ class Critic(nn.Module):
 
         Parameters
         ----------
-        input_dim : int
+        input_dim
             The block's input dimensions.
-        output_dim : int
+        output_dim
             The block's output dimensions.
-        final_layer : bool | None, optional
+        final_layer
             Indicates if the block contains the final layer, by default False.
 
         Returns
@@ -100,12 +100,12 @@ class ConditionalCritic(Critic):
 
         Parameters
         ----------
-        x_input : int
+        x_input
             The dimension of the input tensor.
-        critic_layers : list[int]
+        critic_layers
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
-        num_classes : int
+        num_classes
             Number of clusters.
         """
         self.num_classes = num_classes
@@ -118,9 +118,9 @@ class ConditionalCritic(Critic):
 
         Parameters
         ----------
-        data : Tensor
+        data
             Tensor containing gene expression of (fake/real) cells.
-        labels : Tensor
+        labels
             Tensor containing labels corresponding to cells (data parameter).
         *args
             Variable length argument list.
@@ -164,17 +164,17 @@ class ConditionalCriticProj(Critic):
         """
         Conditional Critic's constructor using a modified implementation of
         Projection Discriminator (Marouf et al, 2020).
-        
+
         Currently not used in any of the GAN implementations.
 
         Parameters
         ----------
-        x_input : int
+        x_input
             The dimension of the input tensor.
-        critic_layers : list[int]
+        critic_layers
             List of integers corresponding to the number of neurons
             at each hidden layer of the critic.
-        num_classes : int
+        num_classes
             Number of clusters.
         """
         self.num_classes = num_classes
@@ -187,9 +187,9 @@ class ConditionalCriticProj(Critic):
 
         Parameters
         ----------
-        data : Tensor
+        data
             Tensor containing gene expression of (fake/real) cells.
-        labels : Tensor
+        labels
             Tensor containing labels corresponding to cells (data parameter).
         *args
             Variable length argument list.

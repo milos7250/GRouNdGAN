@@ -25,7 +25,7 @@ class ConditionalGANTrainer(GANTrainer, ABC):
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path"
+        output_dir: "Path",
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
@@ -34,14 +34,16 @@ class ConditionalGANTrainer(GANTrainer, ABC):
         """Precompute UMAP embeddings for the validation set to speed up UMAP plotting during training."""
         super()._init_umap()
         self.real_labels = self.loaders["valid"].dataset.clusters.numpy()
-    
-    def _generate_umap_figures(self, fake_embedding: np.ndarray, fake_labels: np.ndarray | None) -> tuple["Figure", "Figure", "Figure"]:
+
+    def _generate_umap_figures(
+        self, fake_embedding: np.ndarray, fake_labels: np.ndarray | None
+    ) -> tuple["Figure", "Figure", "Figure"]:
         real_embedding = self.real_embedding
         real_labels = self.real_labels
-        
+
         if fake_labels is None:
             raise ValueError("fake_labels cannot be None for ConditionalGANTrainer._generate_umap_figures")
-        
+
         extent = np.array([
             [
                 min(min(real_embedding[:, 0]), min(fake_embedding[:, 0])),
@@ -100,15 +102,25 @@ class ConditionalGANTrainer(GANTrainer, ABC):
         hexbin_fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
         ax1: Axes
         ax2: Axes
-        
+
         ax1.hexbin(
-            real_embedding[:, 0], real_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds" # pyright: ignore[reportArgumentType]
+            real_embedding[:, 0],
+            real_embedding[:, 1],
+            mincnt=1,
+            linewidths=0.0,
+            extent=extent.flatten(),  # pyright: ignore[reportArgumentType]
+            cmap="Reds",
         )
         ax1.set_title("Real Cells")
         plt.colorbar(ax1.collections[0], ax=ax1)
 
         ax2.hexbin(
-            fake_embedding[:, 0], fake_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds" # pyright: ignore[reportArgumentType]
+            fake_embedding[:, 0],
+            fake_embedding[:, 1],
+            mincnt=1,
+            linewidths=0.0,
+            extent=extent.flatten(),  # pyright: ignore[reportArgumentType]
+            cmap="Reds",
         )
         ax2.set_title("Generated Cells")
         plt.colorbar(ax2.collections[0], ax=ax2)
@@ -130,5 +142,5 @@ class ConditionalGANTrainer(GANTrainer, ABC):
         # make new ax object for the cbar
         cbar_ax = hist_rel_abun_fig.add_axes((0.87, 0.15, 0.02, 0.7))  # x, y, width, height
         plt.colorbar(cax=cbar_ax)
-        
+
         return scatter_fig, hexbin_fig, hist_rel_abun_fig

@@ -22,7 +22,7 @@ class ConditionalCatGANTrainer(ConditionalGANTrainer):
         valid_file: "Path",
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path"
+        output_dir: "Path",
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
@@ -34,11 +34,7 @@ class ConditionalCatGANTrainer(ConditionalGANTrainer):
         interpolates.requires_grad_(True)
 
         # Calculate the critic's scores on the mixed data
-        critic_interpolates = self.modules["crit"](
-            self.gan.cat_one_hot_labels(
-                interpolates, real_labels
-            )
-        )
+        critic_interpolates = self.modules["crit"](self.gan.cat_one_hot_labels(interpolates, real_labels))
 
         # Take the gradient of the scores with respect to the data
         gradient = torch.autograd.grad(

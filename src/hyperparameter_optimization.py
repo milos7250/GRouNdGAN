@@ -27,7 +27,8 @@ if TYPE_CHECKING:
 
     _T = TypeVar("_T", int, float, str)
 
-logger = setup_logger('optuna')
+logger = setup_logger("optuna")
+
 
 def suggest_from_tuple(
     str_tuple: str, type_: "type[_T]", suggest_fun: "Callable[..., _T]", var_name: str, **kwargs: "Any"
@@ -39,15 +40,15 @@ def suggest_from_tuple(
 
     Parameters
     ----------
-    str_tuple : str
+    str_tuple
         String representation of a tuple, e.g. "(0.1 1.0)".
-    type_ : type[_T]
+    type_
         The type of the values inside the tuple.
-    suggest_fun : Callable[..., _T]
+    suggest_fun
         Function to suggest a value from the given range. The type of the suggested value needs to match _T.
-    var_name : str
+    var_name
         Name of the variable to suggest. Used in the suggest function.
-    **kwargs : Any
+    **kwargs
         Additional keyword arguments to pass to the suggest function.
 
     Returns
@@ -76,15 +77,15 @@ def suggest_list_from_tuples(
 
     Parameters
     ----------
-    str_list : str
+    str_list
         String representation of a list of tuples, e.g. "(0.1 1.0) (0.2 1.1)". Note: No enclosing brackets.
-    type_ : type[_T]
+    type_
         The type of the values inside the tuple.
-    suggest_fun : Callable
+    suggest_fun
         Function to suggest a value from the given range. The type of the suggested value needs to match _T.
-    var_name : str
+    var_name
         Name of the variable to suggest. Used in the suggest function.
-    **kwargs : Any
+    **kwargs
         Additional keyword arguments to pass to the suggest function.
 
     Returns
@@ -102,7 +103,7 @@ def max_trial_callback(max_trials: int) -> "Callable[[Study, FrozenTrial], None]
 
     Parameters
     ----------
-    max_trials : int
+    max_trials
         Maximum number of completed trials before stopping the study.
 
     Returns
@@ -114,9 +115,7 @@ def max_trial_callback(max_trials: int) -> "Callable[[Study, FrozenTrial], None]
     def max_trial_callback(study: "Study", trial: "FrozenTrial") -> None:
         n_complete = len([t for t in study.trials if t.state == TrialState.COMPLETE])
         if n_complete >= max_trials:
-            logger.info(
-                "Optuna study reached required number of completed trials, stopping optimization."
-            )
+            logger.info("Optuna study reached required number of completed trials, stopping optimization.")
             study.stop()
 
     return max_trial_callback
@@ -128,7 +127,7 @@ def manual_off_switch_callback(control_file_path: "Path") -> "Callable[[Study, F
 
     Parameters
     ----------
-    control_file_path : Path
+    control_file_path
         Path to the control file that acts as an off switch.
 
     Returns
@@ -167,7 +166,7 @@ def resolve_hyperparameters(cfg_parser: "MyConfigParser", trial: "Trial"):
         *, key: None = None, value: str, trial: "Trial"
     ) -> "tuple[type[float], Callable[..., float]] | tuple[type[int], Callable[..., int]]":
         return (float, trial.suggest_float) if any(c in value for c in ".eE") else (int, trial.suggest_int)
-    
+
     resolved_parser = deepcopy(cfg_parser)
     for section in cfg_parser.sections():
         if section.startswith("HO "):
@@ -207,6 +206,7 @@ def resolve_hyperparameters(cfg_parser: "MyConfigParser", trial: "Trial"):
     resolved_parser.save_interpolated(resolved_parser_path)
     return resolved_parser_path
 
+
 def optuna_trainer(cfg_parser: "MyConfigParser") -> "Callable[[], None]":
     def objective(trial: "Trial") -> float:
         if worker_id_env := cfg_parser.get(
@@ -242,9 +242,7 @@ def optuna_trainer(cfg_parser: "MyConfigParser") -> "Callable[[], None]":
     if len(study.get_trials(states=[TrialState.COMPLETE])) >= cfg_parser.getint(
         "Hyperparameter Optimization", "number of trials"
     ):
-        logger.info(
-            "Optuna study already has required number of completed trials, skipping optimization."
-        )
+        logger.info("Optuna study already has required number of completed trials, skipping optimization.")
         return lambda: None
 
     return lambda: study.optimize(

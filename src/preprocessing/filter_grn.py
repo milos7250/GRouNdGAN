@@ -24,26 +24,28 @@ if __name__ == "__main__":
     @click.option("--target-col", type=str, default="target", help="Column name for targets in the input CSV")
     @click.option("--importance-col", type=str, default=None, help="Column name for importance in the input CSV")
     @click.pass_context
-    def cli(ctx: click.Context, input: Path, output: Path, tf_col: str, target_col: str, importance_col: str | None) -> None:
+    def cli(
+        ctx: click.Context, input: Path, output: Path, tf_col: str, target_col: str, importance_col: str | None
+    ) -> None:
         """This script processes a GRN CSV file to either filter it into a bipartite graph or convert it into an undirected graph."""
         col_names = {"TF": tf_col, "target": target_col}
         if importance_col is not None:
             col_names["importance"] = importance_col
         grn: GRNAccessor = GRNAccessor.from_csv(input, col_names=col_names).grn  # pyright: ignore[reportAssignmentType]
         ctx.obj = grn
-    
+
     @cli.result_callback()
     def save_result(result: pd.DataFrame, output: Path, *args: tuple[Any], **kwargs: dict[str, Any]) -> None:
         result.to_csv(output, index=False)
         logger.info(f"Saved processed GRN to {output}")
-        
+
     @cli.command("to-bipartite")
     @click.pass_context
     def to_bipartite(ctx: click.Context) -> pd.DataFrame:
         """Filter the GRN into a bipartite graph based on importance of edges."""
         grn: GRNAccessor = ctx.obj
         return grn.to_bipartite()
-    
+
     @cli.command("to-undirected")
     @click.pass_context
     def to_undirected(ctx: click.Context) -> pd.DataFrame:

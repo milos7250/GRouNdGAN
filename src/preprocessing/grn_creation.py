@@ -32,7 +32,7 @@ def create_GRN(cfg: ConfigParser) -> None:
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Parser for config file containing GRN creation params.
     """
     # Configure logger

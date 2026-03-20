@@ -13,9 +13,9 @@ class LSN(nn.Module):
 
         Parameters
         ----------
-        library_size : int
+        library_size
             Total number of counts per generated cell.
-        device : str | None, optional
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else "cpu".
 
@@ -31,9 +31,9 @@ class LSN(nn.Module):
 
         Parameters
         ----------
-        in_ : torch.Tensor
+        in_
             Tensor containing gene expression of cells.
-        reuse_scale : bool | None, optional
+        reuse_scale
             If set to true, the LSN layer will scale the cells by
             the same scale as the previous batch. Useful for performing
             perturbation studies. By default False

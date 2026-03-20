@@ -9,11 +9,11 @@ class Labeler(nn.Module):
 
         Parameters
         ----------
-        num_genes : int
+        num_genes
             Number of target genes (all genes excluding TFs) in the dataset.
-        num_tfs : int
+        num_tfs
             Number of transcription factors in the dataset.
-        labeler_layers : list[int]
+        labeler_layers
             List of integers corresponding to the number of neurons
             at each deep layer of the labeler.
         """
@@ -33,7 +33,7 @@ class Labeler(nn.Module):
 
         Parameters
         ----------
-        target_genes : torch.Tensor
+        target_genes
             Tensor containing target gene expression of (fake/real) cells.
 
         Returns

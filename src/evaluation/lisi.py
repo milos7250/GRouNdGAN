@@ -43,16 +43,16 @@ def compute_lisi(
 
     Parameters
     ----------
-    X : np.ndarray
+    X
         Data matrix of shape (n_samples, n_features), representing the embedding space (e.g., PCA, UMAP).
 
-    metadata : pd.DataFrame
+    metadata
         DataFrame containing categorical metadata for each sample (e.g., batch or cell type).
 
-    label_colnames : Collection[str]
+    label_colnames
         List of column names in `metadata` for which to compute LISI.
 
-    perplexity : float, optional
+    perplexity
         Perplexity parameter influencing the neighborhood size, by default 30.
 
     Returns
@@ -94,22 +94,22 @@ def compute_simpson(
 
     Parameters
     ----------
-    distances : np.ndarray
+    distances
         Array of shape (n_neighbors, n_samples) with distances to each sample's neighbors.
 
-    indices : np.ndarray
+    indices
         Array of shape (n_neighbors, n_samples) with indices of nearest neighbors for each sample.
 
-    labels : pd.Categorical
+    labels
         Categorical labels for all samples, aligned with the rows of `X`.
 
-    n_categories : int
+    n_categories
         Number of unique categories in the label.
 
-    perplexity : float
+    perplexity
         Perplexity value, used to set the target entropy for neighborhood probability distribution.
 
-    tol : float, optional
+    tol
         Tolerance for the entropy convergence, by default 1e-5.
 
     Returns

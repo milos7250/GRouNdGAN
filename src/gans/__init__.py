@@ -4,4 +4,3 @@ from .causal_gan import CausalGAN as CausalGAN
 from .conditional_gan_cat import ConditionalCatGAN as ConditionalCatGAN
 from .conditional_gan_proj import ConditionalProjGAN as ConditionalProjGAN
 from .gan import GAN as GAN
-

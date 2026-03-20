@@ -30,7 +30,7 @@ def read_datasets(cfg: ConfigParser) -> tuple[sparse.csr_matrix, sparse.csr_matr
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Parser for config file containing program params.
 
     Returns
@@ -66,15 +66,18 @@ def read_datasets(cfg: ConfigParser) -> tuple[sparse.csr_matrix, sparse.csr_matr
 
     return real_cells, fake_cells
 
-def get_UMAP_embeddings(real : np.ndarray | sparse.csr_matrix, fake: np.ndarray | sparse.csr_matrix) -> tuple[np.ndarray, np.ndarray]:
+
+def get_UMAP_embeddings(
+    real: np.ndarray | sparse.csr_matrix, fake: np.ndarray | sparse.csr_matrix
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute UMAP embeddings for real and fake cell data.
 
     Parameters
     ----------
-    real : np.ndarray | sparse.csr_matrix
+    real
         A NumPy array of real cell data with shape (n_real_cells, n_features).
-    fake : np.ndarray | sparse.csr_matrix
+    fake
         A NumPy array of fake/generated cell data with shape (n_fake_cells, n_features).
 
     Returns
@@ -90,19 +93,18 @@ def get_UMAP_embeddings(real : np.ndarray | sparse.csr_matrix, fake: np.ndarray 
 
     return real_embedding, fake_embedding
 
-def plot_UMAP(
-    real_embedding: np.ndarray, fake_embedding: np.ndarray
-) -> tuple[Figure, Figure, Figure]:
+
+def plot_UMAP(real_embedding: np.ndarray, fake_embedding: np.ndarray) -> tuple[Figure, Figure, Figure]:
     """
     Perform UMAP embedding on real and fake cell data and save a scatter plot.
 
     Parameters
     ----------
-    real : np.ndarray | sparse.csr_matrix
+    real
         A NumPy array of real cell data with shape (n_real_cells, n_features).
-    fake : np.ndarray | sparse.csr_matrix
+    fake
         A NumPy array of fake/generated cell data with shape (n_fake_cells, n_features).
-    output_dir : Path | None
+    output_dir
 
     Returns
     -------
@@ -152,15 +154,25 @@ def plot_UMAP(
     hexbin_fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
     ax1: Axes
     ax2: Axes
-    
+
     ax1.hexbin(
-        real_embedding[:, 0], real_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds" # pyright: ignore[reportArgumentType]
+        real_embedding[:, 0],
+        real_embedding[:, 1],
+        mincnt=1,
+        linewidths=0.0,
+        extent=extent.flatten(),  # pyright: ignore[reportArgumentType]
+        cmap="Reds",
     )
     ax1.set_title("Real Cells")
     plt.colorbar(ax1.collections[0], ax=ax1)
 
     ax2.hexbin(
-        fake_embedding[:, 0], fake_embedding[:, 1], mincnt=1, linewidths=0.0, extent=extent.flatten(), cmap="Reds" # pyright: ignore[reportArgumentType]
+        fake_embedding[:, 0],
+        fake_embedding[:, 1],
+        mincnt=1,
+        linewidths=0.0,
+        extent=extent.flatten(),  # pyright: ignore[reportArgumentType]
+        cmap="Reds",
     )
     ax2.set_title("Generated Cells")
     plt.colorbar(ax2.collections[0], ax=ax2)
@@ -195,11 +207,11 @@ def compute_distances(
 
     Parameters
     ----------
-    real_cells : np.ndarray | sparse.csr_matrix
+    real_cells
         A NumPy array representing real cell data (cells × features).
-    fake_cells : np.ndarray | sparse.csr_matrix
+    fake_cells
         A NumPy array representing fake cell data (cells × features).
-    axis : int, optional
+    axis
         Axis along which to compute the mean expression (default is 0, meaning across cells), by default 0
 
     Returns
@@ -229,11 +241,11 @@ def compute_RF_AUROC(
 
     Parameters
     ----------
-    real_cells : np.ndarray
+    real_cells
         A NumPy array representing real cell data (cells x features).
-    fake_cells : np.ndarray
+    fake_cells
         A NumPy array representing fake/generated cell data (cells x features).
-    n_components : int, optional
+    n_components
         Number of principal components to retain during PCA, by default 50
 
     Returns
@@ -300,7 +312,7 @@ def evaluate(cfg: ConfigParser) -> None:
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Parser for config file containing program params.
     """
     output_dir = Path(cfg.get("EXPERIMENT", "output directory"))
@@ -317,13 +329,13 @@ def evaluate(cfg: ConfigParser) -> None:
     if cfg.getboolean("Evaluation", "plot umap") or cfg.getboolean("Evaluation", "compute miLISI"):
         real_embedding, fake_embedding = get_UMAP_embeddings(real_cells, fake_cells)
         scatter_fig, hexbin_fig, hist_diff_fig = plot_UMAP(real_embedding, fake_embedding)
-        
+
         umap_path = output_dir / "UMAP"
         umap_path.mkdir(parents=True, exist_ok=True)
         scatter_fig.savefig(umap_path / "UMAP Scatter.jpg")
         hexbin_fig.savefig(umap_path / "UMAP Histogram.jpg")
         hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.jpg")
-        
+
     if cfg.getboolean("Evaluation", "compute euclidean distance") or cfg.getboolean(
         "Evaluation", "compute cosine distance"
     ):
@@ -335,7 +347,7 @@ def evaluate(cfg: ConfigParser) -> None:
 
         logger.info(f"Cosine distance (real vs fake): {cosine}")
         logger.info(f"Cosine distance (control): {cosine_ctr}")
-        
+
         results |= {
             "euclidean_distance_real_vs_fake": euclidean,
             "euclidean_distance_control": euclidean_ctr,
@@ -390,6 +402,6 @@ def evaluate(cfg: ConfigParser) -> None:
             "miLISI_real_vs_fake": float(lisis),
             "miLISI_control": float(lisis_ctr),
         }
-    
+
     with open(output_dir / "evaluation_results.json", "w") as f:
         json.dump(results, f, indent=2)

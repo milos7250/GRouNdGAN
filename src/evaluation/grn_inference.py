@@ -36,7 +36,7 @@ def get_imposed_grn(
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Configuration object providing the necessary file paths:
         - "Data" -> "train": Path to real cells `.h5ad` file for gene name mapping.
         - "Data" -> "causal graph": Path to the pickle file containing the ground truth GRN.
@@ -44,22 +44,22 @@ def get_imposed_grn(
 
     Returns
     -------
-    imposed_grn : pd.DataFrame
+    imposed_grn
         DataFrame with a single column "res" containing string-formatted edges ("TF -> target").
 
-    imposed_TFs : set[str]
+    imposed_TFs
         Set of transcription factors (TFs) involved in the imposed GRN.
 
-    imposed_targets : set[str]
+    imposed_targets
         Set of target genes in the imposed GRN.
 
-    imposed_edges : list[str]
+    imposed_edges
         List of edges as strings in the format "TF -> target".
 
-    TFs : list[str]
+    TFs
         List of unique transcription factors (from `imposed_TFs`), useful for downstream filtering.
 
-    possible_edges_no : int
+    possible_edges_no
         Total number of possible TF-target combinations based on imposed GRN (\\|TFs\\| * \\|targets\\|).
     """
     real_cells = sc.read_h5ad(cfg.get("Data", "train"))
@@ -121,20 +121,20 @@ def get_fake_grn(
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Configuration object providing the path to the inferred GRN file via the section
         "GRN Benchmarking" -> "grn to benchmark".
 
-    imposed_TFs : Collection[str]
+    imposed_TFs
         List of TFs that are considered "imposed" in the simulation and should be included as sources in the GRN.
 
-    imposed_targets : Collection[str]
+    imposed_targets
         List of target genes that are expected to be regulated in the benchmark.
 
-    TFs : Collection[str]
+    TFs
         List of all possible TFs used to filter the GRN (must be valid source nodes).
 
-    possible_edges_no : int
+    possible_edges_no
         Total number of possible edges in the benchmark GRN (used for validation/debugging).
 
     Returns
@@ -192,18 +192,18 @@ def compute_precision_at_k(
 
     Parameters
     ----------
-    fake_grn : pd.DataFrame
+    fake_grn
         Inferred GRN with columns "TF", "target", and "res" (formatted as "TF -> target").
 
-    imposed_grn : pd.DataFrame
+    imposed_grn
         Ground truth GRN with a column "res" representing edges in "TF -> target" format.
 
-    TFs : list[str] | set[str]
+    TFs
         List or set of valid transcription factors. Used to exclude predictions where a TF is treated as a target.
 
-    numTFs_pergene : int
+    numTFs_pergene
         Maximum number of top TFs to evaluate per gene.
-    save_path : Path
+    save_path
         Directory path where the precision-at-k plot should be saved. If empty, the plot is not saved.
 
     Returns
@@ -290,22 +290,22 @@ def compute_PR(
 
     Parameters
     ----------
-    fake_grn : pd.DataFrame
+    fake_grn
         Inferred GRN DataFrame with a column 'res' representing edges in the format "TF -> target".
 
-    imposed_grn : pd.DataFrame
+    imposed_grn
         Ground-truth GRN DataFrame with a column 'res' representing edges in the same format.
 
-    imposed_edges : list[str]
+    imposed_edges
         List of all ground-truth edges as strings ("TF -> target").
 
-    imposed_targets : set[str]
+    imposed_targets
         Set of ground-truth target genes.
 
-    imposed_TFs : set[str]
+    imposed_TFs
         Set of ground-truth transcription factors.
 
-    save_path : Path | None
+    save_path
         Directory path to save the precision-recall plot as "PR_curve.png".
         If None or empty, the plot is not saved.
 
@@ -363,7 +363,7 @@ def evaluate(cfg: "ConfigParser") -> None:
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Parser for config file containing program params.
 
     Returns

@@ -28,6 +28,7 @@ class GRNAccessor:
         df = GRNAccessor.from_csv("path/to/grn.csv")
         df.grn.method_name()
     """
+
     def __init__(self, pandas_obj: pd.DataFrame) -> None:
         self._validate(pandas_obj)
         self._obj = GRNAccessor._coalesce_duplicates(pandas_obj)
@@ -61,7 +62,8 @@ class GRNAccessor:
             df["importance"] = np.arange(len(df), 0, -1).astype(float)  # Assign importance based on rows if missing
         else:
             df = (
-                pd.read_csv(
+                pd
+                .read_csv(
                     grn_file,
                     dtype={col_names["TF"]: str, col_names["target"]: str, col_names["importance"]: float},
                     usecols=list(col_names.values()),
@@ -95,7 +97,8 @@ class GRNAccessor:
             return df
         logger.warning(f"{no_of_duplicates} duplicate edges found in GRN. Coalescing by summing importance values.")
         coalesced = (
-            pd.DataFrame(df.groupby(["TF", "target"], as_index=False)["importance"].sum())
+            pd
+            .DataFrame(df.groupby(["TF", "target"], as_index=False)["importance"].sum())
             .sort_values("importance", ascending=False)
             .reset_index(drop=True)
         )
@@ -161,7 +164,9 @@ class GRNAccessor:
             suffixes=("_1", "_2"),
             validate="one_to_one",
         )
-        merged["importance"] = np.nanmean(merged[["normalized_importance_1", "normalized_importance_2"]].to_numpy(), axis=1)
+        merged["importance"] = np.nanmean(
+            merged[["normalized_importance_1", "normalized_importance_2"]].to_numpy(), axis=1
+        )
         merged.drop(columns=["normalized_importance_1", "normalized_importance_2"], inplace=True)
         merged["importance"] = merged["importance"] / merged["importance"].sum() * sum_importance
         merged = merged.sort_values("importance", ascending=False).reset_index(drop=True)
@@ -194,7 +199,9 @@ class GRNAccessor:
             suffixes=("_1", "_2"),
             validate="one_to_one",
         )
-        merged["importance"] = np.nanmean(merged[["normalized_importance_1", "normalized_importance_2"]].to_numpy(), axis=1)
+        merged["importance"] = np.nanmean(
+            merged[["normalized_importance_1", "normalized_importance_2"]].to_numpy(), axis=1
+        )
         merged.drop(columns=["normalized_importance_1", "normalized_importance_2"], inplace=True)
         merged["importance"] = merged["importance"] / merged["importance"].sum() * sum_importance
         merged = merged.sort_values("importance", ascending=False).reset_index(drop=True)

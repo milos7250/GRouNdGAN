@@ -17,7 +17,7 @@ def preprocess(cfg: ConfigParser) -> None:
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Parser for config file containing preprocessing params.
     """
 
@@ -72,8 +72,8 @@ def preprocess(cfg: ConfigParser) -> None:
     )["X"]  # pyright: ignore[reportOptionalSubscript]
 
     if cfg.get("Preprocessing", "annotations", fallback=None) is not None:
-        annotations = pd.read_csv(cfg.get("Preprocessing", "annotations"), delimiter="\t", index_col=['barcodes'])
-        anndata.obs["celltype"] = annotations.loc[anndata.obs_names, 'celltype'].values
+        annotations = pd.read_csv(cfg.get("Preprocessing", "annotations"), delimiter="\t", index_col=["barcodes"])
+        anndata.obs["celltype"] = annotations.loc[anndata.obs_names, "celltype"].values
 
     # identify highly variable genes
     sc.pp.log1p(anndata, layer="normalized")  # logarithmize the data
@@ -106,6 +106,8 @@ def preprocess(cfg: ConfigParser) -> None:
     anndata[test_size + val_size :].write_h5ad(cfg.get("Data", "train"))
 
     logger.info("Successfully preprocessed and saved dataset.")
-    logger.info(f"Train set ({anndata[test_size + val_size :].shape[0]} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'train')}")
+    logger.info(
+        f"Train set ({anndata[test_size + val_size :].shape[0]} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'train')}"
+    )
     logger.info(f"Validation set ({val_size} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'validation')}")
     logger.info(f"Test set ({test_size} cells, {anndata.shape[1]} genes): {cfg.get('Data', 'test')}")

@@ -4,7 +4,8 @@ from torch.optim.lr_scheduler import ExponentialLR, LinearLR, SequentialLR
 
 if TYPE_CHECKING:
     from torch.optim import Optimizer
-    
+
+
 def set_exponential_lr(
     optimizer: "Optimizer",
     alpha_0: float,
@@ -18,17 +19,17 @@ def set_exponential_lr(
 
     Parameters
     ----------
-    optimizer : Optimizer
+    optimizer
         Optimizer for which to create an exponential learning rate scheduler.
-    alpha_0 : float
+    alpha_0
         Initial learning rate.
-    alpha_final : float
+    alpha_final
         Final learning rate.
-    max_steps : int
+    max_steps
         Total number of training steps. When current_step=max_steps, alpha_final
         will be set as the learning rate.
-    warmup_percent : float, optional
-        Percentage of total steps to use for learning rate warmup (default: 0.0).
+    warmup_percent
+        Percentage of total steps to use for learning rate warmup (default
 
     Returns
     -------
@@ -54,6 +55,7 @@ def set_exponential_lr(
     else:
         return exponential_sched
 
+
 class RunningAverage:
     """
     Class for computing a running average of a metric.
@@ -70,10 +72,10 @@ class RunningAverage:
 
         Parameters
         ----------
-        value : float
+        value
             New value to update the running average with.
-        n : int, optional
-            Number of samples that the value corresponds to (default: 1).
+        n
+            Number of samples that the value corresponds to (default
         """
         if self.ignore_next > 0:
             self.ignore_next -= n

@@ -26,7 +26,7 @@ class CausalGANTrainer(GANTrainer):
         valid_file: "Path",
         training_args: "CausalGANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path"
+        output_dir: "Path",
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan
@@ -77,11 +77,11 @@ class CausalGANTrainer(GANTrainer):
 
         Parameters
         ----------
-        cells : Tensor
+        cells
             Tensor containing a batch of cells.
-        genes : Tensor
+        genes
             Tensor containing the indices of the genes in the causal graph.
-        tfs : Tensor
+        tfs
             Tensor containing the indices of the TFs in the causal graph.
 
         Returns
@@ -100,11 +100,11 @@ class CausalGANTrainer(GANTrainer):
 
         Parameters
         ----------
-        cells : Tensor
+        cells
             Tensor containing a batch of cells.
-        genes : Tensor
+        genes
             Tensor containing the indices of the genes in the causal graph.
-        tfs : Tensor
+        tfs
             Tensor containing the indices of the TFs in the causal graph.
 
         Returns
@@ -123,7 +123,7 @@ class CausalGANTrainer(GANTrainer):
 
         Parameters
         ----------
-        real_cells : Tensor
+        real_cells
             Tensor containing a batch of real cells.
 
         Returns

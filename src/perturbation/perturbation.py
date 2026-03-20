@@ -1,14 +1,12 @@
-import typing
 from configparser import ConfigParser
 
-import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import scanpy as sc
 import seaborn as sns
 import torch
 import umap.umap_ as umap
-from matplotlib import cm, rcParams
+from matplotlib import cm, font_manager, rcParams
 
 from factory import get_factory, parse_list
 from loggers import setup_logger
@@ -29,7 +27,7 @@ UMAP = umap.UMAP(random_state=60, n_neighbors=15)
 def plot_UMAP(
     real: np.ndarray,
     fake: np.ndarray,
-    real_labels: typing.Union[list[str], np.ndarray] | None = None,
+    real_labels: list[str] | np.ndarray | None = None,
     fit: bool = False,
     fake_title: str = "Fake",
     case_ctr: str = "ctr",
@@ -40,20 +38,20 @@ def plot_UMAP(
 
     Parameters
     ----------
-    real : np.ndarray
+    real
         Real cell expression data (cells x genes).
-    fake : np.ndarray
+    fake
         Fake/generated cell expression data (cells x genes).
-    real_labels : Union[list[str], np.ndarray] | None, optional
+    real_labels
         List or array of cell type labels for real cells (used for color-coded scatter plots), by default None
-    fit : bool, optional
+    fit
         Whether to fit a new UMAP model on the concatenated data (`True`),
         or transform using an existing fitted UMAP model (`False`), by default False
-    fake_title : str, optional
+    fake_title
         Title used for fake cells in the plots (e.g., "Generated", "Simulated"), by default "Fake"
-    case_ctr : str, optional
+    case_ctr
         Identifier used in the saved filenames (before of after pert), by default "ctr"
-    save_path : str | None, optional
+    save_path
         If provided, saves the scatter and density plots as PNGs, by default None
     """
 
@@ -242,7 +240,7 @@ def perturb(cfg: ConfigParser) -> None:
 
     Parameters
     ----------
-    cfg : ConfigParser
+    cfg
         Parser for config file containing program params.
     """
     # use the same number of cels as the test set

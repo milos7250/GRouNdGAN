@@ -32,34 +32,35 @@ class CausalGenerator(nn.Module):
 
         Parameters
         ----------
-        z_input : int
+        z_input
             The dimension of the noise tensor.
-        noise_per_gene : int
+        noise_per_gene
             Dimension of the latent space from which the noise vectors used by target generators is sampled.
-        depth_per_gene : int
+        depth_per_gene
             Depth of the target generator networks.
-        width_scale_per_gene : int
+        width_scale_per_gene
             The width scale used for the target generator networks.
             if width_scale_per_gene = 2 and a gene is regulated by 10 TFs and 1 noise vector,
             the width of the target gene generator will be 2 * (10 + 1) = 22.
             Assuming 1000 target genes, each regulated by 10 TFs and 1 noise, the total width of the
             sparse target generator will be 22000.
-        causal_controller : nn.Module
+        causal_controller
             Causal controller module (retrieved from checkpoint if pretrained). It is a GAN trained on
             genes and TFs with the LSN layer removed after training. It cannot be trained on TFs only since the
             library size has to be enforced. However, during causal generator training, only TFs are used.
-        causal_graph : dict[int, set[int]]
+        causal_graph
             The causal graph is a dictionary representing the TRN to impose. It has the following format:
             {target gene index: {TF1 index, TF2 index, ...}}. This causal graph has to be acyclic and bipartite.
             A TF cannot be regulated by another TF.
-            Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
-            Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
-            Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
+
+            - Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
+            - Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
+            - Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
 
             Valid causal graph example: {1: {2, 3, 4}, 6: {5, 4, 2}, ...}
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default None
-        device : str, optional
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
         """
@@ -105,15 +106,15 @@ class CausalGenerator(nn.Module):
     @staticmethod
     def _generate_noise(batch_size: int, latent_dim: int, device: str) -> "Tensor":
         """
-        Function for creating noise vectors: Given the dimensions (batch_size, latent_dim).
+        Function for creating noise vectors
 
         Parameters
         ----------
-        batch_size : int
+        batch_size
             The number of samples to generate (normally equal to training batch size).
-        latent_dim : int
+        latent_dim
             Dimension of the latent space to sample from.
-        device : str
+        device
             The device type.
 
         Returns
@@ -131,7 +132,7 @@ class CausalGenerator(nn.Module):
 
         Parameters
         ----------
-        noise : torch.Tensor
+        noise
             The noise used as input by the causal controller.
         *args
             Variable length argument list.
@@ -257,11 +258,11 @@ class CausalGenerator(nn.Module):
 
         Parameters
         ----------
-        mask : torch.Tensor
+        mask
             Mask Tensor with shape (n_input_feature, n_output_feature).
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default None.
-        final_layer : bool | None, optional
+        final_layer
             Indicates if the block contains the final layer, by default False.
 
         Returns

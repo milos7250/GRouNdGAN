@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from torch import Tensor
 
 
-
 class ConditionalGAN(GAN, ABC):
     def __init__(
         self,
@@ -28,28 +27,28 @@ class ConditionalGAN(GAN, ABC):
 
         Parameters
         ----------
-        genes_no : int
+        genes_no
             Number of genes in the dataset.
-        batch_size : int
+        batch_size
             Training batch size.
-        latent_dim : int
+        latent_dim
             Dimension of the latent space from which the noise vector is sampled.
-        gen_layers : list[int]
+        gen_layers
             List of integers corresponding to the number of neurons of each generator layer.
-        crit_layers : list[int]
+        crit_layers
             List of integers corresponding to the number of neurons of each critic layer.
-        num_classes : int
+        num_classes
             Number of classes in the dataset.
-        label_ratios : list[float]
+        label_ratios
             List containing the ratio of each class in the dataset.
-        device : str | None, optional
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
-        library_size : int | None, optional
+        library_size
             Total number of counts per generated cell, by default 20000.
         """
         self.num_classes = num_classes
-        
+
         super().__init__(
             genes_no,
             batch_size,
@@ -60,9 +59,9 @@ class ConditionalGAN(GAN, ABC):
             library_size,
         )
 
-        self.label_ratios = torch.nn.Buffer(torch.tensor(label_ratios, device=device), persistent=True) # After super().__init__() to ensure self.device is set
-
-        
+        self.label_ratios = torch.nn.Buffer(
+            torch.tensor(label_ratios, device=device), persistent=True
+        )  # After super().__init__() to ensure self.device is set
 
     @staticmethod
     def sample_pseudo_labels(batch_size: int, cluster_ratios: "Tensor") -> "Tensor":
@@ -71,9 +70,9 @@ class ConditionalGAN(GAN, ABC):
 
         Parameters
         ----------
-        batch_size : int
+        batch_size
             The number of samples to generate (normally equal to training batch size).
-        cluster_ratios : Tensor
+        cluster_ratios
             Tensor containing the parameters of the multinomial distribution
             (ex: Tensor([0.5, 0.3, 0.2]) for 3 clusters with occurence
             probabilities of  0.5, 0.3, and 0.2 for clusters 0, 1, and 2, respectively).

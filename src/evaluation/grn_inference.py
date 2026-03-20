@@ -60,7 +60,7 @@ def get_imposed_grn(
         List of unique transcription factors (from `imposed_TFs`), useful for downstream filtering.
 
     possible_edges_no : int
-        Total number of possible TF-target combinations based on imposed GRN (|TFs| * |targets|).
+        Total number of possible TF-target combinations based on imposed GRN (\\|TFs\\| * \\|targets\\|).
     """
     real_cells = sc.read_h5ad(cfg.get("Data", "train"))
     gene_names = real_cells.var_names.tolist()

@@ -1,12 +1,11 @@
 import pickle
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 # from loggers import setup_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import TypeVar
 
     from optuna.trial import Trial
 
@@ -14,7 +13,10 @@ if TYPE_CHECKING:
     from gans import GAN, CausalGAN, ConditionalCatGAN, ConditionalProjGAN
     from training.dicts import CausalGANTrainingArgs, GANTrainingArgs, SummaryArgs
 
-    _T = TypeVar("_T", int, float, str)
+_T = TypeVar("_T", int, float, str)
+"""
+Type variable for :py:func:`parse_list` function. Allowed types are :py:class:`int`, :py:class:`float`, and :py:class:`str`.
+"""
 
 
 def parse_list(str_list: str, _type: "type[_T]") -> "list[_T]":

@@ -9,9 +9,19 @@ import click
 
 
 class MyConfigParser(ConfigParser):
-    """Custom ConfigParser that adds an option to save interpolated version."""
+    """
+    Custom ConfigParser that adds an option to save interpolated version.
+    """
 
     def save_interpolated(self, file_path: Path) -> None:
+        """
+        Save the interpolated version of the configuration to a file.
+        
+        Parameters
+        ----------
+        file_path : Path
+            The path to the file where the interpolated configuration will be saved.
+        """
         cfg_parser = deepcopy(self)
         default_keys = list(cfg_parser.defaults().keys())
         for section in cfg_parser.sections():
@@ -33,6 +43,24 @@ class MyConfigParser(ConfigParser):
     @overload
     def getpath(self, section: str, option: str, fallback: None) -> Path | None: ...
     def getpath(self, section: str, option: str, fallback: Path | None | str | object = _UNSET) -> Path | None:
+        """
+        Get a configuration value as a Path object, with an optional fallback.
+        
+        Parameters
+        ----------
+        section : str
+            The section of the configuration file.
+        option : str
+            The option within the section to retrieve.
+        fallback : Path | str | None, optional
+            The fallback value to return if the option is not found. If not provided, a KeyError will be raised if the
+            option is not found.
+        
+        Returns
+        -------
+        Path | None
+            The configuration value as a Path object, or None if the option is not found and fallback is None.
+        """
         value = self.get(section, option, fallback=fallback)
         return Path(value) if value is not None else None # pyright: ignore[reportArgumentType]
 

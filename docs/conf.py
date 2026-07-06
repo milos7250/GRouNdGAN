@@ -33,7 +33,42 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_favicon",
     "sphinx_copybutton",
+    "sphinx_autodoc_typehints",
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.11", None),
+    "pytorch": ("https://pytorch.org/docs/2.9/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "optuna": ("https://optuna.readthedocs.io/en/stable/", None),
+    "sklearn": ("https://scikit-learn.org/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+}
+
+# napoleon_use_rtype = False  # sphinx.ext.napoleon setting
+# napoleon_preprocess_types = False  # sphinx.ext.napoleon setting
+napoleon_google_docstring = False # sphinx.ext.napoleon setting
+# napoleon_type_aliases = {
+#     "Tensor": "torch.Tensor",
+#     "Module": "torch.nn.Module",
+#     "Trial": "optuna.Trial",
+#     "Path": "pathlib.Path",
+#     "Figure": "matplotlib.figure.Figure",
+#     "np.ndarray": "numpy.ndarray",
+# }
+
+typehints_fully_qualified = False      # show unqualified type names
+python_use_unqualified_type_names = True  # show unqualified type names
+typehints_use_signature = True  # show parameter types in signature
+typehints_use_signature_return = True  # show return type in signature
+always_document_param_types = True
+typehints_defaults = "comma"
+autodoc_typehints="none"
+
+nitpicky = True
+
+
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",

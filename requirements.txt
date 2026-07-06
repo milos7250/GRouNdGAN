@@ -9,6 +9,7 @@ optuna~=4.6
 optuna-dashboard~=0.20
 optunahub~=0.4
 pandas~=2.3
+psycopg2-binary~=2.9
 rich~=14.2
 rich-click~=1.9
 scanpy~=1.11

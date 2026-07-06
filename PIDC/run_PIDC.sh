@@ -4,7 +4,6 @@ set -euo pipefail
 INPUT_FILE=$(realpath -- "$1")
 OUTPUT_FILE=$(realpath -- "$2")
 
-
 if [[ -z "$TMPDIR" ]]; then
     TMPDIR="$(mktemp -d)"
 fi

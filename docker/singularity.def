@@ -6,6 +6,9 @@ From: pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
 
 %files
     requirements.txt /groundgan/requirements.txt
+    requirements2.txt /groundgan/requirements2.txt
+    requirements-dev.txt /groundgan/requirements-dev.txt
+    src /groundgan/src
     arboreto.patch /groundgan/arboreto.patch
 
 %post
@@ -14,7 +17,7 @@ From: pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
     # Update and upgrade system packages (non-interactive)
     apt-get update \
       && apt-get upgrade -y --no-install-recommends \
-      && apt-get install git g++ make \
+      && apt-get install -y git g++ make \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
 
@@ -23,6 +26,10 @@ From: pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
 
     # Install Python requirements
     python -m pip install --no-cache-dir --root-user-action ignore -r /groundgan/requirements.txt
+    python -m pip install --no-cache-dir --root-user-action ignore --no-build-isolation -r /groundgan/requirements2.txt
+
+    # Install dev requirements (uncomment if needed)
+    # python -m pip install --no-cache-dir --root-user-action ignore -r /groundgan/requirements-dev.txt  
 
     # Cleanup pip cache
     rm -rf /root/.cache/pip || true
@@ -35,8 +42,12 @@ From: pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime
     if [ "$#" -eq 0 ]; then
       set -- --help
     fi
-    exec python /groundgan/main.py "$@"
+    exec python /groundgan/src/main.py "$@"
 
 %help
     Singularity image for GRouNdGAN based on pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime.
-    Defaults to running: python /groundgan/main.py --help
+    Provide arguments to run the main.py script, e.g.:
+    `singularity run groundgan.sif --train --config gan.cfg`
+
+    Defaults to running:
+    `python /groundgan/src/main.py --help`

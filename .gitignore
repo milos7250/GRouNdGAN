@@ -46,3 +46,6 @@ data/
 
 # generated coverage files
 *.coverage.*
+
+# apptainer containers
+*.sif

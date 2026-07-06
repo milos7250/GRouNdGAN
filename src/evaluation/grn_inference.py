@@ -267,12 +267,8 @@ def compute_precision_at_k(
     plt.grid()
     if save_path:
         Path(save_path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(
-            save_path / "Top_TF_precision.png",
-            format="png",
-            dpi=300,
-            bbox_inches="tight",
-        )
+        plt.savefig(save_path / "Top_TF_precision.png")
+        plt.savefig(save_path / "Top_TF_precision.pdf")
         logger.info(f"Saved precision at k plot at {save_path / 'Top_TF_precision.png'}")
 
 
@@ -353,7 +349,8 @@ def compute_PR(
     logger.info(f"Baseline AUPRC (random predictor): {baseline}")
     if save_path:
         Path(save_path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_path / "PR_curve.png", format="png", dpi=300, bbox_inches="tight")
+        plt.savefig(save_path / "PR_curve.png")
+        plt.savefig(save_path / "PR_curve.pdf")
         logger.info(f"Saved PR curve at {save_path / 'PR_curve.png'}")
 
 

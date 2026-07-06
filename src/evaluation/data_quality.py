@@ -332,9 +332,13 @@ def evaluate(cfg: ConfigParser) -> None:
 
         umap_path = output_dir / "UMAP"
         umap_path.mkdir(parents=True, exist_ok=True)
-        scatter_fig.savefig(umap_path / "UMAP Scatter.jpg")
-        hexbin_fig.savefig(umap_path / "UMAP Histogram.jpg")
-        hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.jpg")
+        scatter_fig.savefig(umap_path / "UMAP Scatter.png")
+        scatter_fig.savefig(umap_path / "UMAP Scatter.pdf")
+        hexbin_fig.savefig(umap_path / "UMAP Histogram.png")
+        hexbin_fig.savefig(umap_path / "UMAP Histogram.pdf")
+        hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.png")
+        hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.pdf")
+        plt.close('all')
 
     if cfg.getboolean("Evaluation", "compute euclidean distance") or cfg.getboolean(
         "Evaluation", "compute cosine distance"
@@ -360,8 +364,8 @@ def evaluate(cfg: ConfigParser) -> None:
             real_cells,
             fake_cells,
         )
-        fig.savefig(output_dir / "RF.png", format="png", bbox_inches="tight")
-        fig.savefig(output_dir / "RF.pdf", format="pdf", bbox_inches="tight")
+        fig.savefig(output_dir / "RF.png")
+        fig.savefig(output_dir / "RF.pdf")
         plt.close(fig)
         logger.info(f"RF ROC plot saved to {output_dir / 'RF.png'}")
         logger.info(f"RF AUROC: {rf_auroc}")

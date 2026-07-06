@@ -36,7 +36,7 @@ class GRNAccessor:
     @staticmethod
     def from_csv(
         grn_file: Path | str,
-        col_names: dict[str, str] | None = {"TF": "TF", "target": "target", "importance": "importance"},
+        col_names: dict[str, str] | None = None,
     ) -> pd.DataFrame:
         """
         Loads a GRN from a CSV file. The CSV file is expected to have columns representing 'TF' and'target'.

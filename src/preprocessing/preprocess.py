@@ -5,10 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from scipy.sparse import csr_matrix
-
 from loggers import setup_logger
 from randomness import random_seed
+from scipy.sparse import csr_matrix
 
 
 def preprocess(cfg: ConfigParser) -> None:
@@ -60,10 +59,13 @@ def preprocess(cfg: ConfigParser) -> None:
 
     # filtering
     logger.info("Filtering data...")
-    sc.pp.filter_cells(anndata, min_genes=int(cfg.get("Preprocessing", "min genes")))
-    sc.pp.filter_genes(anndata, min_cells=int(cfg.get("Preprocessing", "min cells")))
-    anndata.uns["cells_no"] = anndata.shape[0]
-    anndata.uns["genes_no"] = anndata.shape[1]
+    cells_no, genes_no = anndata.shape
+    while True:
+        sc.pp.filter_cells(anndata, min_genes=int(cfg.get("Preprocessing", "min genes")))
+        sc.pp.filter_genes(anndata, min_cells=int(cfg.get("Preprocessing", "min cells")))
+        if anndata.shape == (cells_no, genes_no):
+            break
+        cells_no, genes_no = anndata.shape
 
     # library-size normalization
     logger.info("Subsetting highly variable genes...")
@@ -84,8 +86,15 @@ def preprocess(cfg: ConfigParser) -> None:
     del anndata.layers["normalized"]
     anndata = anndata[:, hvgs].copy()  # only keep highly variable genes
 
-    sc.pp.filter_cells(anndata, min_genes=int(cfg.get("Preprocessing", "min genes")))
-    sc.pp.filter_genes(anndata, min_cells=int(cfg.get("Preprocessing", "min cells")))
+    cells_no, genes_no = anndata.shape
+    while True:
+        sc.pp.filter_cells(anndata, min_genes=int(cfg.get("Preprocessing", "min genes")))
+        sc.pp.filter_genes(anndata, min_cells=int(cfg.get("Preprocessing", "min cells")))
+        if anndata.shape == (cells_no, genes_no):
+            break
+        cells_no, genes_no = anndata.shape
+    anndata.uns["cells_no"] = anndata.shape[0]
+    anndata.uns["genes_no"] = anndata.shape[1]
     sc.pp.normalize_total(anndata, target_sum=int(cfg.get("Preprocessing", "library size")))
 
     # sort genes by name (not needed)

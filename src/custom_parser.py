@@ -92,7 +92,7 @@ def click_options(func: Callable[..., Any]) -> Callable[..., Any]:
         click.option(
             "--config",
             required=True,
-            type=click.Path(exists=True, dir_okay=False),
+            type=click.Path(exists=True, dir_okay=False, path_type=Path),
             help="Path to the configuration file",
         ),
         click.option("--preprocess", is_flag=True, default=False, help="Preprocess raw data for GAN training"),

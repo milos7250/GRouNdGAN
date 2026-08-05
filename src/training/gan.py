@@ -681,31 +681,37 @@ class GANTrainer:
 
     def eval_hooks(self, loss_list: LossList[GANLosses] | None, force: bool = False) -> "GANTrainer.HookResults":
         hook_results = self.__class__.HookResults()
-        fake_cells, fake_labels = self.gan.generate_cells(len(self.loaders["valid"].dataset))
+        run_save = self._should_run(self.summary_args["save_freq"], root_thread_only=True) or force
+        run_summary = (self._should_run(self.summary_args["summary_freq"], root_thread_only=False) or force) and loss_list
+        run_umap = self._should_run(self.summary_args["plt_freq"], root_thread_only=True) or force
+        run_rf_auroc = self._should_run(self.summary_args["rf_auroc_freq"], root_thread_only=True) or force
 
         try:
-            if self._should_run(self.summary_args["save_freq"], root_thread_only=True) or force:
+            if run_save:
                 self._save_checkpoint(self.output_dir / f"checkpoints/step_{self.step}")
         except Exception as e:
             self.logger.error(f"Error saving checkpoint at step {self.step}: {e}")
 
         try:
-            if (self._should_run(self.summary_args["summary_freq"], root_thread_only=False) or force) and loss_list:
+            if run_summary:
                 self._log_stats(loss_list)
         except Exception as e:
             self.logger.error(f"Error saving summary at step {self.step}: {e}")
 
-        try:
-            if self._should_run(self.summary_args["plt_freq"], root_thread_only=True) or force:
-                self._log_umap_plots(fake_cells, fake_labels=fake_labels)
-        except Exception as e:
-            self.logger.error(f"Error saving plots at step {self.step}: {e}")
+        
+        if any([run_umap, run_rf_auroc]):
+            fake_cells, fake_labels = self.gan.generate_cells(len(self.loaders["valid"].dataset))
+            try:
+                if run_umap:
+                    self._log_umap_plots(fake_cells, fake_labels=fake_labels)
+            except Exception as e:
+                self.logger.error(f"Error saving plots at step {self.step}: {e}")
 
-        try:
-            if self._should_run(self.summary_args["rf_auroc_freq"], root_thread_only=True) or force:
-                hook_results["rf_auroc"] = self._rf_auroc(fake_cells)
-        except Exception as e:
-            self.logger.error(f"Error saving RF AUROC at step {self.step}: {e}")
+            try:
+                if run_rf_auroc:
+                    hook_results["rf_auroc"] = self._rf_auroc(fake_cells)
+            except Exception as e:
+                self.logger.error(f"Error saving RF AUROC at step {self.step}: {e}")
 
         return hook_results
 

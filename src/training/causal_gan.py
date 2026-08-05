@@ -89,7 +89,7 @@ class CausalGANTrainer(GANTrainer):
         tuple[Tensor, Tensor]
             Antilabeler's loss for the current batch and the predicted TFs.
         """
-        predicted_tfs = self.gan.antilabeler(cells[:, genes])
+        predicted_tfs = self.modules["antilabeler"](cells[:, genes])
         antilabeler_loss = self.mse(predicted_tfs, cells[:, tfs])
 
         return antilabeler_loss, predicted_tfs
@@ -112,7 +112,7 @@ class CausalGANTrainer(GANTrainer):
         Tensor
             Labeler's loss for the current batch and the predicted TFs.
         """
-        predicted_tfs = self.gan.labeler(cells[:, genes])
+        predicted_tfs = self.modules["labeler"](cells[:, genes])
         labeler_loss = self.mse(predicted_tfs, cells[:, tfs])
 
         return labeler_loss, predicted_tfs

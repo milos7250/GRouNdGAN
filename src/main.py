@@ -178,3 +178,4 @@ if __name__ == "__main__":
         _main()
     except Exception:
         logger.exception("An error occurred during execution.")
+        raise

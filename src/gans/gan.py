@@ -215,6 +215,7 @@ class GAN:
             generated_h5ad.var_names = train_var_names.tolist()
 
         if save_path:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
             generated_h5ad.write(save_path)
             return None
         else:

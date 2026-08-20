@@ -129,27 +129,46 @@ def plot_UMAP(real_embedding: np.ndarray, fake_embedding: np.ndarray) -> tuple[F
     plt.clf()
     scatter_fig = plt.figure(figsize=(5, 5))
 
+    # Interweave points for cycled colors
+    points = np.empty(
+        (real_embedding.shape[0] + fake_embedding.shape[0], real_embedding.shape[1]), dtype=real_embedding.dtype
+    )
+    points[0::2] = real_embedding
+    points[1::2] = fake_embedding
+    colors = np.array(["blue", "red"] * (points.shape[0] // 2 + 1))[: points.shape[0]]
+
     plt.scatter(
-        real_embedding[:, 0],
-        real_embedding[:, 1],
+        points[:, 0],
+        points[:, 1],
+        c=colors,
+        s=3,
+        edgecolor="none",
+    )
+
+    # Create artificial legend handles for the scatter plot
+    a1 = plt.scatter(
+        [],
+        [],
         c="blue",
         label="real",
-        alpha=0.1,
+        s=3,
+        edgecolor="none",
     )
-
-    plt.scatter(
-        fake_embedding[:, 0],
-        fake_embedding[:, 1],
+    a2 = plt.scatter(
+        [],
+        [],
         c="red",
         label="generated",
-        alpha=0.1,
+        s=3,
+        edgecolor="none",
     )
+    plt.legend(handles=[a1, a2], loc="lower left", ncol=2, fontsize=8, bbox_to_anchor=(0, 0)).set(zorder=5)
 
-    plt.grid(True)
+    plt.grid(True, linestyle="--", linewidth=0.5)
+    plt.gca().set_axisbelow(True)
     plt.xlim(extent[0, 0], extent[0, 1])
     plt.ylim(extent[1, 0], extent[1, 1])
     plt.title("UMAP Projection of Real and Generated Cells")
-    plt.legend(loc="lower left", numpoints=1, ncol=2, fontsize=8, bbox_to_anchor=(0, 0))
 
     hexbin_fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
     ax1: Axes
@@ -316,6 +335,7 @@ def evaluate(cfg: ConfigParser) -> None:
         Parser for config file containing program params.
     """
     output_dir = Path(cfg.get("EXPERIMENT", "output directory"))
+    plt.rcParams.update({"savefig.dpi": 600})
     results = {}
 
     real_cells, fake_cells = read_datasets(cfg)
@@ -332,13 +352,16 @@ def evaluate(cfg: ConfigParser) -> None:
 
         umap_path = output_dir / "UMAP"
         umap_path.mkdir(parents=True, exist_ok=True)
+
         scatter_fig.savefig(umap_path / "UMAP Scatter.png")
         scatter_fig.savefig(umap_path / "UMAP Scatter.pdf")
+        scatter_fig.axes[0].set_rasterization_zorder(1.1)
+        scatter_fig.savefig(umap_path / "UMAP Scatter Rasterized.pdf")
         hexbin_fig.savefig(umap_path / "UMAP Histogram.png")
         hexbin_fig.savefig(umap_path / "UMAP Histogram.pdf")
         hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.png")
         hist_diff_fig.savefig(umap_path / "UMAP Histogram Difference.pdf")
-        plt.close('all')
+        plt.close("all")
 
     if cfg.getboolean("Evaluation", "compute euclidean distance") or cfg.getboolean(
         "Evaluation", "compute cosine distance"

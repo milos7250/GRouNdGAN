@@ -185,11 +185,10 @@ if not __set_up:
     plt.rcParams.update({
         "savefig.facecolor": (0.0, 0.0, 0.0, 0.0),
         "axes.facecolor": (0.0, 0.0, 0.0, 0.0),
-        "legend.facecolor": (0.0, 0.0, 0.0, 0.1),
-        "legend.framealpha": 0.1,
+        "legend.facecolor": (1.0, 1.0, 1.0, 0.7),
         "savefig.transparent": True,
         "savefig.bbox": "tight",
-        "savefig.pad_inches": 0,
+        "savefig.pad_inches": 0.25,
         "savefig.dpi": 300,
     })
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot UMAP embeddings of real and generated cells, showing the smaller of two disjoint regions as a zoomed inset to reduce whitespace."""
+"""Plot UMAP embeddings of an arbitrary number of cell groups, showing the smaller of two disjoint regions as a zoomed inset to reduce whitespace."""
 
 import sys
 from pathlib import Path
@@ -21,8 +21,18 @@ if TYPE_CHECKING:
     from scipy import sparse
 
 
-_CATEGORIES: tuple[str, ...] = ("real", "original generated", "improved generated")
-_CATEGORY_COLORS: tuple[str, ...] = ("blue", "red", "green")
+_DEFAULT_COLORS: tuple[str, ...] = (
+    "blue",
+    "red",
+    "green",
+    "orange",
+    "purple",
+    "brown",
+    "pink",
+    "gray",
+    "olive",
+    "cyan",
+)
 _CORNER_LOCATIONS: tuple[str, ...] = ("upper right", "upper left", "lower right", "lower left")
 _LEGEND_LOCATIONS: tuple[str, ...] = (
     "best",
@@ -40,81 +50,62 @@ _LEGEND_LOCATIONS: tuple[str, ...] = (
 _INSET_LOCATIONS: tuple[str, ...] = ("best", "upper right", "upper left", "lower right", "lower left", "center")
 
 
-def read_datasets(
-    test_cells_path: Path, orig_fake_cells_path: Path, improved_fake_cells_path: Path
-) -> tuple["sparse.csr_matrix", "sparse.csr_matrix", "sparse.csr_matrix"]:
+def _category_colors(n: int) -> list[str]:
+    """Return ``n`` distinct colour names, cycling the default palette if ``n`` exceeds it."""
+    if n <= len(_DEFAULT_COLORS):
+        return list(_DEFAULT_COLORS[:n])
+    logger.warning("More than %d cell groups requested; colours will cycle.", len(_DEFAULT_COLORS))
+    return [_DEFAULT_COLORS[i % len(_DEFAULT_COLORS)] for i in range(n)]
+
+
+def read_datasets(cells_paths: list[Path]) -> list["sparse.csr_matrix"]:
     """
-    Load real and simulated (fake) gene expression datasets.
+    Load gene expression datasets from H5AD files.
+
+    Each file is read into a sparse matrix and all datasets are truncated to the smallest row count so
+    every group contributes the same number of cells.
 
     Parameters
     ----------
-    test_cells_path
-        Path to the H5AD file containing real cell data.
-    orig_fake_cells_path
-        Path to the H5AD file containing original simulated gene expression data.
-    improved_fake_cells_path
-        Path to the H5AD file containing improved simulated gene expression data.
+    cells_paths
+        Paths to the H5AD files, one per cell group.
 
     Returns
     -------
-    tuple["sparse.csr_matrix", "sparse.csr_matrix", "sparse.csr_matrix"]
-        A tuple containing:
-        - real_cells.X : sparse matrix of real gene expression data
-        - orig_fake_cells.X : sparse matrix of original simulated data, truncated to match real data row count
-        - improved_fake_cells.X : sparse matrix of improved simulated data, truncated to match real data row count
+    list["sparse.csr_matrix"]
+        Sparse matrices (one per input file), each truncated to the common cell count.
     """
     import scanpy as sc
     from scipy import sparse
 
-    real_cells = sc.read_h5ad(test_cells_path)
-    orig_fake_cells = sc.read_h5ad(orig_fake_cells_path)
-    improved_fake_cells = sc.read_h5ad(improved_fake_cells_path)
-
-    real_cells = sparse.csr_matrix(real_cells.X)
-    orig_fake_cells = sparse.csr_matrix(orig_fake_cells.X)
-    improved_fake_cells = sparse.csr_matrix(improved_fake_cells.X)
-
-    no_of_cells = int(min(real_cells.shape[0], orig_fake_cells.shape[0], improved_fake_cells.shape[0]))  # pyright: ignore[reportOptionalSubscript,reportUnknownArgumentType]
-    real_cells = real_cells[:no_of_cells, :]
-    orig_fake_cells = orig_fake_cells[:no_of_cells, :]
-    improved_fake_cells = improved_fake_cells[:no_of_cells, :]
-
-    return real_cells, orig_fake_cells, improved_fake_cells
+    matrices = [sparse.csr_matrix(sc.read_h5ad(p).X) for p in cells_paths]
+    no_of_cells = int(min(m.shape[0] for m in matrices))
+    return [m[:no_of_cells, :] for m in matrices]
 
 
-def get_UMAP_embeddings(
-    real: "sparse.csr_matrix",
-    orig_fake: "sparse.csr_matrix",
-    improved_fake: "sparse.csr_matrix",
-) -> tuple["np.ndarray", "np.ndarray", "np.ndarray"]:
+def get_UMAP_embeddings(datasets: list["sparse.csr_matrix"]) -> list["np.ndarray"]:
     """
-    Compute UMAP embeddings for real and fake cell data.
+    Compute 2D UMAP embeddings for each dataset.
+
+    UMAP is fitted once on the first dataset and used to transform every dataset, so the embeddings
+    are comparable across groups. Put the reference (e.g. real) dataset first.
 
     Parameters
     ----------
-    real
-        A sparse matrix of real cell data with shape (n_real_cells, n_features).
-    orig_fake
-        A sparse matrix of original fake/generated cell data with shape (n_fake_cells, n_features).
-    improved_fake
-        A sparse matrix of improved fake/generated cell data with shape (n_fake_cells, n_features).
+    datasets
+        Sparse matrices of shape (n_cells, n_features), one per group.
 
     Returns
     -------
-    tuple["np.ndarray", "np.ndarray", "np.ndarray"]
-        The 2D UMAP embeddings of the real and fake data, in the form
-        (real_embedding, orig_fake_embedding, improved_fake_embedding).
+    list["np.ndarray"]
+        2D UMAP embeddings, one array per dataset, in the same order as the input.
     """
     import numpy as np
     from umap import UMAP
 
     umap = UMAP(random_state=42, min_dist=0.0, n_jobs=1)
-    umap.fit(real)  # ensure UMAP is fitted only once to preserve comparability
-    real_embedding = np.array(umap.transform(real))
-    orig_fake_embedding = np.array(umap.transform(orig_fake))
-    improved_fake_embedding = np.array(umap.transform(improved_fake))
-
-    return real_embedding, orig_fake_embedding, improved_fake_embedding
+    umap.fit(datasets[0])  # fit only once on the first dataset to preserve comparability
+    return [np.array(umap.transform(d)) for d in datasets]
 
 
 def _interleave(points_per_category: list["np.ndarray"]) -> tuple["np.ndarray", "np.ndarray"]:
@@ -158,20 +149,26 @@ def _interleave(points_per_category: list["np.ndarray"]) -> tuple["np.ndarray", 
     return out, cat
 
 
-def split_into_regions(points: "np.ndarray") -> "np.ndarray":
+def split_into_regions(points: "np.ndarray", centres: list[tuple[float, float]] | None = None) -> "np.ndarray":
     """
-    Split 2D points into two spatial regions using HDBSCAN.
+    Split 2D points into two spatial regions: the larger (more points) labelled ``0`` (main) and the
+    rest labelled ``1`` (inset).
 
-    The larger region (more points) is labelled ``0`` and the smaller region ``1``. HDBSCAN finds
-    clusters of arbitrary shape and varying density without a fixed cluster count; noise and any
-    extra clusters are assigned to the nearest of the two largest clusters. If fewer than two
-    clusters are detected, all points are labelled ``0`` so the caller can fall back to a plain
-    plot. Callers should additionally verify the two regions are well-separated before insetting.
+    If ``centres`` are supplied, each point is assigned to its nearest centre; the largest resulting
+    group becomes the main region and all other points the inset region. Otherwise the two regions
+    are found by splitting at the largest gap along the best of three 1D projections (the first
+    principal component and the x / y axes), choosing the projection whose split yields the most
+    separated groups. This gap-based split is more robust than density clustering (HDBSCAN), which
+    tends to over-segment a region into several adjacent sub-clusters so that the "two largest
+    clusters" both lie in the same region. Callers should additionally verify the two regions are
+    well-separated before insetting.
 
     Parameters
     ----------
     points
         ``(n, 2)`` array of 2D embeddings. Not modified.
+    centres
+        Optional list of ``(x, y)`` region centres for manual assignment.
 
     Returns
     -------
@@ -179,29 +176,62 @@ def split_into_regions(points: "np.ndarray") -> "np.ndarray":
         Integer labels of shape ``(n,)`` with values in ``{0, 1}``.
     """
     import numpy as np
-    from sklearn.cluster import HDBSCAN
 
     n = points.shape[0]
     if n < 2:
         return np.zeros(n, dtype=np.int64)
 
-    min_cluster_size = max(5, n // 100)
-    raw = HDBSCAN(min_cluster_size=min_cluster_size, copy=True).fit_predict(points)
-    present = [c for c in range(int(raw.max()) + 1) if (raw == c).any()]
-    if len(present) < 2:
-        return np.zeros(n, dtype=np.int64)
+    if centres is not None and len(centres) >= 2:
+        cen = np.asarray(centres, dtype=float)
+        assign = np.argmin(np.linalg.norm(points[:, None, :] - cen[None, :, :], axis=2), axis=1)
+    else:
+        assign = _largest_gap_split(points)
 
-    counts = {c: int((raw == c).sum()) for c in present}
-    main_label, inset_label = sorted(present, key=lambda c: counts[c], reverse=True)[:2]
-    centroids = np.stack([points[raw == main_label].mean(axis=0), points[raw == inset_label].mean(axis=0)])
-    out = np.ones(n, dtype=np.int64)
-    out[raw == main_label] = 0
-    other = (raw != main_label) & (raw != inset_label)
-    if other.any():
-        diff = points[other][:, None, :] - centroids[None, :, :]
-        nearest = np.argmin(np.linalg.norm(diff, axis=2), axis=1)
-        out[np.where(other)[0]] = nearest
-    return out
+    counts = np.bincount(assign)
+    main_label = int(np.argmax(counts))
+    return np.where(assign == main_label, 0, 1).astype(np.int64)
+
+
+def _largest_gap_split(points: "np.ndarray") -> "np.ndarray":
+    """Split points into two groups at the largest gap along the best of PC1 / x / y axes.
+
+    The "best" axis is the one whose largest-gap split produces the most separated (by bounding-box
+    gap) pair of groups, so the main/outlier separation is chosen directly rather than via an
+    arbitrary projection.
+    """
+    import numpy as np
+    from sklearn.decomposition import PCA
+
+    pc1 = PCA(n_components=1).fit_transform(points).ravel()
+    candidates = [pc1, points[:, 0], points[:, 1]]
+    best_gap = -np.inf
+    best_labels = np.zeros(points.shape[0], dtype=np.int64)
+    for proj in candidates:
+        order = np.argsort(proj)
+        s = proj[order]
+        gaps = np.diff(s)
+        if gaps.size == 0:
+            continue
+        i = int(np.argmax(gaps))
+        labels = np.where(proj <= s[i], 0, 1)
+        g0 = points[labels == 0]
+        g1 = points[labels == 1]
+        if g0.shape[0] == 0 or g1.shape[0] == 0:
+            continue
+        gap = _bbox_gap(g0, g1)
+        if gap > best_gap:
+            best_gap = gap
+            best_labels = labels
+    return best_labels
+
+
+def _bbox_gap(region0: "np.ndarray", region1: "np.ndarray") -> float:
+    """Maximum spatial gap between the bounding boxes of two point sets (0 if they overlap)."""
+    b0 = _region_bbox(region0, margin_frac=0.0)
+    b1 = _region_bbox(region1, margin_frac=0.0)
+    gap_x = max(b0[0, 0], b1[0, 0]) - min(b0[0, 1], b1[0, 1])
+    gap_y = max(b0[1, 0], b1[1, 0]) - min(b0[1, 1], b1[1, 1])
+    return float(max(gap_x, gap_y))
 
 
 def _region_bbox(points: "np.ndarray", margin_frac: float = 0.05) -> "np.ndarray":
@@ -329,32 +359,30 @@ def _best_inset_corner(main_points: "np.ndarray") -> tuple[str, dict[str, int]]:
     return corner, counts
 
 
-def _scatter_interleaved(ax, points_per_category: list["np.ndarray"]) -> None:
+def _scatter_interleaved(ax, points_per_category: list["np.ndarray"], colors: list[str]) -> None:
     """Interleave the category points and scatter them on ``ax`` with cycled colours."""
     import numpy as np
 
     pts, cat = _interleave(points_per_category)
-    colors = np.array(_CATEGORY_COLORS)[cat]
-    ax.scatter(pts[:, 0], pts[:, 1], c=colors, s=3, edgecolor="none")
+    color_array = np.array(colors)[cat]
+    ax.scatter(pts[:, 0], pts[:, 1], c=color_array, s=3, edgecolor="none")
 
 
-def _add_legend(ax, location: str) -> None:
-    """Attach the shared real/original/improved legend to ``ax``."""
-    handles = [
-        ax.scatter([], [], c=_CATEGORY_COLORS[i], label=_CATEGORIES[i], s=3, edgecolor="none")
-        for i in range(len(_CATEGORIES))
-    ]
+def _add_legend(ax, location: str, names: list[str], colors: list[str]) -> None:
+    """Attach the shared legend (one handle per cell group) to ``ax``."""
+    handles = [ax.scatter([], [], c=colors[i], label=names[i], s=3, edgecolor="none") for i in range(len(names))]
     ax.legend(handles=handles, loc=location, ncol=1, fontsize=8).set(zorder=5)
 
 
 def plot_UMAP_inset(
-    real_embedding: "np.ndarray",
-    orig_fake_embedding: "np.ndarray",
-    improved_fake_embedding: "np.ndarray",
+    embeddings: list["np.ndarray"],
+    names: list[str],
+    colors: list[str],
     legend_location: str = "lower left",
     inset_loc: str = "best",
     inset_width: float = 0.35,
     inset_height: float = 0.35,
+    centres: list[tuple[float, float]] | None = None,
 ) -> "Figure":
     """
     Scatter the UMAP embeddings with the smaller of two disjoint regions shown as a zoomed inset.
@@ -367,12 +395,12 @@ def plot_UMAP_inset(
 
     Parameters
     ----------
-    real_embedding
-        2D UMAP embedding of the real cells.
-    orig_fake_embedding
-        2D UMAP embedding of the original generated cells.
-    improved_fake_embedding
-        2D UMAP embedding of the improved generated cells.
+    embeddings
+        2D UMAP embeddings, one array per cell group.
+    names
+        Legend name per cell group.
+    colors
+        Colour name per cell group.
     legend_location
         Location of the shared legend on the main axes. Defaults to ``"lower left"``.
     inset_loc
@@ -382,6 +410,9 @@ def plot_UMAP_inset(
         Inset width as a fraction of the main axes width. Defaults to ``0.35``.
     inset_height
         Inset height as a fraction of the main axes height. Defaults to ``0.35``.
+    centres
+        Optional list of ``(x, y)`` region centres. If given, each point is assigned to its nearest
+        centre instead of the automatic largest-gap split.
 
     Returns
     -------
@@ -391,9 +422,8 @@ def plot_UMAP_inset(
     import matplotlib.pyplot as plt
     import numpy as np
 
-    all_per_category = [real_embedding, orig_fake_embedding, improved_fake_embedding]
-    all_points = np.vstack(all_per_category)
-    region = split_into_regions(all_points)
+    all_points = np.vstack(embeddings)
+    region = split_into_regions(all_points, centres=centres)
     has_inset = bool((region == 0).any() and (region == 1).any())
     if has_inset and not _regions_well_separated(all_points[region == 0], all_points[region == 1]):
         has_inset = False
@@ -416,32 +446,23 @@ def plot_UMAP_inset(
     ax = fig.subplots()
 
     if not has_inset:
-        _scatter_interleaved(ax, all_per_category)
+        _scatter_interleaved(ax, embeddings, colors)
         extent = _region_bbox(all_points)
         ax.set_xlim(extent[0, 0], extent[0, 1])
         ax.set_ylim(extent[1, 0], extent[1, 1])
         ax.grid(True, linestyle="--", linewidth=0.5)
         ax.set_axisbelow(True)
-        ax.set_title("UMAP Projection of Real and Generated Cells")
-        _add_legend(ax, legend_location)
+        ax.set_title("UMAP Projection of Cells")
+        _add_legend(ax, legend_location, names, colors)
         return fig
 
-    n_real = real_embedding.shape[0]
-    n_orig = orig_fake_embedding.shape[0]
-    real_region = region[:n_real]
-    orig_region = region[n_real : n_real + n_orig]
-    imp_region = region[n_real + n_orig :]
-
-    main_per_category = [
-        real_embedding[real_region == 0],
-        orig_fake_embedding[orig_region == 0],
-        improved_fake_embedding[imp_region == 0],
-    ]
-    inset_per_category = [
-        real_embedding[real_region == 1],
-        orig_fake_embedding[orig_region == 1],
-        improved_fake_embedding[imp_region == 1],
-    ]
+    sizes = [int(emb.shape[0]) for emb in embeddings]
+    starts = [0]
+    for s in sizes[:-1]:
+        starts.append(starts[-1] + s)
+    region_per_category = [region[starts[i] : starts[i] + sizes[i]] for i in range(len(embeddings))]
+    main_per_category = [embeddings[i][region_per_category[i] == 0] for i in range(len(embeddings))]
+    inset_per_category = [embeddings[i][region_per_category[i] == 1] for i in range(len(embeddings))]
     main_points = np.vstack(main_per_category)
     inset_points = np.vstack(inset_per_category)
     main_extent = _region_bbox(main_points)
@@ -451,8 +472,8 @@ def plot_UMAP_inset(
     ax.set_ylim(main_extent[1, 0], main_extent[1, 1])
     ax.grid(True, linestyle="--", linewidth=0.5)
     ax.set_axisbelow(True)
-    _scatter_interleaved(ax, main_per_category)
-    ax.set_title("UMAP Projection of Real and Generated Cells")
+    _scatter_interleaved(ax, main_per_category, colors)
+    ax.set_title("UMAP Projection of Cells")
 
     best_corner, corner_counts = _best_inset_corner(main_points)
     corner = best_corner if inset_loc == "best" else inset_loc
@@ -462,7 +483,7 @@ def plot_UMAP_inset(
     ax_inset = _sibling_inset_axes(fig, ax, corner, inset_width, inset_height)
     ax_inset.patch.set_facecolor("white")
     ax_inset.patch.set_alpha(1.0)
-    _scatter_interleaved(ax_inset, inset_per_category)
+    _scatter_interleaved(ax_inset, inset_per_category, colors)
     ax_inset.set_xlim(inset_extent[0, 0], inset_extent[0, 1])
     ax_inset.set_ylim(inset_extent[1, 0], inset_extent[1, 1])
     # Inset ticks on the sides facing the main axes interior (so labels stay inside and do not
@@ -472,19 +493,19 @@ def plot_UMAP_inset(
     ax_inset.set_axisbelow(True)
     ax_inset.tick_params(labelsize=6)
 
-    _add_legend(ax, legend_location)
+    _add_legend(ax, legend_location, names, colors)
     return fig
 
 
 def main(
-    real_cells_path: Path,
-    orig_fake_cells_path: Path,
-    improved_fake_cells_path: Path,
+    cells_paths: list[Path],
+    names: list[str],
     output_dir: Path,
     legend_location: str = "best",
     inset_loc: str = "best",
     inset_width: float = 0.35,
     inset_height: float = 0.35,
+    centres: list[tuple[float, float]] | None = None,
 ) -> None:
     import matplotlib.pyplot as plt
 
@@ -493,25 +514,26 @@ def main(
         "legend.facecolor": (1.0, 1.0, 1.0, 0.0),
     })
 
+    if len(names) != len(cells_paths):
+        raise ValueError(f"Number of names ({len(names)}) must match number of input files ({len(cells_paths)}).")
+    colors = _category_colors(len(names))
+
     logger.info("Reading datasets")
-    real_cells, orig_fake_cells, improved_fake_cells = read_datasets(
-        real_cells_path, orig_fake_cells_path, improved_fake_cells_path
-    )
+    datasets = read_datasets(cells_paths)
 
     logger.info("Computing UMAP embeddings")
-    real_embedding, orig_fake_embedding, improved_fake_embedding = get_UMAP_embeddings(
-        real_cells, orig_fake_cells, improved_fake_cells
-    )
+    embeddings = get_UMAP_embeddings(datasets)
 
     logger.info("Plotting UMAP inset scatter plot")
     scatter_fig = plot_UMAP_inset(
-        real_embedding,
-        orig_fake_embedding,
-        improved_fake_embedding,
+        embeddings,
+        names,
+        colors,
         legend_location=legend_location,
         inset_loc=inset_loc,
         inset_width=inset_width,
         inset_height=inset_height,
+        centres=centres,
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -529,9 +551,35 @@ def main(
     plt.close("all")
 
 
+def _parse_centres(spec: str) -> list[tuple[float, float]]:
+    """
+    Parse a cluster-centres specification of the form ``"x1,y1;x2,y2[;...]"``.
+
+    Centres are separated by ``;`` and each centre is an ``x,y`` pair. Whitespace is ignored. At
+    least two centres are required.
+    """
+    centres: list[tuple[float, float]] = []
+    for part in spec.split(";"):
+        part = part.strip()
+        if not part:
+            continue
+        coords = [c.strip() for c in part.split(",")]
+        if len(coords) != 2:
+            raise click.UsageError(f"Each cluster centre must be 'x,y' (got '{part}').")
+        try:
+            centres.append((float(coords[0]), float(coords[1])))
+        except ValueError as exc:
+            raise click.UsageError(f"Cluster centre coordinates must be numeric (got '{part}').") from exc
+    if len(centres) < 2:
+        raise click.UsageError("--cluster-centres must provide at least two 'x,y' centres separated by ';'.")
+    return centres
+
+
 @click.command()
-@click.option(
-    "--real",
+@click.argument(
+    "files",
+    nargs=-1,
+    required=True,
     type=click.Path(
         exists=True,
         dir_okay=False,
@@ -539,32 +587,12 @@ def main(
         readable=True,
         path_type=Path,
     ),
-    required=True,
-    help="Path to the H5AD file containing real cell data.",
 )
 @click.option(
-    "--orig",
-    type=click.Path(
-        exists=True,
-        dir_okay=False,
-        file_okay=True,
-        readable=True,
-        path_type=Path,
-    ),
+    "--names",
+    type=str,
     required=True,
-    help="Path to the H5AD file containing original simulated gene expression data.",
-)
-@click.option(
-    "--improved",
-    type=click.Path(
-        exists=True,
-        dir_okay=False,
-        file_okay=True,
-        readable=True,
-        path_type=Path,
-    ),
-    required=True,
-    help="Path to the H5AD file containing improved simulated gene expression data.",
+    help="Comma-separated legend names, one per input file (e.g. 'real,original generated,improved generated').",
 )
 @click.option(
     "--out",
@@ -600,20 +628,41 @@ def main(
     show_default=True,
     help="Inset height as a fraction of the main axes height.",
 )
+@click.option(
+    "--cluster-centres",
+    type=str,
+    default=None,
+    help="Optional manual region centres as 'x1,y1;x2,y2' (semicolon-separated). Each point is "
+    "assigned to its nearest centre; the largest group is the main region, the rest the inset. "
+    "Use when automatic detection fails.",
+)
 def cli(
-    real: Path,
-    orig: Path,
-    improved: Path,
+    files: tuple[Path, ...],
+    names: str,
     out: Path,
     legend_location: str,
     inset_loc: str,
     inset_width: float,
     inset_height: float,
+    cluster_centres: str | None,
 ) -> None:
     """
-    Plot UMAP embeddings of real test cells and both original and improved generated cells, showing the smaller of two disjoint regions as a zoomed inset to reduce whitespace.
+    Plot UMAP embeddings of an arbitrary number of cell groups (one H5AD file each), showing the smaller of two disjoint regions as a zoomed inset to reduce whitespace. UMAP is fitted on the first file and used to transform all files.
     """
-    main(real, orig, improved, out, legend_location, inset_loc, inset_width, inset_height)
+    name_list = [n.strip() for n in names.split(",")]
+    if len(name_list) != len(files):
+        raise click.UsageError(f"--names must provide {len(files)} comma-separated names (got {len(name_list)}).")
+    centres = _parse_centres(cluster_centres) if cluster_centres else None
+    main(
+        list(files),
+        name_list,
+        out,
+        legend_location,
+        inset_loc,
+        inset_width,
+        inset_height,
+        centres=centres,
+    )
 
 
 if __name__ == "__main__":

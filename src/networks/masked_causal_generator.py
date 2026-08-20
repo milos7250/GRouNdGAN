@@ -2,6 +2,8 @@ import itertools
 from typing import TYPE_CHECKING
 from warnings import filterwarnings
 
+import numpy as np
+import scipy.sparse as sp
 import torch
 from sparselinear import SparseLinear
 from torch import nn
@@ -190,46 +192,72 @@ class CausalGenerator(nn.Module):
         hidden mask: contains connections between hidden layers such that there is no connection between hidden layers of two genes' generators
         output mask: contains connections between hidden layers of each gene's generator and its expression (before LSN)
 
-        The MaskedLinear module is used to mask weights and gradients in linear layers.
+        Masks are built as scipy.sparse CSR matrices with bool dtype to avoid materialising
+        O(hidden_dims²) dense tensors.  Connectivity indices for SparseLinear are extracted
+        directly from the COO representation.
         """
         hidden_dims = (len(self.regulators) + self.num_noises) * self.width_scale_per_gene
 
-        # noise mask will be added to TF mask
-        input_mask = torch.zeros(self.num_tfs, hidden_dims, dtype=torch.int64).to(self.device)
-        hidden_mask = torch.zeros(hidden_dims, hidden_dims, dtype=torch.int64).to(self.device)
-        output_mask = torch.zeros(hidden_dims, self.num_genes, dtype=torch.int64).to(self.device)
+        input_rows: list[np.ndarray] = []
+        input_cols: list[np.ndarray] = []
+        hidden_rows: list[np.ndarray] = []
+        hidden_cols: list[np.ndarray] = []
+        output_rows: list[np.ndarray] = []
+        output_cols: list[np.ndarray] = []
 
         prev_gene_hidden_dims = 0
-        for gene, gene_regulators in self.causal_graph.items():
-            gene_idx = self.genes.index(gene)
+        for gene_idx, (gene, gene_regulators) in enumerate(self.causal_graph.items()):
             curr_gene_hidden_dims = self.width_scale_per_gene * (len(gene_regulators) + self.noise_per_gene)
+            start = prev_gene_hidden_dims
+            end = prev_gene_hidden_dims + curr_gene_hidden_dims
+
+            # input mask: TF -> hidden block connections
             for gene_regulator in gene_regulators:
                 gene_regulator_idx = self.tfs.index(gene_regulator)
+                input_rows.append(np.full(curr_gene_hidden_dims, gene_regulator_idx, dtype=np.int64))
+                input_cols.append(np.arange(start, end, dtype=np.int64))
 
-                # mask for the tfs
-                input_mask[
-                    gene_regulator_idx,
-                    prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-                ] = 1
+            # input mask: noise -> hidden block connections
+            noise_row_offset = self.num_tfs + gene_idx * self.noise_per_gene
+            for noise_idx in range(self.noise_per_gene):
+                input_rows.append(np.full(curr_gene_hidden_dims, noise_row_offset + noise_idx, dtype=np.int64))
+                input_cols.append(np.arange(start, end, dtype=np.int64))
 
-            # mask for the noises
-            noise_mask = torch.zeros(self.noise_per_gene, hidden_dims, dtype=torch.int64).to(self.device)
-            noise_mask[:, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims] = 1
-            input_mask = torch.cat([input_mask, noise_mask])
+            # hidden mask: block-diagonal (all-to-all within this gene's block)
+            block = np.arange(start, end, dtype=np.int64)
+            br, bc = np.meshgrid(block, block, indexing="ij")
+            hidden_rows.append(br.flatten())
+            hidden_cols.append(bc.flatten())
 
-            # mask for hidden layer
-            hidden_mask[
-                prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-                prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-            ] = 1
+            # output mask: hidden block -> gene output
+            output_rows.append(block)
+            output_cols.append(np.full(curr_gene_hidden_dims, gene_idx, dtype=np.int64))
 
-            # mask for final layer
-            output_mask[
-                prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-                gene_idx,
-            ] = 1
+            prev_gene_hidden_dims = end
 
-            prev_gene_hidden_dims += curr_gene_hidden_dims
+        num_input_rows = self.num_tfs + self.num_noises
+
+        input_mask = sp.csr_matrix(
+            (
+                np.ones(sum(len(r) for r in input_rows), dtype=bool),
+                (np.concatenate(input_rows), np.concatenate(input_cols)),
+            ),
+            shape=(num_input_rows, hidden_dims),
+        )
+        hidden_mask = sp.csr_matrix(
+            (
+                np.ones(sum(len(r) for r in hidden_rows), dtype=bool),
+                (np.concatenate(hidden_rows), np.concatenate(hidden_cols)),
+            ),
+            shape=(hidden_dims, hidden_dims),
+        )
+        output_mask = sp.csr_matrix(
+            (
+                np.ones(sum(len(r) for r in output_rows), dtype=bool),
+                (np.concatenate(output_rows), np.concatenate(output_cols)),
+            ),
+            shape=(hidden_dims, self.num_genes),
+        )
 
         generator_layers = nn.ModuleList()
 
@@ -247,7 +275,7 @@ class CausalGenerator(nn.Module):
 
     def _create_generator_block(
         self,
-        mask: torch.Tensor,
+        mask: sp.csr_matrix,
         library_size: int | None = None,
         final_layer: bool | None = False,
     ) -> nn.Sequential:
@@ -259,7 +287,7 @@ class CausalGenerator(nn.Module):
         Parameters
         ----------
         mask
-            Mask Tensor with shape (n_input_feature, n_output_feature).
+            Sparse CSR matrix (bool dtype) with shape (n_input_feature, n_output_feature).
         library_size
             Total number of counts per generated cell, by default None.
         final_layer
@@ -273,7 +301,19 @@ class CausalGenerator(nn.Module):
         filterwarnings(
             "ignore", message=r".*torch\.sparse\.SparseTensor\(indices, values, shape, \*, device=\) is deprecated.*"
         )  # suppress sparselinear warnings
-        masked_linear = SparseLinear(mask.shape[0], mask.shape[1], connectivity=torch.nonzero(mask.T).T)
+
+        # Extract connectivity indices directly from the COO representation.
+        # SparseLinear expects connectivity as a (2, nnz) LongTensor where
+        #   row 0 = output feature indices (columns of the mask)
+        #   row 1 = input feature indices (rows of the mask)
+        # This is equivalent to the old torch.nonzero(mask.T).T but avoids
+        # materialising a dense transpose copy.
+        coo = mask.tocoo()
+        connectivity = torch.stack([
+            torch.as_tensor(coo.col, dtype=torch.long),
+            torch.as_tensor(coo.row, dtype=torch.long),
+        ])
+        masked_linear = SparseLinear(mask.shape[0], mask.shape[1], connectivity=connectivity)
 
         if not final_layer:
             # initialize weights using Xavier uniform initialization

@@ -563,10 +563,15 @@ class GANTrainer:
         if is_ddp_initialized() and os.environ.get("RANK", "0") != "0":
             return  # Only log stats on rank 0 in DDP to avoid conflicts
 
-        gen_mean_abs_weight = (
-            torch.cat([v.flatten() for k, v in self.gan.gen.named_parameters() if "_lsn" not in k]).abs().mean().item()
-        )
-        crit_mean_abs_weight = torch.cat([v.flatten() for v in self.gan.crit.parameters()]).abs().mean().item()
+        gen_params = [v for k, v in self.gan.gen.named_parameters() if "_lsn" not in k]
+        gen_total_sum = sum(p.detach().abs().sum().item() for p in gen_params)
+        gen_total_n = sum(p.numel() for p in gen_params)
+        gen_mean_abs_weight = gen_total_sum / gen_total_n if gen_total_n else 0.0
+
+        crit_params = list(self.gan.crit.parameters())
+        crit_total_sum = sum(p.detach().abs().sum().item() for p in crit_params)
+        crit_total_n = sum(p.numel() for p in crit_params)
+        crit_mean_abs_weight = crit_total_sum / crit_total_n if crit_total_n else 0.0
 
         learning_rates_dict = self._get_learning_rates_dict() | {
             "Generator Avg Abs Weight": gen_mean_abs_weight,
@@ -682,7 +687,9 @@ class GANTrainer:
     def eval_hooks(self, loss_list: LossList[GANLosses] | None, force: bool = False) -> "GANTrainer.HookResults":
         hook_results = self.__class__.HookResults()
         run_save = self._should_run(self.summary_args["save_freq"], root_thread_only=True) or force
-        run_summary = (self._should_run(self.summary_args["summary_freq"], root_thread_only=False) or force) and loss_list
+        run_summary = (
+            self._should_run(self.summary_args["summary_freq"], root_thread_only=False) or force
+        ) and loss_list
         run_umap = self._should_run(self.summary_args["plt_freq"], root_thread_only=True) or force
         run_rf_auroc = self._should_run(self.summary_args["rf_auroc_freq"], root_thread_only=True) or force
 
@@ -698,7 +705,6 @@ class GANTrainer:
         except Exception as e:
             self.logger.error(f"Error saving summary at step {self.step}: {e}")
 
-        
         if any([run_umap, run_rf_auroc]):
             fake_cells, fake_labels = self.gan.generate_cells(len(self.loaders["valid"].dataset))
             try:

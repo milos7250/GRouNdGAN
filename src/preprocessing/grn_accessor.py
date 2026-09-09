@@ -132,7 +132,7 @@ class GRNAccessor:
                 "target": self._obj.groupby("target")["importance"].sum(),
             },
             index=gene_names,
-        )
+        ).fillna(0)
         TFs = importances[importances["TF"] > importances["target"]].index
         filtered = self._obj[self._obj["TF"].isin(TFs) & ~self._obj["target"].isin(TFs)]
         targets = filtered["target"].unique()

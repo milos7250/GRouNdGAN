@@ -1,5 +1,5 @@
 import warnings
-from typing import TypedDict, TypeVar
+from typing import NotRequired, TypedDict, TypeVar
 
 import numpy as np
 
@@ -21,6 +21,9 @@ class GANTrainingArgs(TypedDict):
     beta1: float
     beta2: float
     c_lambda: float
+    lr_decay_type: NotRequired[str]
+    lr_warmup_percent: NotRequired[float]
+    lr_holding_percent: NotRequired[float]
 
 
 class CausalGANTrainingArgs(GANTrainingArgs):

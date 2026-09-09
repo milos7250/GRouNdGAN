@@ -69,6 +69,37 @@ Below is the demo ``causal_gan.cfg`` config file for training GRouNdGAN using th
 
 .. include:: causal_gan_cfg.rst
 
+Learning Rate Scheduling
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``[Learning Rate]`` section controls the generator and critic learning-rate
+schedule. The same options can be set in ``[CC Learning Rate]`` for the causal
+controller. If omitted, the scheduler uses cosine decay, a ``2%`` warmup, and a
+``60%`` holding endpoint.
+
+.. code-block:: ini
+
+    [Learning Rate]
+    generator initial = 0.0001 ; maximum learning rate
+    generator final = 0.00001
+    critic initial = 0.0001 ; maximum learning rate
+    critic final = 0.00001
+    decay type = cosine ; linear, cosine, or exponential
+    warmup percent = 0.02
+    holding percent = 0.60
+
+The schedule has three phases:
+
+* Warmup increases the learning rate to the configured initial rate.
+* Holding keeps the maximum rate until ``holding percent`` of training. This
+  percentage includes the warmup phase. For example, with 100 steps, ``2%``
+  warmup and ``60%`` holding means warmup for 2 steps, hold through step 60,
+  then begin decay.
+* Decay reduces the rate to the configured final rate using the selected curve.
+
+Set ``holding percent = 1.0`` to disable decay and keep the maximum rate after
+warmup. ``warmup percent`` must not exceed ``holding percent``.
+
 
 Project outline
 ---------------

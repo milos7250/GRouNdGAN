@@ -102,6 +102,9 @@
             generator final = 0.0001
             critic initial = 0.001
             critic final = 0.001
+            decay type = cosine ; linear, cosine, or exponential
+            warmup percent = 0.02
+            holding percent = 0.60
             labeler = 0.0001
             antilabeler = 0.0001
 
@@ -134,6 +137,9 @@
             generator final = 0.00001
             critic initial = 0.0001
             critic final = 0.00001
+            decay type = cosine ; linear, cosine, or exponential
+            warmup percent = 0.02
+            holding percent = 0.60
 
             [CC Logging]
             summary frequency = 10000

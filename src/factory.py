@@ -71,6 +71,9 @@ class IGANFactory(ABC):
             beta1=self.parser.getfloat("Optimizer", "beta1"),
             beta2=self.parser.getfloat("Optimizer", "beta2"),
             c_lambda=self.parser.getfloat("Model", "lambda"),
+            lr_decay_type=self.parser.get("Learning Rate", "decay type", fallback="cosine"),
+            lr_warmup_percent=self.parser.getfloat("Learning Rate", "warmup percent", fallback=0.02),
+            lr_holding_percent=self.parser.getfloat("Learning Rate", "holding percent", fallback=0.60),
         )
 
     def get_summary_args(self) -> "SummaryArgs":
@@ -288,6 +291,9 @@ class CausalGANFactory(IGANFactory):
                 beta1=self.parser.getfloat("CC Optimizer", "beta1"),
                 beta2=self.parser.getfloat("CC Optimizer", "beta2"),
                 c_lambda=self.parser.getfloat("CC Model", "lambda"),
+                lr_decay_type=self.parser.get("CC Learning Rate", "decay type", fallback="cosine"),
+                lr_warmup_percent=self.parser.getfloat("CC Learning Rate", "warmup percent", fallback=0.02),
+                lr_holding_percent=self.parser.getfloat("CC Learning Rate", "holding percent", fallback=0.60),
             )
 
         def get_cc_summary_args() -> "SummaryArgs":

@@ -26,7 +26,7 @@ from .dicts import (
     GANLosses,
     LossList,
 )
-from .helpers import RunningAverage, set_exponential_lr
+from .helpers import RunningAverage, set_learning_rate_scheduler
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -110,20 +110,20 @@ class GANTrainer:
 
     def _init_schedulers(self) -> None:
         self.logger.debug("Initializing schedulers...")
-        self.schedulers["gen"] = set_exponential_lr(
-            self.optimizers["gen"],
-            alpha_0=self.training_args["gen_alpha_0"],
-            alpha_final=self.training_args["gen_alpha_final"],
-            max_steps=self.training_args["max_steps"],
-            warmup_percent=0.05,
-        )
-        self.schedulers["crit"] = set_exponential_lr(
-            self.optimizers["crit"],
-            alpha_0=self.training_args["crit_alpha_0"],
-            alpha_final=self.training_args["crit_alpha_final"],
-            max_steps=self.training_args["max_steps"],
-            warmup_percent=0,
-        )
+
+        def scheduler_args(comp: str):
+            return {
+                "optimizer": self.optimizers[comp],
+                "alpha_0": self.training_args[f"{comp}_alpha_0"],
+                "alpha_final": self.training_args[f"{comp}_alpha_final"],
+                "max_steps": self.training_args["max_steps"],
+                "decay_type": self.training_args.get("lr_decay_type", "cosine"),
+                "warmup_percent": self.training_args.get("lr_warmup_percent", 0.02),
+                "holding_percent": self.training_args.get("lr_holding_percent", 0.60),
+            }
+
+        self.schedulers["gen"] = set_learning_rate_scheduler(**scheduler_args("gen"))
+        self.schedulers["crit"] = set_learning_rate_scheduler(**scheduler_args("crit"))
 
     def _init_umap(self) -> None:
         """Precompute UMAP embeddings for the validation set to speed up UMAP plotting during training."""

@@ -169,11 +169,9 @@ def create_GRN(cfg: ConfigParser) -> None:
         ]).to_string(index=False, header=False)
     )
 
-    # convert gene names to numerical indices
-    causal_graph = {
-        gene_names.get_loc(gene): {gene_names.get_loc(tf) for tf in tfs}  # pyright: ignore[reportUnhashable]
-        for (gene, tfs) in causal_graph.items()
-    }
+    # convert gene names to numerical indices in the final gene list (which matches the possibly subsetted dataset)
+    gene_indices = {gene: index for index, gene in enumerate(genes)}
+    causal_graph = {gene_indices[gene]: {gene_indices[tf] for tf in tfs} for (gene, tfs) in causal_graph.items()}
 
     # save causal graph
     with open(cfg.get("Data", "causal graph"), "wb") as fp:

@@ -1,11 +1,11 @@
-# <img src="https://github.com/Emad-COMBINE-lab/GRouNdGAN/blob/master/docs/_static/logo.svg" width="250"> 
+# <img src="https://github.com/milos7250/GRouNdGAN/blob/master/docs/_static/logo.svg" width="250">
  
 
 _**GR**N-guided in silic**o** sim**u**lation of single-cell R**N**A-seq **d**ata using Causal **G**enerative **A**dversarial **N**etworks_
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Femad-combine-lab.github.io%2FGRouNdGAN%2F)](https://emad-combine-lab.github.io/GRouNdGAN/)
-[![CI](https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master)](https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions)
-[![Docker build status](https://img.shields.io/github/actions/workflow/status/Emad-COMBINE-lab/GRouNdGAN/docker-build.yml?logo=docker&label=docker%20build)](https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions/workflows/docker-build.yml)
+[![CI](https://github.com/milos7250/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master)](https://github.com/milos7250/GRouNdGAN/actions)
+[![Docker build status](https://img.shields.io/github/actions/workflow/status/milos7250/GRouNdGAN/docker-build.yml?logo=docker&label=docker%20build)](https://github.com/milos7250/GRouNdGAN/actions/workflows/docker-build.yml)
 [![Docker Image Size with architecture (latest by date/latest semver)](https://img.shields.io/docker/image-size/yazdanz/groundgan?logo=docker)](https://hub.docker.com/r/yazdanz/groundgan)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11068246.svg)](https://doi.org/10.5281/zenodo.11068246)

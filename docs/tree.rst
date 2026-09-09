@@ -29,16 +29,28 @@
     |       |-- Mus_musculus_TF.csv
     |       `-- PBMC
     |-- docker
-    |   `-- Dockerfile
+    |   |-- Dockerfile
+    |   |-- build-docker.sh
+    |   |-- build-singularity.sh
+    |   `-- singularity.def
     |-- docs
     |-- notebooks
+    |-- conda-env-create.sh
+    |-- environment.yml
     |-- requirements.txt
-    |-- requirements_computecanada.txt
+    |-- requirements2.txt
+    |-- requirements-dev.txt
     |-- results
     |-- scDesign2
     |-- scGAN
     |-- scripts
-    |   |-- monitor.sh
+    |   |-- benchmark.sh
+    |   |-- common.sh
+    |   |-- create-grn.sh
+    |   |-- evaluate.sh
+    |   |-- generate.sh
+    |   |-- hyperopt.sh
+    |   |-- preprocess.sh
     |   `-- train.sh
     |-- sparsim
     `-- src

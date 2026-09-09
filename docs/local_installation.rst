@@ -1,46 +1,43 @@
 Local Installation
 ~~~~~~~~~~~~~~~~~~
 
-**Prerequisites:** Before setting up GRouNdGAN locally, ensure you have Python 3.9.6 installed. If you do not have Python 3.9.6, you can use `pyenv` to manage multiple Python versions. Detailed installation instructions for various platforms can be found in the `pyenv` documentation: https://github.com/pyenv/pyenv#installation.  In the case you are using pyenv, please use `pyenv-virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ to manage and activate your virtual environment. 
+**Prerequisites:** Install Conda and ensure that CUDA drivers are available if
+you plan to train on a GPU. The supported environment uses Python 3.11 and
+PyTorch 2.9.1.
 
 1. Clone the GRouNdGAN repository to a directory of your choice::
 
-   $ git clone https://github.com/Emad-COMBINE-lab/GRouNdGAN.git
+   $ git clone https://github.com/milos7250/GRouNdGAN.git
    
    .. tip::
        You can optionally clone the scGAN, BEELINE, scDESIGN2, and SPARSim submodules to also get the specific version of repositories that we used in our study. 
         
        .. code-block:: sh
         
-           git clone --recurse-submodules https://github.com/Emad-COMBINE-lab/GRouNdGAN.git
+           git clone --recurse-submodules https://github.com/milos7250/GRouNdGAN.git
            
 2. Navigate to the project directory::
 
    $ cd GRouNdGAN
 
-3. Create a virtual environment for your project::
+3. Create the supported Conda environment and install the dependencies::
 
-   $ python -m venv venv
+   $ ./conda-env-create.sh
 
-In the case you are using pyenv, please use `pyenv-virtualenv <https://github.com/pyenv/pyenv-virtualenv>`_ to manage and activate your virtual environment. 
-   
-4. Activate the virtual environment
+The setup script creates the ``groundgan`` environment from
+``environment.yml``, installs PyTorch and the first dependency group from
+``requirements.txt``, installs build-sensitive dependencies from
+``requirements2.txt``, and applies the required ``arboreto.patch``. It asks
+whether developer dependencies from ``requirements-dev.txt`` should also be
+installed.
 
-   - **Linux/macOS**::
+4. Activate the environment::
 
-     $ source venv/bin/activate
+   $ conda activate groundgan
 
-   - **Windows**::
-
-     $ venv\Scripts\activate
-
-5. Install the required dependencies from the ``requirements.txt`` file::
-
-   (venv)$ pip install -r requirements.txt
-
-   If you're a fellow Canadian using ComputeCanada, consider using ``requirements_computecanada.txt`` instead.
-
-You're now ready to use GRouNdGAN locally!
+You're now ready to use GRouNdGAN locally. For CPU-only installations, edit
+the PyTorch installation command in ``conda-env-create.sh`` to use the CPU
+index instead of the CUDA 13 index.
 
 .. admonition:: Troubleshooting
 

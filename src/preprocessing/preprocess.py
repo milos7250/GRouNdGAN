@@ -5,9 +5,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import scanpy as sc
+from scipy.sparse import csr_matrix
+
 from loggers import setup_logger
 from randomness import random_seed
-from scipy.sparse import csr_matrix
 
 
 def preprocess(cfg: ConfigParser) -> None:

@@ -101,7 +101,7 @@ html_logo = "_static/logo.svg"
 
 
 html_theme_options = {
-    "repository_url": "https://github.com/Emad-COMBINE-lab/GRouNdGAN",
+    "repository_url": "https://github.com/milos7250/GRouNdGAN",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_source_button": True,
@@ -122,13 +122,13 @@ html_theme_options = {
         {
             # Label for this link
             "name": "GitHub",
-            "url": "https://github.com/Emad-COMBINE-lab/GRouNdGAN",
+            "url": "https://github.com/milos7250/GRouNdGAN",
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
         },
         {
             "name": "Docker",
-            "url": "https://hub.docker.com/repository/docker/yazdanz/groundgan/",
+            "url": "https://hub.docker.com/repository/docker/milos7250/groundgan/",
             "icon": "fa-brands fa-docker",
             "type": "fontawesome",
         },
@@ -141,8 +141,8 @@ html_theme_options = {
         },
         {
             "name": "Docs Build",
-            "url": "https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions",
-            "icon": "https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master",
+            "url": "https://github.com/milos7250/GRouNdGAN/actions",
+            "icon": "https://github.com/milos7250/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master",
             "type": "url",
         },
     ],

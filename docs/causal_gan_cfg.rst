@@ -4,6 +4,10 @@
     output directory = results/GRouNdGAN
     device = cuda ; we will let the program choose what is available
     checkpoint  ; set value to use a trained model
+    compile modules = True ; use torch.compile for faster training
+    use DDP = False ; use distributed data parallel training
+    random seed ; optional random seed
+    deterministic mode = False ; use deterministic algorithms where supported
 
         [Preprocessing]
         10x = True
@@ -27,6 +31,7 @@
         ; "neg ctr" for generating negative control GRNs (odd indices 1, 3, 5... = top 2, 4, 6, ...)
         ; note that k has to be a pair number for strategy=ctr
         strategy = top 
+        include genes with no regulators = False
 
         [Data]
         train = data/processed/PBMC/PBMC68k_train.h5ad
@@ -53,12 +58,12 @@
 
         [Evaluation]
         simulated data path ; will use [Generation]/generation path if left undefined
-        plot tsne = True # Note: has to be true in order to run miLISI
+        plot umap = True ; Note: has to be true in order to run miLISI
         compute euclidean distance = True
         compute cosine distance = True 
         compute rf auroc = True
         compute MMD = True
-        compute miLISI = True # plot tsne has to be True for this to work
+        compute miLISI = True ; plot umap has to be True for this to work
         
         [GRN Benchmarking]
         grn to benchmark = path/to/inferred/grn.csv
@@ -113,6 +118,7 @@
             summary frequency = 10000
             plot frequency = 10000
             save frequency = 100000
+            rf auroc frequency = 10000
 
         [CC Model]
         type = GAN ; Non-conditional single-cell RNA-seq GAN
@@ -145,3 +151,4 @@
             summary frequency = 10000
             plot frequency = 10000
             save frequency = 100000
+            rf auroc frequency = 10000

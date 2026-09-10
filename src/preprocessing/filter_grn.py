@@ -5,11 +5,19 @@ from typing import Any
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).parent.parent))  # Allow importing from the project root
-
-from grn_accessor import GRNAccessor
-
 from loggers import setup_logger
+
+logger = setup_logger(Path(__file__).stem)
+
+# Allow running this script directly to filter a GRN CSV file
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).parent.parent))  # Allow importing from the project root
+    from grn_accessor import GRNAccessor
+
+    try:
+        import rich_click as click
+    except ImportError:
+        import click
 
 logger = setup_logger(Path(__file__).stem)
 

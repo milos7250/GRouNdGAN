@@ -108,8 +108,11 @@ class LossList(list[Losses]):
     def avg(self, last_n: int | None = None) -> Losses:
         if not self:
             raise ValueError("Cannot average an empty list of losses.")
-        last_n = last_n or len(self)
-        avg_loss = {}
+        if last_n is None:
+            last_n = len(self)
+        elif last_n < 1:
+            raise ValueError("last_n must be positive")
+        avg_loss: dict[str, float] = {}
         for key in self[0]:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", message=r"Mean of empty slice", category=RuntimeWarning)

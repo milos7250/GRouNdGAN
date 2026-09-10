@@ -19,7 +19,7 @@ echo "*" > "$STOREDIR/.gitignore"  # optional
 
 cat > "$STOREDIR/.env" <<EOL
 POSTGRES_USER="$(whoami)"
-POSTGRES_PASSWORD="TyBudesOratZa5KorunNaMojomPoli!"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-$(openssl rand -hex 32)}"
 POSTGRES_DB="optuna"
 PGHOST="$(hostname -f)"
 PGPORT="5432"

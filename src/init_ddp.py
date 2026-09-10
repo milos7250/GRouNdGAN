@@ -31,5 +31,8 @@ def with_ddp(fac: "IGANFactory") -> "Generator[None, None, None]":
     try:
         yield
     finally:
-        fac.parser.set("EXPERIMENT", "device", old_device)  # Reset device to original value after training
+        if old_device is None:
+            fac.parser.remove_option("EXPERIMENT", "device")
+        else:
+            fac.parser.set("EXPERIMENT", "device", old_device)  # Reset device to original value after training
         dist.destroy_process_group()  # Clean up the process group

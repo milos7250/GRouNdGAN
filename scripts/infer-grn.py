@@ -40,7 +40,10 @@ def main(adata_path: Path, output_path: Path, tfs_path: Path | None = None):
         TFs = pd.read_csv(tfs_path, sep="\t")["Symbol"]
         TFs = [tf for tf in TFs if tf in adata.var_names]
         if not TFs:
-            raise ValueError("No TFs from the provided list were found in the dataset. Using all genes as TFs.")
+            logger.warning(
+                "No TFs from the provided list were found in the dataset; falling back to using all genes as TFs."
+            )
+            TFs = "all"
     else:
         TFs = "all"
 

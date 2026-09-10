@@ -5,7 +5,7 @@ import sys
 import anndata as ad
 
 if len(sys.argv) != 2:
-    print("Usage: inspect_h5ad.sh <h5ad file>")
+    print("Usage: inspect_h5ad.py <h5ad file>")
     sys.exit(1)
 
 adata = ad.read_h5ad(sys.argv[1], backed="r")

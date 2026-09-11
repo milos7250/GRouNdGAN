@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -9,8 +10,6 @@ from .dicts import CausalGANGenLosses, CausalGANLabelerLosses, CausalGANLosses
 from .gan import GANTrainer
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from torch import Tensor
 
     from gans import CausalGAN
@@ -22,11 +21,11 @@ class CausalGANTrainer(GANTrainer):
     def __init__(
         self,
         gan: "CausalGAN",
-        train_file: "Path",
-        valid_file: "Path",
+        train_file: Path,
+        valid_file: Path,
         training_args: "CausalGANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
+        output_dir: Path,
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan

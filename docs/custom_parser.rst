@@ -5,3 +5,4 @@ custom\_parser module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: __init__

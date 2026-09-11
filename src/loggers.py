@@ -1,7 +1,9 @@
 import logging
 import os
 import warnings
+from collections.abc import Iterator
 from contextlib import contextmanager
+from logging import LogRecord
 from typing import TYPE_CHECKING
 
 from matplotlib import pyplot as plt
@@ -11,8 +13,6 @@ from tqdm import TqdmExperimentalWarning
 from tqdm import tqdm as std_tqdm
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from logging import Logger, LogRecord
     from typing import Any
 
 FORMAT = "([green]%(name)s[/green]) %(message)s "
@@ -31,7 +31,7 @@ def __get_handler(rank: str | None = None) -> RichHandler:
 
     Returns
     -------
-    handler
+    RichHandler
         Configured RichHandler instance.
     """
     handler = RichHandler(
@@ -50,7 +50,7 @@ def __get_handler(rank: str | None = None) -> RichHandler:
 
 
 @contextmanager
-def with_log_level(logger: "Logger", level: int) -> "Iterator[None]":
+def with_log_level(logger: logging.Logger, level: int) -> Iterator[None]:
     """
     Context manager to temporarily set the log level of a logger.
 
@@ -69,7 +69,7 @@ def with_log_level(logger: "Logger", level: int) -> "Iterator[None]":
         logger.setLevel(old_level)
 
 
-def setup_logger(name: str | None = None) -> "Logger":
+def setup_logger(name: str | None = None) -> logging.Logger:
     """
     Custom function that initializes and returns a logger with a RichHandler.
 
@@ -80,7 +80,7 @@ def setup_logger(name: str | None = None) -> "Logger":
 
     Returns
     -------
-    logger
+    logging.Logger
         Configured logger instance.
     """
     logger = logging.getLogger(name)
@@ -104,7 +104,7 @@ def setup_logger(name: str | None = None) -> "Logger":
 
 @contextmanager
 def tqdm_logging_redirect(
-    loggers: "list[Logger] | None" = None,
+    loggers: "list[logging.Logger] | None" = None,
     tqdm_class: "type[std_tqdm[Any]] | None" = None,
     *tqdm_args: "Any",
     **tqdm_kwargs: "Any",
@@ -123,7 +123,7 @@ def tqdm_logging_redirect(
 
     Yields
     ------
-    pbar
+    Iterator[std_tqdm]
         The progress bar instance created by `tqdm_class`.
     """
     # TODO: currently does not support tqdm.rich, is only tested with standard tqdm

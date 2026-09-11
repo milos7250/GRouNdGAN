@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import scanpy as sc
@@ -7,14 +8,13 @@ from torch.cuda import is_available as is_cuda_available
 from torch.utils.data import DataLoader, Dataset
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import Any
 
     from torch import Tensor
 
 
 class SCDataset(Dataset["tuple[Tensor, Tensor]"]):
-    def __init__(self, path: "Path") -> None:
+    def __init__(self, path: Path) -> None:
         """
         Create a dataset from the h5ad processed data. Use the
         preprocessing/preprocess.py script to create the h5ad train,
@@ -96,7 +96,7 @@ class SCDataLoader(DataLoader["tuple[Tensor, Tensor]"]):
 
 
 def get_loader(
-    file_path: "Path",
+    file_path: Path,
     batch_size: int | None = None,
     shuffle: bool = False,
     drop_last: bool = False,

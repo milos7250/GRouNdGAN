@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from time import time_ns
 from typing import TYPE_CHECKING, TypedDict
 
@@ -29,8 +30,6 @@ from .dicts import (
 from .helpers import RunningAverage, set_learning_rate_scheduler
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from matplotlib.figure import Figure
     from optuna import Trial
     from torch import Tensor
@@ -51,11 +50,11 @@ class GANTrainer:
     def __init__(
         self,
         gan: "GAN",
-        train_file: "Path",
-        valid_file: "Path",
+        train_file: Path,
+        valid_file: Path,
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
+        output_dir: Path,
     ) -> None:
         self.gan = gan
         self.train_file = train_file
@@ -171,7 +170,7 @@ class GANTrainer:
         for module, is_training in zip(self.modules.values(), training):
             module.train(is_training)
 
-    def _load_checkpoint(self, checkpoint_path: "Path", model_only: bool = False) -> None:
+    def _load_checkpoint(self, checkpoint_path: Path, model_only: bool = False) -> None:
         self.logger.debug(f"Loading checkpoint from {checkpoint_path}")
         checkpoint = torch.load(checkpoint_path, map_location=self.gan.device)
         for key, module in self.modules.items():
@@ -196,7 +195,7 @@ class GANTrainer:
             for key, scheduler in self.schedulers.items():
                 scheduler.load_state_dict(checkpoint[f"{key}_scheduler_state_dict"])
 
-    def _save_checkpoint(self, output_path: "Path", model_only: bool = False) -> None:
+    def _save_checkpoint(self, output_path: Path, model_only: bool = False) -> None:
         checkpoint = {}
         for key, module in self.modules.items():
             if is_ddp_initialized():

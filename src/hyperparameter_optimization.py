@@ -1,38 +1,34 @@
 import os
 import re
+from collections.abc import Callable
 from copy import deepcopy
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from optuna import create_study
+from optuna import Trial, create_study
 from optuna.pruners import HyperbandPruner
-from optuna.trial import TrialState
+from optuna.study import Study
+from optuna.trial import FrozenTrial, TrialState
 from optunahub import load_module
 from torch._dynamo import reset as dynamo_reset
 from torch.cuda import empty_cache as empty_cuda_cache
 
+from custom_parser import MyConfigParser
 from loggers import setup_logger
 from main import main
 from randomness import random_seed
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from pathlib import Path
-    from typing import Any, TypeVar
-
     from optuna.samplers import BaseSampler
-    from optuna.study import Study
-    from optuna.trial import FrozenTrial, Trial
 
-    from .custom_parser import MyConfigParser
-
-    _T = TypeVar("_T", int, float, str)
+_T = TypeVar("_T", int, float, str)
 
 logger = setup_logger("optuna")
 
 
 def suggest_from_tuple(
-    str_tuple: str, type_: "type[_T]", suggest_fun: "Callable[..., _T]", var_name: str, **kwargs: "Any"
-) -> "_T":
+    str_tuple: str, type_: type[_T], suggest_fun: Callable[..., _T], var_name: str, **kwargs: Any
+) -> _T:
     """
     Used with optuna trials. Suggest a value from a tuple string representation using the provided suggest function
     (e.g., trial.suggest_int or trial.suggest_float). The _T needs to match the type of the suggest function.
@@ -68,8 +64,8 @@ def suggest_from_tuple(
 
 
 def suggest_list_from_tuples(
-    str_list: str, type_: "type[_T]", suggest_fun: "Callable[..., _T]", var_name: str, **kwargs: "Any"
-) -> "list[_T]":
+    str_list: str, type_: type[_T], suggest_fun: Callable[..., _T], var_name: str, **kwargs: Any
+) -> list[_T]:
     """
     Used with optuna trials. Suggests list of values from a string representation of tuples using the provided suggest
     function (e.g., trial.suggest_int or trial.suggest_float). The _T needs to match the type of the suggest
@@ -97,7 +93,7 @@ def suggest_list_from_tuples(
     return [suggest_from_tuple(tup, type_, suggest_fun, f"{var_name}_{i}", **kwargs) for i, tup in enumerate(tuples)]
 
 
-def max_trial_callback(max_trials: int) -> "Callable[[Study, FrozenTrial], None]":
+def max_trial_callback(max_trials: int) -> Callable[[Study, FrozenTrial], None]:
     """
     Optuna callback to stop the study after reaching the maximum number of completed trials.
 
@@ -112,7 +108,7 @@ def max_trial_callback(max_trials: int) -> "Callable[[Study, FrozenTrial], None]
         Callback function to be used with Optuna.
     """
 
-    def max_trial_callback(study: "Study", trial: "FrozenTrial") -> None:
+    def max_trial_callback(study: Study, trial: FrozenTrial) -> None:
         n_complete = len([t for t in study.trials if t.state == TrialState.COMPLETE])
         if n_complete >= max_trials:
             logger.info("Optuna study reached required number of completed trials, stopping optimization.")
@@ -121,7 +117,7 @@ def max_trial_callback(max_trials: int) -> "Callable[[Study, FrozenTrial], None]
     return max_trial_callback
 
 
-def manual_off_switch_callback(control_file_path: "Path") -> "Callable[[Study, FrozenTrial], None]":
+def manual_off_switch_callback(control_file_path: Path) -> Callable[[Study, FrozenTrial], None]:
     """
     Optuna callback to stop the study if first line of the control file reads as 'stop'.
 
@@ -140,7 +136,7 @@ def manual_off_switch_callback(control_file_path: "Path") -> "Callable[[Study, F
         with open(control_file_path, "w") as f:
             f.write("# stop\n# To stop the Optuna hyperparameter optimization study, uncomment the first line.")
 
-    def manual_off_switch_callback(study: "Study", trial: "FrozenTrial") -> None:
+    def manual_off_switch_callback(study: Study, trial: FrozenTrial) -> None:
         if control_file_path.exists():
             with open(control_file_path, "r") as f:
                 first_line = f.readline().strip()
@@ -153,7 +149,7 @@ def manual_off_switch_callback(control_file_path: "Path") -> "Callable[[Study, F
     return manual_off_switch_callback
 
 
-def resolve_hyperparameters(cfg_parser: "MyConfigParser", trial: "Trial"):
+def resolve_hyperparameters(cfg_parser: MyConfigParser, trial: Trial):
     def is_log(*, key: str, value: None = None) -> bool:
         return "learning rate" in key.lower()
 
@@ -207,8 +203,8 @@ def resolve_hyperparameters(cfg_parser: "MyConfigParser", trial: "Trial"):
     return resolved_parser_path
 
 
-def optuna_trainer(cfg_parser: "MyConfigParser") -> "Callable[[], None]":
-    def objective(trial: "Trial") -> float:
+def optuna_trainer(cfg_parser: MyConfigParser) -> Callable[[], None]:
+    def objective(trial: Trial) -> float:
         if worker_id_env := cfg_parser.get(
             "Hyperparameter Optimization", "worker id environment variable", fallback=None
         ):

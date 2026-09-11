@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -9,7 +10,6 @@ from networks.generator import ConditionalGenerator
 from .conditional_gan import ConditionalGAN
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import Any
 
     from torch import Tensor

@@ -13,9 +13,9 @@ sys.path.insert(0, os.path.abspath('../src'))
 
 project = "GRouNdGAN"
 copyright = (
-    "2023, Emad's COMBINE Lab: Yazdan Zinati, Abdulrahman Takiddeen, and Amin Emad"
+    "2026, Milos Micik"
 )
-author = "Yazdan Zinati"
+author = "Milos Micik"
 version = release = "1.0"
 
 # -- General configuration ---------------------------------------------------

@@ -1,5 +1,5 @@
 CODE_ROOT="${CODE_ROOT:-/mnt/shared/scratch/mmicik/private/Geneformer/simulation/GRouNdGAN.worktrees/dedup}"
-CONFIG="${CONFIG:-gan.cfg}"
+CONFIG="${CONFIG:-causal_gan.cfg}"
 POSTGRES_DIR="${POSTGRES_DIR:-$PWD/postgres}"
 
  if [[ ! -d "$CODE_ROOT" ]]; then

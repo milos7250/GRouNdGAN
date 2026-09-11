@@ -14,6 +14,9 @@ set -euo pipefail
 CODE_ROOT="${CODE_ROOT:-/mnt/shared/scratch/mmicik/private/Geneformer/simulation/GRouNdGAN.worktrees/dedup}"
 source "$CODE_ROOT/scripts/common.sh"
 
+# Sleep random amount of time to avoid race conditions when creating optuna study
+sleep $(( RANDOM % 60 ))
+
 apptainer exec --nv "$CODE_ROOT/docker/groundgan.sif" \
     python \
     "$CODE_ROOT/src/main.py" \

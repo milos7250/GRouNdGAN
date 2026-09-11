@@ -1,36 +1,85 @@
-import os
-import typing
 from abc import ABC
+from typing import TYPE_CHECKING
 
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
-from matplotlib import cm
-from sklearn.manifold import TSNE
-from torch.utils.data.dataloader import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
-from gans.gan import GAN
+from .gan import GAN
+
+if TYPE_CHECKING:
+    from torch import Tensor
 
 
 class ConditionalGAN(GAN, ABC):
+    def __init__(
+        self,
+        genes_no: int,
+        batch_size: int,
+        latent_dim: int,
+        gen_layers: list[int],
+        crit_layers: list[int],
+        num_classes: int,
+        label_ratios: list[float],
+        device: str | None = None,
+        library_size: int | None = 20000,
+    ) -> None:
+        """
+        Conditional single-cell RNA-seq GAN using the conditioning method by concatenation.
+
+        Parameters
+        ----------
+        genes_no
+            Number of genes in the dataset.
+        batch_size
+            Training batch size.
+        latent_dim
+            Dimension of the latent space from which the noise vector is sampled.
+        gen_layers
+            List of integers corresponding to the number of neurons of each generator layer.
+        crit_layers
+            List of integers corresponding to the number of neurons of each critic layer.
+        num_classes
+            Number of classes in the dataset.
+        label_ratios
+            List containing the ratio of each class in the dataset.
+        device
+            Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
+            GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
+        library_size
+            Total number of counts per generated cell, by default 20000.
+        """
+        self.num_classes = num_classes
+
+        super().__init__(
+            genes_no,
+            batch_size,
+            latent_dim,
+            gen_layers,
+            crit_layers,
+            device,
+            library_size,
+        )
+
+        self.label_ratios = torch.nn.Buffer(
+            torch.tensor(label_ratios, device=device), persistent=True
+        )  # After super().__init__() to ensure self.device is set
+
     @staticmethod
-    def _sample_pseudo_labels(batch_size: int, cluster_ratios: torch.Tensor) -> torch.Tensor:
+    def sample_pseudo_labels(batch_size: int, cluster_ratios: "Tensor") -> "Tensor":
         """
         Randomly samples cluster labels following a multinomial distribution.
 
         Parameters
         ----------
-        batch_size : int
+        batch_size
             The number of samples to generate (normally equal to training batch size).
-        cluster_ratios : torch.Tensor
+        cluster_ratios
             Tensor containing the parameters of the multinomial distribution
-            (ex: torch.Tensor([0.5, 0.3, 0.2]) for 3 clusters with occurence
+            (ex: Tensor([0.5, 0.3, 0.2]) for 3 clusters with occurence
             probabilities of  0.5, 0.3, and 0.2 for clusters 0, 1, and 2, respectively).
 
         Returns
         -------
-        torch.Tensor
+        Tensor
             Tensor containing a batch of samples cluster labels.
         """
         cluster_ratios = 1 - cluster_ratios
@@ -38,69 +87,3 @@ class ConditionalGAN(GAN, ABC):
         labels = torch.multinomial(mn_logits, 1)
 
         return labels.flatten()
-
-    def _generate_tsne_plot(
-        self,
-        valid_loader: DataLoader,
-        output_dir: typing.Union[str, bytes, os.PathLike],
-    ) -> None:
-        """
-        Generate t-SNE plot during training.
-
-        Parameters
-        ----------
-        valid_loader : DataLoader
-            Validation set DataLoader.
-        output_dir : typing.Union[str, bytes, os.PathLike]
-            Directory to save the t-SNE plots.
-        """
-        tsne_path = output_dir + "/TSNE"
-        if not os.path.isdir(tsne_path):
-            os.makedirs(tsne_path)
-
-        fake_cells, fake_labels = self.generate_cells(len(valid_loader.dataset))
-        valid_cells, valid_labels = next(iter(valid_loader))
-        valid_labels = valid_labels.flatten()
-
-        embedded_cells = TSNE().fit_transform(np.concatenate((valid_cells, fake_cells), axis=0))
-
-        real_embedding = embedded_cells[0 : valid_cells.shape[0], :]
-        fake_embedding = embedded_cells[valid_cells.shape[0] :, :]
-
-        colormap = cm.nipy_spectral
-        colors = [colormap(i) for i in np.linspace(0, 1, self.num_classes)]
-
-        plt.clf()
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(32, 12))
-
-        for i in range(self.num_classes):
-            mask = valid_labels[:] == i
-
-            ax1.scatter(
-                real_embedding[mask, 0],
-                real_embedding[mask, 1],
-                c=colors[i],
-                marker="o",
-                label="real_" + str(i),
-            )
-
-        ax1.legend(loc="lower left", numpoints=1, ncol=3, fontsize=8, bbox_to_anchor=(0, 0))
-
-        for i in range(self.num_classes):
-            mask = fake_labels[:] == i
-            ax2.scatter(
-                fake_embedding[mask, 0],
-                fake_embedding[mask, 1],
-                c=colors[i],
-                marker="o",
-                label="fake_" + str(i),
-            )
-
-        ax2.legend(loc="lower left", numpoints=1, ncol=3, fontsize=8, bbox_to_anchor=(0, 0))
-
-        plt.savefig(tsne_path + "/step_" + str(self.step) + ".jpg")
-
-        with SummaryWriter(f"{output_dir}/TensorBoard/TSNE") as w:
-            w.add_figure("t-SNE plot", fig, self.step)
-
-        plt.close()

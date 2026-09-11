@@ -43,3 +43,9 @@ data/
 # figures
 *.svg
 *.png
+
+# generated coverage files
+*.coverage.*
+
+# apptainer containers
+*.sif

@@ -1,16 +1,14 @@
-import os
-import typing
 from pathlib import Path
 
 import torch
-from loggers import setup_logger
+from torch.cuda import is_available as is_cuda_available
+
 from networks.critic import Critic
 from networks.generator import Generator
 from networks.labeler import Labeler
 from networks.masked_causal_generator import CausalGenerator
-from torch.utils.tensorboard import SummaryWriter
 
-from gans.gan import GAN
+from .gan import GAN
 
 
 class CausalGAN(GAN):
@@ -23,54 +21,55 @@ class CausalGAN(GAN):
         depth_per_gene: int,
         width_per_gene: int,
         cc_latent_dim: int,
-        cc_layers: typing.List[int],
-        cc_pretrained_checkpoint: str,
-        crit_layers: typing.List[int],
-        causal_graph: typing.Dict[int, typing.Set[int]],
-        labeler_layers: typing.List[int],
-        device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
-        library_size: typing.Optional[int] = 20000,
+        cc_layers: list[int],
+        cc_pretrained_checkpoint: Path,
+        crit_layers: list[int],
+        causal_graph: dict[int, set[int]],
+        labeler_layers: list[int],
+        device: str | None = None,
+        library_size: int | None = 20000,
     ) -> None:
         """
         Causal single-cell RNA-seq GAN (TODO: find a unique name).
 
         Parameters
         ----------
-        genes_no : int
+        genes_no
             Number of genes in the dataset.
-        batch_size : int
+        batch_size
             Training batch size.
-        latent_dim : int
+        latent_dim
             Dimension of the latent space from which the noise vector used by the causal controller is sampled.
-        noise_per_gene : int
+        noise_per_gene
             Dimension of the latent space from which the noise vectors used by target generators is sampled.
-        depth_per_gene : int
+        depth_per_gene
             Depth of the target generator networks.
-        width_per_gene : int
+        width_per_gene
             The width scale used for the target generator networks.
-        cc_latent_dim : int
+        cc_latent_dim
             Dimension of the latent space from which the noise vector to the causal controller is sampled.
-        cc_layers : typing.List[int]
-            List of integers corresponding to the number of neurons of each causal controller layer.
-        cc_pretrained_checkpoint : str
+        cc_layers
+            list of integers corresponding to the number of neurons of each causal controller layer.
+        cc_pretrained_checkpoint
             Path to the  pretrained causal controller.
-        crit_layers : typing.List[int]
-            List of integers corresponding to the number of neurons of each critic layer.
-        causal_graph : typing.Dict[int, typing.Set[int]]
+        crit_layers
+            list of integers corresponding to the number of neurons of each critic layer.
+        causal_graph
             The causal graph is a dictionary representing the TRN to impose. It has the following format:
             {target gene index: {TF1 index, TF2 index, ...}}. This causal graph has to be acyclic and bipartite.
             A TF cannot be regulated by another TF.
-            Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
-            Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
-            Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
+
+            - Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
+            - Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
+            - Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
 
             Valid causal graph example: {1: {2, 3, 4}, 6: {5, 4, 2}, ...}
-        labeler_layers : typing.List[int]
-            List of integers corresponding to the width of each labeler layer.
-        device : typing.Optional[str], optional
+        labeler_layers
+            list of integers corresponding to the width of each labeler layer.
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
-        library_size : typing.Optional[int], optional
+        library_size
             Total number of counts per generated cell, by default 20000.
         """
 
@@ -81,8 +80,10 @@ class CausalGAN(GAN):
             library_size=None,
         )
 
+        device = device if device else ("cuda" if is_cuda_available() else "cpu")
+
         checkpoint = torch.load(cc_pretrained_checkpoint, map_location=torch.device(device))
-        self.causal_controller.load_state_dict(checkpoint["generator_state_dict"], strict=False)
+        self.causal_controller.load_state_dict(checkpoint["gen_state_dict"], strict=False)
 
         self.noise_per_gene = noise_per_gene
         self.depth_per_gene = depth_per_gene
@@ -93,7 +94,7 @@ class CausalGAN(GAN):
             genes_no,
             batch_size,
             latent_dim,
-            None,
+            [],
             crit_layers,
             device=device,
             library_size=library_size,
@@ -113,470 +114,48 @@ class CausalGAN(GAN):
         ).to(self.device)
         self.gen.freeze_causal_controller()
 
-        self.crit = Critic(self.genes_no, self.critic_layers).to(self.device)
+        self.crit = Critic(self.genes_no, self.crit_layers).to(self.device)
 
         # the number of genes and TFs are resolved by the causal generator during its instantiation
         self.labeler = Labeler(self.gen.num_genes, self.gen.num_tfs, self.labeler_layers).to(self.device)
         self.antilabeler = Labeler(self.gen.num_genes, self.gen.num_tfs, self.labeler_layers).to(self.device)
 
-    def _save(self, path: typing.Union[str, bytes, os.PathLike]) -> None:
+    def save(self, path: Path) -> None:
         """
         Saves the model.
 
         Parameters
         ----------
-        path : typing.Union[str, bytes, os.PathLike]
-            Directory to save the model.
+        path
+            Path to save the model. The model will be saved in .pth format.
         """
-        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
-            return
-
-        output_dir = path + "/checkpoints"
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-        if torch.distributed.is_initialized():
-            state_dict = {
-                "generator_state_dict": self.gen.module.state_dict(),
-                "critic_state_dict": self.crit.module.state_dict(),
-                "labeler_state_dict": self.labeler.module.state_dict(),
-                "antilabeler_state_dict": self.antilabeler.module.state_dict(),
-            }
-        else:
-            state_dict = {
-                "generator_state_dict": self.gen.state_dict(),
-                "critic_state_dict": self.crit.state_dict(),
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "gen_state_dict": self.gen.state_dict(),
+                "crit_state_dict": self.crit.state_dict(),
                 "labeler_state_dict": self.labeler.state_dict(),
                 "antilabeler_state_dict": self.antilabeler.state_dict(),
-            }
-
-        torch.save(
-            state_dict
-            | {
-                "step": self.step,
-                "generator_optimizer_state_dict": self.gen_opt.state_dict(),
-                "critic_optimizer_state_dict": self.crit_opt.state_dict(),
-                "labeler_optimizer_state_dict": self.labeler_opt.state_dict(),
-                "antilabeler_optimizer_state_dict": self.antilabeler_opt.state_dict(),
-                "generator_lr_scheduler": self.gen_lr_scheduler.state_dict(),
-                "critic_lr_scheduler": self.crit_lr_scheduler.state_dict(),
             },
-            f"{path}/checkpoints/step_{self.step}.pth",
+            path.with_suffix(".pth"),
         )
 
-    def _load(
+    def load(
         self,
-        path: typing.Union[str, bytes, os.PathLike],
-        mode: typing.Optional[str] = "inference",
+        path: Path,
     ) -> None:
         """
-        Loads a saved causal GAN model (.pth file). Inference mode only loads the generator and critic.
-        Initialization mode loads the model only for weight initialization of the generator, critic and
-        labellers (optimizer states are not loaded). Training mode loads the model for training from
-        checkpoint with optimizer states.
+        Loads a saved model (.pth file).
 
         Parameters
         ----------
-        path : typing.Union[str, bytes, os.PathLike]
-            Path to the saved model.
-        mode : typing.Optional[str], optional
-            Specify if the loaded model is used for 'inference', 'initialization', or 'training', by default "inference".
-
-        Raises
-        ------
-        ValueError
-            If a mode other than 'inference', 'initialization', or 'training' is specified.
+        path
+            Path to the saved model .pth file.
         """
 
         checkpoint = torch.load(path, map_location=torch.device(self.device))
 
-        self.gen.load_state_dict(checkpoint["generator_state_dict"])
-        self.crit.load_state_dict(checkpoint["critic_state_dict"])
-
-        if mode == "inference":
-            # The causal GAN performs better when using batch stats (model.train() mode)
-
-            self.gen.train()
-            self.crit.train()
-
-        elif mode == "initialization":
-            self.labeler.load_state_dict(checkpoint["labeler_state_dict"])
-            self.antilabeler.load_state_dict(checkpoint["antilabeler_state_dict"])
-
-            self.gen.train()
-            self.crit.train()
-            self.labeler.train()
-            self.antilabeler.train()
-
-        elif mode == "training":
-            self.gen.train()
-            self.crit.train()
-
-            self.step = checkpoint["step"] + 1
-            self.gen_opt.load_state_dict(checkpoint["generator_optimizer_state_dict"])
-            self.crit_opt.load_state_dict(checkpoint["critic_optimizer_state_dict"])
-            self.gen_lr_scheduler.load_state_dict(checkpoint["generator_lr_scheduler"])
-            self.crit_lr_scheduler.load_state_dict(checkpoint["critic_lr_scheduler"])
-            self.labeler.load_state_dict(checkpoint["labeler_state_dict"])
-            self.antilabeler.load_state_dict(checkpoint["antilabeler_state_dict"])
-            self.labeler_opt.load_state_dict(checkpoint["labeler_optimizer_state_dict"])
-            self.antilabeler_opt.load_state_dict(checkpoint["antilabeler_optimizer_state_dict"])
-
-        else:
-            raise ValueError("mode should be 'inference', 'initialization', or 'training'")
-
-    def _update_tensorboard(
-        self,
-        gen_loss: float,
-        crit_loss: float,
-        labeler_loss: float,
-        antilabeler_loss: float,
-        gp: torch.Tensor,
-        gen_lr: float,
-        crit_lr: float,
-        output_dir: typing.Union[str, bytes, os.PathLike],
-    ) -> None:
-        """
-        Updates the TensorBoard summary logs.
-
-        Parameters
-        ----------
-        gen_loss : float
-            Generator loss.
-        crit_loss : float
-            Critic loss.
-        labeler_loss : float
-            Labeler loss.
-        antilabeler_loss : float
-            Anti-labeler loss.
-        gp : torch.Tensor
-            Gradient penalty.
-        gen_lr : float
-            Generator's optimizer learning rate.
-        crit_lr : float
-            Critic's optimizer learning rate.
-        output_dir : typing.Union[str, bytes, os.PathLike]
-            Directory to save the tfevents.
-        """
-
-        # Only update on the master node
-        if torch.distributed.is_initialized() and os.environ.get("RANK", "0") != "0":
-            return
-
-        super()._update_tensorboard(
-            gen_loss,
-            crit_loss,
-            gp,
-            gen_lr,
-            crit_lr,
-            output_dir,
-        )
-
-        with SummaryWriter(f"{output_dir}/TensorBoard/labeler") as w:
-            w.add_scalar("loss", labeler_loss, self.step)
-
-        with SummaryWriter(f"{output_dir}/TensorBoard/antilabeler") as w:
-            w.add_scalar("loss", antilabeler_loss, self.step)
-
-    def _train_labelers(self, real_cells: torch.Tensor) -> None:
-        """
-        Trains the labeler (on real and fake) and anti-labeler (on fake only).
-
-        Parameters
-        ----------
-        real_cells : torch.Tensor
-            Tensor containing a batch of real cells.
-        """
-        fake_noise = self._generate_noise(self.batch_size, self.latent_dim, self.device)
-        fake = self.gen(fake_noise).detach()
-
-        if torch.distributed.is_initialized():
-            genes = self.gen.module.genes
-            tfs = self.gen.module.tfs
-        else:
-            genes = self.gen.genes
-            tfs = self.gen.tfs
-
-        # train anti-labeler
-        self.antilabeler_opt.zero_grad()
-        predicted_tfs = self.antilabeler(fake[:, genes])
-        actual_tfs = fake[:, tfs]
-        antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
-        antilabeler_loss.backward(retain_graph=True)
-        self.antilabeler_opt.step()
-
-        # train labeler on fake data
-        self.labeler_opt.zero_grad()
-        predicted_tfs = self.labeler(fake[:, genes])
-        labeler_floss = self.mse(predicted_tfs, actual_tfs)
-        labeler_floss.backward()
-        self.labeler_opt.step()
-
-        # train labeler on real data
-        self.labeler_opt.zero_grad()
-        predicted_tfs = self.labeler(real_cells[:, genes])
-        actual_tfs = real_cells[:, tfs]
-        labeler_rloss = self.mse(predicted_tfs, actual_tfs)
-        labeler_rloss.backward()
-        self.labeler_opt.step()
-
-    def _train_generator(self) -> torch.Tensor:
-        """
-        Trains the causal generator for one iteration.
-        Returns
-        -------
-        torch.Tensor
-            Tensor containing only 1 item, the generator loss.
-        """
-        self.gen_opt.zero_grad()
-
-        fake_noise = self._generate_noise(self.batch_size, self.latent_dim, device=self.device)
-
-        self.tb_fake_noise = fake_noise  # for tensorboard model graph
-
-        fake = self.gen(fake_noise)
-
-        if torch.distributed.is_initialized():
-            genes = self.gen.module.genes
-            tfs = self.gen.module.tfs
-        else:
-            genes = self.gen.genes
-            tfs = self.gen.tfs
-
-        predicted_tfs = self.labeler(fake[:, genes])
-        actual_tfs = fake[:, tfs]
-        labeler_loss = self.mse(predicted_tfs, actual_tfs)
-
-        predicted_tfs = self.antilabeler(fake[:, genes])
-        antilabeler_loss = self.mse(predicted_tfs, actual_tfs)
-
-        crit_fake_pred = self.crit(fake)
-        gen_loss = self._generator_loss(crit_fake_pred)
-
-        # comment for ablation of labeler and anti-labeler (GRouNdGAN_def_even_ablation1)
-        gen_loss += labeler_loss + antilabeler_loss
-
-        # uncomment for ablation of anti-labeler but keeping the labeler (GRouNdGAN_def_even_ablation2)
-        # gen_loss += labeler_loss
-
-        # uncomment for ablation of labeler but keeping the anti-labeler (GRouNdGAN_def_even_ablation3)
-        # gen_loss += antilabeler_loss
-
-        gen_loss.backward()
-
-        # Update weights
-        self.gen_opt.step()
-
-        return gen_loss, labeler_loss, antilabeler_loss
-
-    # FIXME: A lot of code duplication here with the parent train() method.
-    def train(
-        self,
-        train_files: str,
-        valid_files: str,
-        critic_iter: int,
-        max_steps: int,
-        c_lambda: float,
-        beta1: float,
-        beta2: float,
-        gen_alpha_0: float,
-        gen_alpha_final: float,
-        crit_alpha_0: float,
-        crit_alpha_final: float,
-        labeler_alpha: float,
-        antilabeler_alpha: float,
-        labeler_training_interval: int,
-        checkpoint: typing.Optional[typing.Union[str, bytes, os.PathLike, None]] = None,
-        starting_checkpoint: typing.Optional[typing.Union[str, bytes, os.PathLike, None]] = None,
-        output_dir: typing.Optional[str] = "output",
-        summary_freq: typing.Optional[int] = 5000,
-        plt_freq: typing.Optional[int] = 10000,
-        save_feq: typing.Optional[int] = 10000,
-    ) -> None:
-        """
-        Method for training the causal GAN.
-
-        Parameters
-        ----------
-        train_files : str
-            Path to training set files (TFrecords supported for now).
-        valid_files : str
-            Path to validation set files (TFrecords supported for now).
-        critic_iter : int
-            Number of training iterations of the critic for each iteration on the generator.
-        max_steps : int
-            Maximum number of steps to train the GAN.
-        c_lambda : float
-            Regularization hyper-parameter for gradient penalty.
-        beta1 : float
-            Coefficients used for computing running averages of gradient in the optimizer.
-        beta2 : float
-            Coefficient used for computing running averages of gradient squares in the optimizer.
-        gen_alpha_0 : float
-            Generator's initial learning rate value.
-        gen_alpha_final : float
-            Generator's final learning rate value.
-        crit_alpha_0 : float
-            Critic's initial learning rate value.
-        crit_alpha_final : float
-            Critic's final learning rate value.
-        labeler_alpha : float
-            Labeler's learning rate value.
-        antilabeler_alpha : float
-            Anti-labeler's learning rate value.
-        labeler_training_interval: int
-            The number of steps after which the labeler and anti-labeler are trained.
-            If 20, the labeler and anti-labeler will be trained every 20 steps.
-        checkpoint : typing.Optional[typing.Union[str, bytes, os.PathLike, None]], optional
-            Path to a trained model; if specified, the checkpoint is be used to resume training, by default None.
-        starting_checkpoint : typing.Optional[typing.Union[str, bytes, os.PathLike, None]], optional
-            Path to a trained model; if specified, the checkpoint is be used to initialize the generator, critic,
-            labeler and anti-labeler, by default None.
-        output_dir : typing.Optional[str], optional
-            Directory to which plots, tfevents, and checkpoints will be saved, by default "output".
-        summary_freq : typing.Optional[int], optional
-            Period between summary logs to TensorBoard, by default 5000.
-        plt_freq : typing.Optional[int], optional
-            Period between t-SNE plots, by default 10000.
-        save_feq : typing.Optional[int], optional
-            Period between saves of the model, by default 10000.
-        """
-
-        # Configure logger
-        logger = setup_logger(__name__)
-
-        def should_run(freq):
-            return (freq > 0 and self.step % freq == 0 and self.step > 1) or (self.step - 1 == max_steps)
-
-        loader, valid_loader = self._get_loaders(train_files, valid_files)
-        loader_gen = iter(loader)
-
-        # Instantiate optimizers
-        self.gen_opt = torch.optim.AdamW(
-            filter(lambda p: p.requires_grad, self.gen.parameters()),
-            lr=gen_alpha_0,
-            betas=(beta1, beta2),
-            amsgrad=True,
-        )
-
-        self.crit_opt = torch.optim.AdamW(
-            self.crit.parameters(),
-            lr=crit_alpha_0,
-            betas=(beta1, beta2),
-            amsgrad=True,
-        )
-
-        self.labeler_opt = torch.optim.AdamW(
-            self.labeler.parameters(),
-            lr=labeler_alpha,
-            betas=(beta1, beta2),
-            amsgrad=True,
-        )
-
-        self.antilabeler_opt = torch.optim.AdamW(
-            self.antilabeler.parameters(),
-            lr=antilabeler_alpha,
-            betas=(beta1, beta2),
-            amsgrad=True,
-        )
-
-        # for the labeler and anti-labeler
-        self.mse = torch.nn.MSELoss()
-
-        # Exponential Learning Rate
-        self.gen_lr_scheduler = self._set_exponential_lr(self.gen_opt, gen_alpha_0, gen_alpha_final, max_steps)
-        self.crit_lr_scheduler = self._set_exponential_lr(self.crit_opt, crit_alpha_0, crit_alpha_final, max_steps)
-
-        if checkpoint is not None:
-            self._load(checkpoint, mode="training")
-        elif starting_checkpoint is not None:
-            self._load(starting_checkpoint, mode="initialization")
-
-        self.gen.train()
-        self.crit.train()
-        self.labeler.train()
-        self.antilabeler.train()
-
-        # We only accept training on GPU since training on CPU is impractical.
-        if torch.distributed.is_initialized():
-            self.gen = torch.nn.parallel.DistributedDataParallel(self.gen)
-            self.crit = torch.nn.parallel.DistributedDataParallel(self.crit)
-            self.labeler = torch.nn.parallel.DistributedDataParallel(self.labeler)
-            self.antilabeler = torch.nn.parallel.DistributedDataParallel(self.antilabeler)
-        else:
-            self.device = "cuda"
-
-        # Main training loop
-        generator_losses, critic_losses = [], []
-        labeler_losses, antilabeler_losses = [], []
-        while self.step <= max_steps:
-            try:
-                real_cells, real_labels = next(loader_gen)
-            except StopIteration:
-                loader_gen = iter(loader)
-                real_cells, real_labels = next(loader_gen)
-
-            real_cells = real_cells.to(self.device)
-            real_labels = real_labels.flatten().to(self.device)
-
-            if self.step != 0:
-                mean_iter_crit_loss = 0
-                for _ in range(critic_iter):
-                    crit_loss, gp = self._train_critic(real_cells, real_labels, c_lambda)
-                    mean_iter_crit_loss += crit_loss.item() / critic_iter
-
-                critic_losses += [mean_iter_crit_loss]
-
-                # Update learning rate
-                self.crit_lr_scheduler.step(self.step + 1)
-
-            gen_loss, labeler_loss, antilabeler_loss = self._train_generator()
-            self.gen_lr_scheduler.step(self.step + 1)
-
-            generator_losses += [gen_loss.item()]
-            labeler_losses += [labeler_loss.item()]
-            antilabeler_losses += [antilabeler_loss.item()]
-
-            if should_run(labeler_training_interval):
-                self._train_labelers(real_cells)
-
-            if should_run(save_feq):
-                self._save(output_dir)
-                logger.info(f"Step {self.step}: Saved checkpoint to {output_dir}")
-
-            # Log and visualize progress
-            if should_run(summary_freq):
-                gen_mean = sum(generator_losses[-summary_freq:]) / summary_freq
-                crit_mean = sum(critic_losses[-summary_freq:]) / summary_freq
-                labeler_mean = sum(labeler_losses[-summary_freq:]) / summary_freq
-                antilabeler_mean = sum(antilabeler_losses[-summary_freq:]) / summary_freq
-
-                if self.step == summary_freq:
-                    self._add_tensorboard_graph(output_dir, self.tb_fake_noise, self.tb_fake)
-
-                self._update_tensorboard(
-                    gen_mean,
-                    crit_mean,
-                    labeler_mean,
-                    antilabeler_mean,
-                    gp,
-                    self.gen_lr_scheduler.get_last_lr()[0],
-                    self.crit_lr_scheduler.get_last_lr()[0],
-                    output_dir,
-                )
-
-                logger.info(
-                    f"Step {self.step}: Training metrics - Generator loss: {gen_mean:.4f}, Critic loss: {crit_mean:.4f}, Gradient Penalty: {gp.item():.4f}, Labeler loss: {labeler_mean:.4f}, Anti-labeler loss: {antilabeler_mean:.4f}"
-                )
-                logger.debug(
-                    f"Step {self.step}: Generator LR: {self.gen_lr_scheduler.get_last_lr()[0]:.6f}, Critic LR: {self.crit_lr_scheduler.get_last_lr()[0]:.6f}"
-                )
-
-            if should_run(plt_freq):
-                self._generate_tsne_plot(valid_loader, output_dir)
-                logger.info(f"Step {self.step}: Generated and saved t-SNE plot to {output_dir}")
-
-            logger.info(f"Step {self.step}/{max_steps} completed")
-
-            self.step += 1
-            if torch.distributed.is_initialized():
-                torch.distributed.barrier()
+        self.gen.load_state_dict(checkpoint["gen_state_dict"])
+        self.crit.load_state_dict(checkpoint["crit_state_dict"])
+        self.labeler.load_state_dict(checkpoint["labeler_state_dict"])
+        self.antilabeler.load_state_dict(checkpoint["antilabeler_state_dict"])

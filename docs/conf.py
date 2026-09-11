@@ -33,7 +33,42 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_favicon",
     "sphinx_copybutton",
+    "sphinx_autodoc_typehints",
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3.11", None),
+    "pytorch": ("https://pytorch.org/docs/2.9/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "optuna": ("https://optuna.readthedocs.io/en/stable/", None),
+    "sklearn": ("https://scikit-learn.org/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+}
+
+# napoleon_use_rtype = False  # sphinx.ext.napoleon setting
+# napoleon_preprocess_types = False  # sphinx.ext.napoleon setting
+napoleon_google_docstring = False # sphinx.ext.napoleon setting
+# napoleon_type_aliases = {
+#     "Tensor": "torch.Tensor",
+#     "Module": "torch.nn.Module",
+#     "Trial": "optuna.Trial",
+#     "Path": "pathlib.Path",
+#     "Figure": "matplotlib.figure.Figure",
+#     "np.ndarray": "numpy.ndarray",
+# }
+
+typehints_fully_qualified = False      # show unqualified type names
+python_use_unqualified_type_names = True  # show unqualified type names
+typehints_use_signature = True  # show parameter types in signature
+typehints_use_signature_return = True  # show return type in signature
+always_document_param_types = True
+typehints_defaults = "comma"
+autodoc_typehints="none"
+
+nitpicky = True
+
+
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",
@@ -66,7 +101,7 @@ html_logo = "_static/logo.svg"
 
 
 html_theme_options = {
-    "repository_url": "https://github.com/Emad-COMBINE-lab/GRouNdGAN",
+    "repository_url": "https://github.com/milos7250/GRouNdGAN",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_source_button": True,
@@ -87,13 +122,13 @@ html_theme_options = {
         {
             # Label for this link
             "name": "GitHub",
-            "url": "https://github.com/Emad-COMBINE-lab/GRouNdGAN",
+            "url": "https://github.com/milos7250/GRouNdGAN",
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
         },
         {
             "name": "Docker",
-            "url": "https://hub.docker.com/repository/docker/yazdanz/groundgan/",
+            "url": "https://hub.docker.com/repository/docker/milos7250/groundgan/",
             "icon": "fa-brands fa-docker",
             "type": "fontawesome",
         },
@@ -106,8 +141,8 @@ html_theme_options = {
         },
         {
             "name": "Docs Build",
-            "url": "https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions",
-            "icon": "https://github.com/Emad-COMBINE-lab/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master",
+            "url": "https://github.com/milos7250/GRouNdGAN/actions",
+            "icon": "https://github.com/milos7250/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master",
             "type": "url",
         },
     ],

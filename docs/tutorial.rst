@@ -10,31 +10,23 @@ To use the CLI, run the ``src/main.py`` script with the desired command and any 
 
 .. important::
 
-    Use :code:`python3.9` instead of :code:`python` if you're running through docker or singularity.
+    Use Python 3.11 when running through Docker or Singularity.
     
-.. code-block:: bash 
+The command requires a configuration file and accepts the following flags:
 
-    $ python src/main.py --help
-    usage: GRouNdGAN [-h] --config CONFIG [--preprocess] [--create_grn] [--train] [--generate] [--evaluate] [--benchmark_grn] [--perturb]
+* ``--config PATH`` (required): Path to the configuration file.
+* ``--preprocess``: Preprocess raw data for GAN training.
+* ``--create-grn``: Infer a GRN with GRNBoost2 and format it as a causal graph.
+* ``--train``: Start or resume model training.
+* ``--optimize-hyperparameters``: Start or resume Optuna hyperparameter optimization.
+* ``--generate``: Simulate single-cell RNA-seq data in silico.
+* ``--evaluate``: Evaluate the quality of the simulated dataset.
+* ``--benchmark-grn``: Evaluate an inferred GRN against the ground-truth GRN.
+* ``--perturb``: Run a perturbation experiment with a trained model.
 
-    GRouNdGAN is a gene regulatory network (GRN)-guided causal implicit generative model for
-    simulating single-cell RNA-seq data, in-silico perturbation experiments, and benchmarking GRN
-    inference methods. This programs also contains cWGAN and unofficial implementations of scGAN and
-    cscGAN (with projection conditioning)
-
-    required arguments:
-    --config CONFIG  Path to the configuration file
-
-    optional arguments:
-    --preprocess     Preprocess raw data for GAN training
-    --create_grn     Infer a GRN from preprocessed data using GRNBoost2 and appropriately format as causal graph
-    --train          Start or resume model training
-    --generate       Simulate single-cells RNA-seq data in-silico
-    --evaluate       Evaluate the data quality of the simulated dataset
-    --benchmark_grn  Evaluate the performance of a GRN inference method in inferring the ground truth GRN
-    --perturb        Perform a perturbation experiment using a trained GRouNdGAN model
-    
-There are essentially seven commands available: ``--preprocess``, ``--create_grn``, ``--train``, ``--generate``, ``--evaluate``, ``benchmark_grn``, and ``perturb``. You must provide a configuration file containing inputs, parameters, and hyperparameters with each command through the ``--config`` flag. 
+The eight operation flags can be combined where appropriate. Hyperparameter
+optimization must be run separately from generation, evaluation, GRN
+benchmarking, and perturbation.
 
 .. note:: 
 
@@ -48,7 +40,7 @@ There are essentially seven commands available: ``--preprocess``, ``--create_grn
 
     .. code-block:: console
 
-        python src/main.py --config configs/causal_gan.cfg --preprocess --create_grn --train --generate --evaluate
+        python src/main.py --config configs/causal_gan.cfg --preprocess --create-grn --train --generate --evaluate
 
     When chaining multiple commands, ensure that the supplied configuration file includes the required arguments for each command in the chain. 
 
@@ -65,9 +57,89 @@ We provide three sample config files in the ``configs/`` directory:
 
 Most of the configuration file consists of hyperparameters. You mostly need to modify input and output parameters which we will go through in each section. GRouNdGAN isn't very sensitive to hyperparameters. However, it is still advisable to test different choices of hyperparameters using a validation set. 
 
+Configuration values can reference environment variables using
+``${VARIABLE_NAME}`` syntax. GRouNdGAN uses ConfigParser interpolation, so the
+environment is resolved when the configuration is read. For example:
+
+.. code-block:: ini
+
+    output directory = ${GROUNDGAN_OUTPUT_DIR}
+    storage = postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PGHOST}:${PGPORT}/${POSTGRES_DB}
+
+When ``POSTGRES_USER``, ``POSTGRES_PASSWORD``, ``PGHOST``, ``PGPORT``, and
+``POSTGRES_DB`` are exported, the PostgreSQL URL is interpolated to the
+corresponding connection string automatically.
+
+Runtime Environment Variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Slurm/container workflows source ``scripts/common.sh``, which sets the
+following environment variables. The thread settings control CPU and
+TorchInductor parallelism:
+
+.. code-block:: bash
+
+    export OMP_NUM_THREADS=8
+    export TORCHINDUCTOR_COMPILE_THREADS=8
+
+TorchInductor, autograd, and Triton caches can be enabled with:
+
+.. code-block:: bash
+
+    export TORCHINDUCTOR_CACHE_DIR="$TMPDIR/torchinductor_cache"
+    export TORCHINDUCTOR_FX_GRAPH_CACHE=1 TORCHINDUCTOR_AUTOGRAD_CACHE=1 TRITON_CACHE_AUTOTUNING=1
+    export TORCHINDUCTOR_FORCE_DISABLE_CACHES=0
+
+``TORCHINDUCTOR_CACHE_DIR`` must point to a directory specific to the current
+Slurm job. It should be on local node scratch, not on a networked drive, to
+avoid cache collisions and slow compilation.
+
+Logging and progress output are controlled with:
+
+.. code-block:: bash
+
+    export GROUNDGAN_LOGLEVEL=${GROUNDGAN_LOGLEVEL:-INFO}
+    export GROUNDGAN_NO_TQDM=${GROUNDGAN_NO_TQDM:-0}
+    export LOGLEVEL=${LOGLEVEL:-WARNING}
+
+``GROUNDGAN_LOGLEVEL`` controls GRouNdGAN's application logs,
+``GROUNDGAN_NO_TQDM=1`` disables progress bars, and ``LOGLEVEL`` controls
+general logger output.
+
 Below is the demo ``causal_gan.cfg`` config file for training GRouNdGAN using the PBMC68k dataset:
 
 .. include:: causal_gan_cfg.rst
+
+Learning Rate Scheduling
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``[Learning Rate]`` section controls the generator and critic learning-rate
+schedule. The same options can be set in ``[CC Learning Rate]`` for the causal
+controller. If omitted, the scheduler uses cosine decay, a ``2%`` warmup, and a
+``60%`` holding endpoint.
+
+.. code-block:: ini
+
+    [Learning Rate]
+    generator initial = 0.0001 ; maximum learning rate
+    generator final = 0.00001
+    critic initial = 0.0001 ; maximum learning rate
+    critic final = 0.00001
+    decay type = cosine ; linear, cosine, or exponential
+    warmup percent = 0.02
+    holding percent = 0.60
+
+The schedule has three phases:
+
+* Warmup increases the learning rate to the configured initial rate.
+* Holding keeps the maximum rate until ``holding percent`` of training. This
+  percentage includes the warmup phase. For example, with 100 steps, ``2%``
+  warmup and ``60%`` holding means warmup for 2 steps, hold through step 60,
+  then begin decay.
+* Decay reduces the rate to the configured final rate using the selected curve.
+
+Set ``holding percent = 1.0`` to disable decay and keep the maximum rate after
+warmup. ``warmup percent`` must not exceed ``holding percent``.
 
 
 Project outline
@@ -153,7 +225,7 @@ GRN Creation
 ~~~~~~~~~~~~
 
 .. note:: 
-    GRN creation isn't needed for scGAN, cscGAN, and cWGAN; you can skip the ``--create_grn`` command. 
+    GRN creation isn't needed for scGAN, cscGAN, and cWGAN; you can skip the ``--create-grn`` command.
 
 This command uses GRNBoost2 (Moerman et al., 2018) to infer a GRN on the preprocessed train set. It then converts it into the a format that GRouNdGAN accepts.  
 
@@ -171,16 +243,35 @@ In addition to what was required in the previous step, you need to provide the f
     ; "neg ctr" for generating negative control GRNs (odd indices 1, 3, 5... = top 2, 4, 6, ...)
     ; note that k has to be a pair number for strategy=ctr
     strategy = top 
+    include genes with no regulators = False ; retain genes with no inferred regulators
 
     [Data]
     causal graph = data/processed/PBMC/causal_graph.pkl ; where to write the created GRN
 
 By default, the top k most important regulating TFs of each gene will be included in the GRN (``strategy = top``). Alternatively, you can construct two separate GRNs, each containing half of these top k TFs per gene. By first setting ``strategy = neg ctr`` and then ``strategy = pos ctr``, you generate two GRNs with identical densities and structural properties, based on the odd/even positions of the TFs in each gene’s ranked list. This strategy can be useful for controlled comparative analyses as both GRNs are equally sparse and are derived from the same underlying ranking.
 
+The ``TFs`` option is optional. When it is omitted, all genes in the
+preprocessed training data are passed to GRNBoost2 as candidate regulators.
+Because this produces genes in both regulator and target roles, GRouNdGAN
+compares each gene's total outgoing edge importance (where it is a ``TF``)
+with its total incoming edge importance (where it is a ``target``). A gene is
+selected as a TF when its outgoing importance is greater than its incoming
+importance. Only edges from selected TFs to non-TF targets are retained.
+
+If the file specified by ``Inferred GRN`` already exists, GRouNdGAN skips
+GRNBoost2 and reads the existing file instead. The file must contain the
+columns ``TF``, ``target``, and ``importance``. This makes it possible to
+reuse an inferred GRN or provide a GRN generated by another method.
+
+GRN creation also removes genes that cannot be represented in the selected
+bipartite graph; the train, validation, and test files are rewritten with the
+retained genes so the generated causal-graph indices remain aligned with the
+data.
+
 
 Run using::
 
-   $ python src/main.py --config configs/causal_gan.cfg --create_grn
+   $ python src/main.py --config configs/causal_gan.cfg --create-grn
 
 Once done, you will see success messages and the properties of the created GRN.
 
@@ -214,7 +305,7 @@ The causal graph will be written to the path specified by ``[Data]/causal graph`
 Imposing Custom GRNs 
 ^^^^^^^^^^^^^^^^^^^^
 
-It is possible to instead impose your own GRN onto GRouNdGAN. If you're opting for this option, skip the ``--create_grn`` command. Instead, create a python dictionary where keys are gene indices (``int``). For each key (gene index), the value is the set of indices ``set[int]`` coresponding to TFs that regulate the gene. 
+It is possible to instead impose your own GRN onto GRouNdGAN. If you're opting for this option, skip the ``--create-grn`` command. Instead, create a python dictionary where keys are gene indices (``int``). For each key (gene index), the value is the set of indices ``set[int]`` coresponding to TFs that regulate the gene.
 
 .. image:: _static/sampleGRN.svg
 
@@ -273,56 +364,55 @@ You can start training the model using the following command::
 
     $ python src/main.py --config configs/causal_gan.cfg --train
 
-Upon running the command above, three folders will be created inside the path provided in the config file (``[EXPERIMENT]/output directory``) and the config file will be copied over:
+Upon running the command above, four folders will be created inside the path provided in the config file (``[EXPERIMENT]/output directory``) and the config file will be copied over:
 
 * ``checkpoints/``: Containing the ``.pth`` state dictionary including model's weights, biases, etc.
 * ``TensorBoard/``: Containing TensorBoard logs (saved as tfevent files)
-* ``TSNE/``: Containing t-SNE plots of real vs simulated cells 
+* ``UMAP/``: Containing UMAP plots of real vs simulated cells.
+* ``RF_AUROC/``: Containing random-forest AUROC plots.
 
-You can change the save, logging, and plotting frequency (``[Training]/save frequency``, ``[Training]/summary frequency``, ``[Training]/plot frequency``) in the config file. 
+You can change the save, logging, plotting, and RF AUROC frequencies in the
+``[Logging]`` section of the config file. The ``[EXPERIMENT]`` section also
+supports ``compile modules`` (default ``True``), ``use DDP`` (default
+``False``), ``random seed``, and ``deterministic mode`` (default ``False``).
 
 Monitor training using TensorBoard::
 
     tensorboard --logdir="{GAN OUTPUT DIR HERE}/TensorBoard" --host 0.0.0.0 --load_fast false &
 
-We also provide two slurm submission scripts for training and monitoring in  ``scripts/``.
+Slurm workflows are provided in ``scripts/`` for preprocessing, GRN creation,
+training, generation, evaluation, benchmarking, and hyperparameter
+optimization. Every script contains a default ``CODE_ROOT`` path. Before using
+the scripts from a clone, either export ``CODE_ROOT`` or edit the default in
+each script so it points to the directory where this repository is cloned:
 
-**Expected output:**
+.. code-block:: bash
+
+    export CODE_ROOT=/path/to/GRouNdGAN
+
+The scripts validate that ``CODE_ROOT`` exists before running. ``CONFIG`` can
+also be exported to select the configuration file passed to the workflow.
+
+**Example output:**
 
 .. code-block:: text
 
-    Done training causal controller step 0
-    Done training causal controller step 1
-    Done training causal controller step 2
+    [09:08:30] INFO     (training.gan) Initializing training...
+    [09:08:42] INFO     (training.gan) Starting training loop...
+    [09:12:55] INFO     (training.gan) Step 5000:
+                         Generator Loss                         -5.1e+04
+                         Generator Total Loss                   -5.1e+04
+                         Critic Total Loss                      -2.3e+05
+                         Validation Total Loss                   1e+04
+    [09:12:58] INFO     (training.gan) Step 5000: Computed Random Forest AUROC: 0.825
     ...
-    Done training causal controller step 10000
-    Saved logs
-    Saved t-SNE plot
-    Done training causal controller step 10001
-    ...
-    Done training causal controller step 200000
-    Saved logs
-    Saved t-SNE plot
-    Saved checkpoint
-    Done training GRouNdGAN step 0
-    Done training GRouNdGAN step 1
-    Done training GRouNdGAN step 2
-    ...
-    Done training GRouNdGAN step 10000
-    Saved logs
-    Saved t-SNE plot
-    Done training GRouNdGAN step 10001
-    ...
-    Done training GRouNdGAN step 100000
-    Saved logs
-    Saved t-SNE plot
-    Saved checkpoint
-    ...
-    Done training GRouNdGAN step 1000000
-    Saved logs
-    Saved t-SNE plot
-    Saved checkpoint
-    Finished training
+    [00:08:37] INFO     (training.gan) Step 500000:
+                         Generator Loss                         -2.2e+03
+                         Generator Total Loss                   -2.2e+03
+                         Critic Total Loss                      -1.5e+03
+                         Validation Total Loss                  -3.4e+03
+    [00:08:40] INFO     (training.gan) Step 500000: Computed Random Forest AUROC: 0.524
+    Finished training after 500000 steps.
 
 .. note::
     * Training time primarily depends on the number of genes and the density of the imposed GRN. It takes about five days with a very dense GRN (~20% density) containing 1000 genes on a single NVidia V100SXM2 (16G memory) GPU. 
@@ -331,7 +421,54 @@ We also provide two slurm submission scripts for training and monitoring in  ``s
 
     * GRouNdGAN trains for a million steps by default. It is not recommended to change this in the config file. 
 
-    * You can resume training from a checkpoint by setting ``[EXPERIMENT]/checkpoint`` in the config file to the ``.pth`` checkpoint you wish to use. 
+    * You can resume training from a checkpoint by setting ``[EXPERIMENT]/checkpoint`` in the config file to the ``.pth`` checkpoint you wish to use.
+
+Hyperparameter Optimization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GRouNdGAN can optimize configuration values with Optuna. Run optimization
+with a configuration containing a ``[Hyperparameter Optimization]`` section:
+
+.. code-block:: ini
+
+    [Hyperparameter Optimization]
+    number of trials = 20
+    storage ; optional Optuna database URL; defaults to a database in the output directory
+    study name = optuna_study
+    worker id environment variable = SLURM_ARRAY_TASK_ID ; optional distributed worker identifier
+
+Values to optimize are declared in sections prefixed with ``HO ``. For
+example, ``[HO Training]`` resolves values into ``[Training]`` and
+``[HO Learning Rate]`` resolves values into ``[Learning Rate]``:
+
+.. code-block:: ini
+
+    [HO Training]
+    batch size = (16 128)
+    critic iterations = (1 10)
+
+    [HO Learning Rate]
+    generator initial = (1e-5 1e-3)
+    critic initial = (1e-5 1e-3)
+
+Tuple values define Optuna ranges. A blank ``HO`` value delegates the choice
+to the optimizer's default suggestion for that parameter. Each trial is
+written to a numbered subdirectory of the configured output directory.
+By default, optimization uses a local SQLite database at
+``<output directory>/optuna_study.db``. PostgreSQL is recommended when running
+multiple workers, since it provides a shared database for coordinating trials;
+set its connection URL with the ``storage`` option. A config can construct the
+URL from environment variables, for example:
+
+.. code-block:: ini
+
+    storage = postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PGHOST}:${PGPORT}/${POSTGRES_DB}
+
+If those environment variables are set before launching GRouNdGAN, ConfigParser
+interpolates them into the correct PostgreSQL URL.
+Generation, evaluation, benchmarking, and perturbation should be run in a
+separate command after optimization completes. Create ``optuna_stop.txt`` in
+the output directory to request a graceful stop between trials.
 
 In-silico Single-Cell Simulation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -373,28 +510,30 @@ Evaluating Simulated Data Quality
 
 You can evaluate the quality of GRouNdGAN simulations using the following quantitative and qualitative metrics:
 
-* t-SNE plot of jointly embedded experimental and simulated cells.
+* UMAP plots of jointly embedded experimental and simulated cells.
 * Euclidean distance between the mean expression profiles of experimental and simulated cells.
 * Cosine distance between the mean expression profiles of experimental and simulated cells.
 * ROC curve and AUROC of Random Forest classifier distinguishing experimental from simulated cells.
 * Maximum Mean Discrepancy (MMD) for assessing distributional similarity between experimental and simulated cells.
 * Mean integration local inverse Simpson's index (miLISI) of experimental and simulated cells.
 
-The above metrics are computed between the test set and an equal number of cells sampled from the simulated data. In the t-SNE plot, greater overlap between experimental and simulated cells indicates better match. For the first three quantitative metrics (Euclidean distance, Cosine distance, and MMD), lower values reflect greater similarity. For the RF AUROC, values closer to 0.5 indicate that the classifier struggles to distinguish between simulated and experimental cells, which implies more realistic simulated data. For miLISI, values closer to 2 suggest better mixing of experimental and simulated cells. As a control, we also compute the Euclidean distance, Cosine distance, MMD, and miLISI metrics between two halves of the reference test set to serve as a point of comparison.
+The above metrics are computed between the test set and an equal number of cells sampled from the simulated data. In the UMAP plots, greater overlap between experimental and simulated cells indicates better match. For the first three quantitative metrics (Euclidean distance, Cosine distance, and MMD), lower values reflect greater similarity. For the RF AUROC, values closer to 0.5 indicate that the classifier struggles to distinguish between simulated and experimental cells, which implies more realistic simulated data. For miLISI, values closer to 2 suggest better mixing of experimental and simulated cells. As a control, we also compute the Euclidean distance, Cosine distance, MMD, and miLISI metrics between two halves of the reference test set to serve as a point of comparison.
 
 
-You can specify which evaluation metrics to compute by setting the appropriate flags in the configuration file. 
+You can specify which evaluation metrics to compute by setting the appropriate
+flags in the configuration file. Set ``plot umap = True`` to generate UMAP
+figures; it is also required when computing miLISI.
 
 .. code-block:: ini
 
     [Evaluation]
     simulated data path ; will use [Generation]/generation path if left undefined
-    plot tsne = True ; Note: has to be true in order to run miLISI
+    plot umap = True ; Note: has to be true in order to run miLISI
     compute euclidean distance = True  ; or False
     compute cosine distance = True 
     compute rf auroc = True
     compute MMD = True
-    compute miLISI = True ; plot tsne has to be True for this to work
+    compute miLISI = True ; plot umap has to be True for this to work
 
 
 To run the evaluation with the specified configuration, use the following command:
@@ -407,7 +546,7 @@ To run the evaluation with the specified configuration, use the following comman
 
 .. code-block:: text
 
-    t-SNE plot saved to results/GRouNdGAN/tSNE.png
+    UMAP plots saved to results/GRouNdGAN/UMAP/
 
     Euclidean distance (real vs fake): 171.218017578125
     Euclidean distance (control): 242.84738159179688
@@ -431,7 +570,7 @@ To run the evaluation with the specified configuration, use the following comman
    * - .. figure:: _static/tSNE.png
           :width: 100%
    
-          Example saved t-SNE plot
+          Example saved UMAP plot
 
      - .. figure:: _static/RF.png
           :width: 100%
@@ -486,7 +625,7 @@ Then run:
 
 .. code-block:: sh
 
-    $ python src/main.py --config configs/causal_gan.cfg --benchmark_grn
+    $ python src/main.py --config configs/causal_gan.cfg --benchmark-grn
 
 **Expected output:**
 

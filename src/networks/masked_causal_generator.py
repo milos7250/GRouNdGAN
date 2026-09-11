@@ -1,11 +1,20 @@
 import itertools
-import typing
+from typing import TYPE_CHECKING
+from warnings import filterwarnings
 
+import numpy as np
+import scipy.sparse as sp
 import torch
-from layers.lsn import LSN
-from layers.masked_linear import MaskedLinear
+from sparselinear import SparseLinear
 from torch import nn
 from torch.nn.modules.activation import ReLU
+
+from layers.lsn import LSN
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    from torch import Tensor
 
 
 class CausalGenerator(nn.Module):
@@ -16,43 +25,44 @@ class CausalGenerator(nn.Module):
         depth_per_gene: int,
         width_scale_per_gene: int,
         causal_controller: nn.Module,
-        causal_graph: typing.Dict[int, typing.Set[int]],
-        library_size: typing.Optional[typing.Union[int, None]] = None,
-        device: typing.Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
+        causal_graph: dict[int, set[int]],
+        library_size: int | None = None,
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ) -> None:
         """
         Causal Generator's constructor.
 
         Parameters
         ----------
-        z_input : int
+        z_input
             The dimension of the noise tensor.
-        noise_per_gene : int
+        noise_per_gene
             Dimension of the latent space from which the noise vectors used by target generators is sampled.
-        depth_per_gene : int
+        depth_per_gene
             Depth of the target generator networks.
-        width_scale_per_gene : int
+        width_scale_per_gene
             The width scale used for the target generator networks.
             if width_scale_per_gene = 2 and a gene is regulated by 10 TFs and 1 noise vector,
             the width of the target gene generator will be 2 * (10 + 1) = 22.
             Assuming 1000 target genes, each regulated by 10 TFs and 1 noise, the total width of the
             sparse target generator will be 22000.
-        causal_controller : nn.Module
+        causal_controller
             Causal controller module (retrieved from checkpoint if pretrained). It is a GAN trained on
             genes and TFs with the LSN layer removed after training. It cannot be trained on TFs only since the
             library size has to be enforced. However, during causal generator training, only TFs are used.
-        causal_graph : typing.Dict[int, typing.Set[int]]
+        causal_graph
             The causal graph is a dictionary representing the TRN to impose. It has the following format:
             {target gene index: {TF1 index, TF2 index, ...}}. This causal graph has to be acyclic and bipartite.
             A TF cannot be regulated by another TF.
-            Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
-            Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
-            Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
+
+            - Invalid: {1: {2, 3, {4, 6}}, ...} - a regulator (TF) is regulated by another regulator (TF)
+            - Invalid: {1: {2, 3, 4}, 2: {4, 3, 5}, ...} - a regulator (TF) is also regulated
+            - Invalid: {4: {2, 3}, 2: {4, 3}} - contains a cycle
 
             Valid causal graph example: {1: {2, 3, 4}, 6: {5, 4, 2}, ...}
-        library_size : typing.Optional[typing.Union[int, None]], optional
+        library_size
             Total number of counts per generated cell, by default None
-        device : typing.Optional[str], optional
+        device
             Specifies to train on 'cpu' or 'cuda'. Only 'cuda' is supported for training the
             GAN but 'cpu' can be used for inference, by default "cuda" if torch.cuda.is_available() else"cpu".
         """
@@ -65,15 +75,18 @@ class CausalGenerator(nn.Module):
         self.library_size = library_size
         self.device = device
         self._causal_controller = causal_controller
-        self._generator = None
 
         self.genes = list(self.causal_graph.keys())
-        self.register_buffer("genes_tensor", torch.tensor(self.genes, device=self.device), persistent=False)
+        self.genes_tensor = torch.nn.Buffer(
+            torch.tensor(self.genes, device=self.device, dtype=torch.int64), persistent=False
+        )
         self.regulators = list(  # all gene regulating TFs (can contain duplicate TFs)
             itertools.chain.from_iterable(self.causal_graph.values())
         )
         self.tfs = list(set(self.regulators))
-        self.register_buffer("tfs_tensor", torch.tensor(self.tfs, device=self.device), persistent=False)
+        self.tfs_tensor = torch.nn.Buffer(
+            torch.tensor(self.tfs, device=self.device, dtype=torch.int64), persistent=False
+        )
 
         # if a gene has X number of regulators (TFs + noises), it will have a
         # hidden layer with the width of (hidden_width * num_regulators)
@@ -87,12 +100,33 @@ class CausalGenerator(nn.Module):
         self.tf_expressions = None
         self.noise = None
 
-        self._lsn = LSN(self.library_size)
-        self.register_module("lsn", self._lsn)
+        if self.library_size is not None:
+            self._lsn = LSN(self.library_size)
 
         self._create_generator()
 
-    def forward(self, noise: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+    @staticmethod
+    def _generate_noise(batch_size: int, latent_dim: int, device: str) -> "Tensor":
+        """
+        Function for creating noise vectors
+
+        Parameters
+        ----------
+        batch_size
+            The number of samples to generate (normally equal to training batch size).
+        latent_dim
+            Dimension of the latent space to sample from.
+        device
+            The device type.
+
+        Returns
+        -------
+        Tensor
+            A tensor filled with random numbers from the standard normal distribution.
+        """
+        return torch.randn(batch_size, latent_dim, device=device)
+
+    def forward(self, noise: torch.Tensor, *args: "Any", **kwargs: "Any") -> torch.Tensor:
         """
         Function for completing a forward pass of the generator. This includes a
         forward pass of the causal controller to generate TFs. TFs and generated
@@ -100,7 +134,7 @@ class CausalGenerator(nn.Module):
 
         Parameters
         ----------
-        noise : torch.Tensor
+        noise
             The noise used as input by the causal controller.
         *args
             Variable length argument list.
@@ -112,9 +146,7 @@ class CausalGenerator(nn.Module):
         torch.Tensor
             The output of the causal generator (gene expression matrix).
         """
-        tf_expressions = self._causal_controller(noise)
-        tf_expressions = tf_expressions[:, self.tfs]
-        tf_expressions = tf_expressions.detach()
+        tf_expressions = self._causal_controller(noise)[:, self.tfs].detach()
 
         # use the same tf expressions as the previous forward pass in perturbation mode
         if self.pert_mode:
@@ -129,11 +161,7 @@ class CausalGenerator(nn.Module):
         cells = torch.zeros(batch_size, self.num_tfs + self.num_genes, device=self.device)
         cells = cells.index_add_(1, self.tfs_tensor, tf_expressions)
 
-        # lazy way of avoiding a circular dependency
-        # FIXME: circular dependency
-        from gans.gan import GAN
-
-        noise = GAN._generate_noise(batch_size, self.num_noises, self.device)
+        noise = self._generate_noise(batch_size, self.num_noises, self.device)
 
         if self.pert_mode:
             if self.noise is not None:
@@ -164,46 +192,72 @@ class CausalGenerator(nn.Module):
         hidden mask: contains connections between hidden layers such that there is no connection between hidden layers of two genes' generators
         output mask: contains connections between hidden layers of each gene's generator and its expression (before LSN)
 
-        The MaskedLinear module is used to mask weights and gradients in linear layers.
+        Masks are built as scipy.sparse CSR matrices with bool dtype to avoid materialising
+        O(hidden_dims²) dense tensors.  Connectivity indices for SparseLinear are extracted
+        directly from the COO representation.
         """
         hidden_dims = (len(self.regulators) + self.num_noises) * self.width_scale_per_gene
 
-        # noise mask will be added to TF mask
-        input_mask = torch.zeros(self.num_tfs, hidden_dims).to(self.device)
-        hidden_mask = torch.zeros(hidden_dims, hidden_dims).to(self.device)
-        output_mask = torch.zeros(hidden_dims, self.num_genes).to(self.device)
+        input_rows: list[np.ndarray] = []
+        input_cols: list[np.ndarray] = []
+        hidden_rows: list[np.ndarray] = []
+        hidden_cols: list[np.ndarray] = []
+        output_rows: list[np.ndarray] = []
+        output_cols: list[np.ndarray] = []
 
         prev_gene_hidden_dims = 0
-        for gene, gene_regulators in self.causal_graph.items():
-            gene_idx = self.genes.index(gene)
+        for gene_idx, (gene, gene_regulators) in enumerate(self.causal_graph.items()):
             curr_gene_hidden_dims = self.width_scale_per_gene * (len(gene_regulators) + self.noise_per_gene)
+            start = prev_gene_hidden_dims
+            end = prev_gene_hidden_dims + curr_gene_hidden_dims
+
+            # input mask: TF -> hidden block connections
             for gene_regulator in gene_regulators:
                 gene_regulator_idx = self.tfs.index(gene_regulator)
+                input_rows.append(np.full(curr_gene_hidden_dims, gene_regulator_idx, dtype=np.int64))
+                input_cols.append(np.arange(start, end, dtype=np.int64))
 
-                # mask for the tfs
-                input_mask[
-                    gene_regulator_idx,
-                    prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-                ] = 1
+            # input mask: noise -> hidden block connections
+            noise_row_offset = self.num_tfs + gene_idx * self.noise_per_gene
+            for noise_idx in range(self.noise_per_gene):
+                input_rows.append(np.full(curr_gene_hidden_dims, noise_row_offset + noise_idx, dtype=np.int64))
+                input_cols.append(np.arange(start, end, dtype=np.int64))
 
-            # mask for the noises
-            noise_mask = torch.zeros(self.noise_per_gene, hidden_dims).to(self.device)
-            noise_mask[:, prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims] = 1
-            input_mask = torch.cat([input_mask, noise_mask])
+            # hidden mask: block-diagonal (all-to-all within this gene's block)
+            block = np.arange(start, end, dtype=np.int64)
+            br, bc = np.meshgrid(block, block, indexing="ij")
+            hidden_rows.append(br.flatten())
+            hidden_cols.append(bc.flatten())
 
-            # mask for hidden layer
-            hidden_mask[
-                prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-                prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-            ] = 1
+            # output mask: hidden block -> gene output
+            output_rows.append(block)
+            output_cols.append(np.full(curr_gene_hidden_dims, gene_idx, dtype=np.int64))
 
-            # mask for final layer
-            output_mask[
-                prev_gene_hidden_dims : prev_gene_hidden_dims + curr_gene_hidden_dims,
-                gene_idx,
-            ] = 1
+            prev_gene_hidden_dims = end
 
-            prev_gene_hidden_dims += curr_gene_hidden_dims
+        num_input_rows = self.num_tfs + self.num_noises
+
+        input_mask = sp.csr_matrix(
+            (
+                np.ones(sum(len(r) for r in input_rows), dtype=bool),
+                (np.concatenate(input_rows), np.concatenate(input_cols)),
+            ),
+            shape=(num_input_rows, hidden_dims),
+        )
+        hidden_mask = sp.csr_matrix(
+            (
+                np.ones(sum(len(r) for r in hidden_rows), dtype=bool),
+                (np.concatenate(hidden_rows), np.concatenate(hidden_cols)),
+            ),
+            shape=(hidden_dims, hidden_dims),
+        )
+        output_mask = sp.csr_matrix(
+            (
+                np.ones(sum(len(r) for r in output_rows), dtype=bool),
+                (np.concatenate(output_rows), np.concatenate(output_cols)),
+            ),
+            shape=(hidden_dims, self.num_genes),
+        )
 
         generator_layers = nn.ModuleList()
 
@@ -221,9 +275,9 @@ class CausalGenerator(nn.Module):
 
     def _create_generator_block(
         self,
-        mask: torch.Tensor,
-        library_size: typing.Optional[typing.Union[int, None]] = None,
-        final_layer: typing.Optional[bool] = False,
+        mask: sp.csr_matrix,
+        library_size: int | None = None,
+        final_layer: bool | None = False,
     ) -> nn.Sequential:
         """
         Method for creating a sequence of operations corresponding to
@@ -232,11 +286,11 @@ class CausalGenerator(nn.Module):
 
         Parameters
         ----------
-        mask : torch.Tensor
-            Mask Tensor with shape (n_input_feature, n_output_feature).
-        library_size : typing.Optional[typing.Union[int, None]], optional
+        mask
+            Sparse CSR matrix (bool dtype) with shape (n_input_feature, n_output_feature).
+        library_size
             Total number of counts per generated cell, by default None.
-        final_layer : typing.Optional[bool], optional
+        final_layer
             Indicates if the block contains the final layer, by default False.
 
         Returns
@@ -244,11 +298,32 @@ class CausalGenerator(nn.Module):
         nn.Sequential
              Sequential container containing the modules.
         """
-        masked_linear = MaskedLinear(mask, device=self.device)
+        filterwarnings(
+            "ignore", message=r".*torch\.sparse\.SparseTensor\(indices, values, shape, \*, device=\) is deprecated.*"
+        )  # suppress sparselinear warnings
+
+        # Extract connectivity indices directly from the COO representation.
+        # SparseLinear expects connectivity as a (2, nnz) LongTensor where
+        #   row 0 = output feature indices (columns of the mask)
+        #   row 1 = input feature indices (rows of the mask)
+        # This is equivalent to the old torch.nonzero(mask.T).T but avoids
+        # materialising a dense transpose copy.
+        coo = mask.tocoo()
+        connectivity = torch.stack([
+            torch.as_tensor(coo.col, dtype=torch.long),
+            torch.as_tensor(coo.row, dtype=torch.long),
+        ])
+        masked_linear = SparseLinear(mask.shape[0], mask.shape[1], connectivity=connectivity)
 
         if not final_layer:
-            nn.init.xavier_uniform_(masked_linear.weight)
-            masked_linear.reapply_mask()
+            # initialize weights using Xavier uniform initialization
+            fan_in, fan_out = mask.shape[0], mask.shape[1]
+            gain = nn.init.calculate_gain("relu")
+            std = gain * (2.0 / float(fan_in + fan_out)) ** 0.5
+            a = 3.0**0.5 * std  # Calculate uniform bounds from standard deviation
+            nn.init.uniform_(masked_linear.weights, -a, a)
+            torch.nn.init.zeros_(masked_linear.bias)
+
             return nn.Sequential(
                 masked_linear,
                 nn.BatchNorm1d(mask.shape[1]),
@@ -256,14 +331,17 @@ class CausalGenerator(nn.Module):
             )
 
         else:
-            nn.init.kaiming_normal_(masked_linear.weight, mode="fan_in", nonlinearity="relu")
-            masked_linear.reapply_mask()
-
+            # initialize weights using Kaiming normal initialization
+            fan_in, fan_out = mask.shape[0], mask.shape[1]
+            gain = nn.init.calculate_gain("relu")
+            std = gain / fan_in**0.5  # Using fan_in mode
+            nn.init.normal_(masked_linear.weights, 0, std)
             torch.nn.init.zeros_(masked_linear.bias)
+
             if library_size is not None:
-                return nn.Sequential(masked_linear, ReLU(), LSN(library_size))
+                return nn.Sequential(masked_linear, ReLU(inplace=False), LSN(library_size))
             else:
-                return nn.Sequential(masked_linear, ReLU())
+                return nn.Sequential(masked_linear, ReLU(inplace=False))
 
     def freeze_causal_controller(self):
         """Freezes the pretrained causal controller and disallows any further updates."""

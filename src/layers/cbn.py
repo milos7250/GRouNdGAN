@@ -10,9 +10,9 @@ class ConditionalBatchNorm(nn.Module):
 
         Parameters
         ----------
-        num_features : int
+        num_features
             Number of input features.
-        num_classes : int
+        num_classes
             Number of classes (i.e., distinct labels).
         """
         super().__init__()
@@ -33,9 +33,9 @@ class ConditionalBatchNorm(nn.Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x
             Tensor on which to perform CBN.
-        y : torch.Tensor
+        y
             A batch of labels.
 
         Returns

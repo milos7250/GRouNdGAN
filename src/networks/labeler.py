@@ -1,25 +1,23 @@
-import typing
-
 import torch
 from torch import nn
 
 
 class Labeler(nn.Module):
-    def __init__(self, num_genes: int, num_tfs: int, labeler_layers: typing.List[int]) -> None:
+    def __init__(self, num_genes: int, num_tfs: int, labeler_layers: list[int]) -> None:
         """
         Labeler network's constructor.
 
         Parameters
         ----------
-        num_genes : int
+        num_genes
             Number of target genes (all genes excluding TFs) in the dataset.
-        num_tfs : int
+        num_tfs
             Number of transcription factors in the dataset.
-        labeler_layers : typing.List[int]
+        labeler_layers
             List of integers corresponding to the number of neurons
             at each deep layer of the labeler.
         """
-        super(Labeler, self).__init__()
+        super().__init__()
 
         self.num_genes = num_genes
         self.num_tfs = num_tfs
@@ -35,7 +33,7 @@ class Labeler(nn.Module):
 
         Parameters
         ----------
-        target_genes : torch.Tensor
+        target_genes
             Tensor containing target gene expression of (fake/real) cells.
 
         Returns

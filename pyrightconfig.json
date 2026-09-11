@@ -1,0 +1,14 @@
+{
+    "include": [
+        "src",
+        "tests"
+    ],
+    "strictListInference": true,
+    "deprecateTypingAliases": true,
+    "typeCheckingMode": "strict",
+    "pythonVersion": "3.11",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none",
+    "reportMissingTypeStubs": "none",
+}

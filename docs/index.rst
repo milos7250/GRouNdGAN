@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-:github_url:  https://github.com/Emad-COMBINE-lab/GRouNdGAN
+:github_url:  https://github.com/milos7250/GRouNdGAN
 
 Welcome to GRouNdGAN's documentation!
 =====================================  
@@ -44,7 +44,7 @@ Contact
    
    If you encounter any issues, glitches, or unexpected behavior while using our software, please let us know. Reporting bugs helps us improve GRouNdGAN. 
 
-   You can reach out to us by opening an `issue <https://github.com/Emad-COMBINE-lab/GRouNdGAN/issues/new>`__ on our GitHub repository.
+   You can reach out to us by opening an `issue <https://github.com/milos7250/GRouNdGAN/issues/new>`__ on our GitHub repository.
 
 .. _Yazdan Zinati: mailto:yazdan.zinati@mail.mcgill.ca
 

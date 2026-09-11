@@ -8,11 +8,11 @@ Option A: Using Pre-built Docker Image (Recommended)
    
    .. code-block:: console
     
-    $ docker pull yazdanz/groundgan:4b98686 
+   $ docker pull milos7250/groundgan:latest
     
 2. Run the Docker container and pass GPU devices::
 
-   $ docker run --gpus all -it yazdanz/groundgan:4b98686 /bin/bash
+   $ docker run --gpus all -it milos7250/groundgan:latest /bin/bash
 
 * The ``--gpus all`` flag enables GPU support within the container. Omit if you intend to use CPU only.
 * The ``--it`` flag allows an interactive terminal session.
@@ -23,17 +23,18 @@ Option B: Building Docker Image from Dockerfile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 1. Clone the GRouNdGAN repository::
 
-   $ git clone https://github.com/Emad-COMBINE-lab/GRouNdGAN.git
+   $ git clone https://github.com/milos7250/GRouNdGAN.git
 
 2. Navigate to the project directory::
 
    $ cd GRouNdGAN
 
-3. Build the Docker image using the provided Dockerfile::
+3. Build the Docker image using the provided build script::
    
-   $ docker build -t yourusername/groundgan:custom -f docker/Dockerfile .
+   $ ./docker/build-docker.sh
 
-   This command will build a Docker image with the tag ``yourusername/groundgan:custom``.
+   This builds the local ``groundgan`` image from ``docker/Dockerfile``. The
+   image is based on PyTorch 2.9.1 with CUDA 13.0 and Python 3.11.
 
    .. note::
         

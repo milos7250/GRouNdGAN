@@ -3,40 +3,62 @@ name: Docker Build
 on:
   push:
     tags:
-      - '*'
+      - 'v*.*.*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Validate semantic version tag
+      id: version
+      run: |
+        if [[ "$GITHUB_REF_NAME" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+          echo "valid=true" >> "$GITHUB_OUTPUT"
+          echo "version=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          echo "major=v${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          echo "minor=v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+        else
+          echo "valid=false" >> "$GITHUB_OUTPUT"
+          echo "Tag '$GITHUB_REF_NAME' is not a semantic version of the form vX.Y.Z"
+        fi
     - name: Checkout github repo (+ download lfs dependencies)
+      if: steps.version.outputs.valid == 'true'
       uses: actions/checkout@v2
       with:
         lfs: true
     - name: Checkout LFS objects
+      if: steps.version.outputs.valid == 'true'
       run: git lfs checkout
-        
-    - name: Get version from tag or commit hash
+
+    - name: Get version from tag
       id: get_version
+      if: steps.version.outputs.valid == 'true'
       run: |
-        if [[ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]]; then
-          echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/}"
-        else
-          echo "::set-output name=VERSION::$(git rev-parse --short HEAD)"
-        fi
+        echo "VERSION=${{ steps.version.outputs.version }}" >> "$GITHUB_OUTPUT"
 
     - name: Build Docker image
+      if: steps.version.outputs.valid == 'true'
       run: |
         docker build -t groundgan:${{ steps.get_version.outputs.VERSION }} -f docker/Dockerfile .
 
     - name: Log in to Docker Hub
+      if: steps.version.outputs.valid == 'true'
       uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_UNAME }}
         password: ${{ secrets.DOCKER_PASS }}
         
     - name: Push Docker image
+      if: steps.version.outputs.valid == 'true'
       run: |
-        docker tag groundgan:${{ steps.get_version.outputs.VERSION }} yazdanz/groundgan:${{ steps.get_version.outputs.VERSION }}
-        docker push yazdanz/groundgan:${{ steps.get_version.outputs.VERSION }}
+        image=milos7250/groundgan
+        version=${{ steps.get_version.outputs.VERSION }}
+        docker tag groundgan:$version $image:latest
+        docker tag groundgan:$version $image:${{ steps.version.outputs.major }}
+        docker tag groundgan:$version $image:${{ steps.version.outputs.minor }}
+        docker tag groundgan:$version $image:$version
+        docker push $image:latest
+        docker push $image:${{ steps.version.outputs.major }}
+        docker push $image:${{ steps.version.outputs.minor }}
+        docker push $image:$version

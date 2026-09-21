@@ -1,10 +1,10 @@
-FROM pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime as runtime
+FROM pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y git g++ make && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /groundgan
-COPY arboreto.patch requirements*.txt src ./
+COPY arboreto.patch requirements*.txt /groundgan/
 
 # Install dependencies from requirements.txt
 RUN python -m pip install --no-cache-dir --root-user-action ignore -r /groundgan/requirements.txt 
@@ -19,6 +19,12 @@ RUN rm -rf /root/.cache/pip || true
 # Patch arboreto bug
 RUN patch /opt/conda/lib/python3.11/site-packages/arboreto/core.py /groundgan/arboreto.patch
 
+
+FROM runtime AS final
+
+WORKDIR /groundgan/src
+COPY src /groundgan/src
+
 # Run the main Python script; runtime arguments replace the default help flag.
 ENTRYPOINT ["python", "/groundgan/src/main.py"]
 CMD ["--help"]
@@ -26,10 +32,15 @@ CMD ["--help"]
 
 FROM runtime AS docs
 
-COPY docs requirements-dev.txt /groundgan/
+COPY requirements-dev.txt /groundgan/
 
 RUN python -m pip install --no-cache-dir \
     --root-user-action ignore \
     -r /groundgan/requirements-dev.txt
 
+WORKDIR /groundgan/docs
+COPY src /groundgan/src
+COPY docs /groundgan/docs
+
 ENTRYPOINT ["sphinx-build"]
+CMD ["docs", "docs/_build"]

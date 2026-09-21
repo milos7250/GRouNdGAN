@@ -10,17 +10,19 @@ import importlib.util
 import os
 import sys
 import warnings
+from pathlib import Path
 
 from sphinx.deprecation import RemovedInSphinx10Warning
 
 warnings.filterwarnings("ignore", category=RemovedInSphinx10Warning, module="sphinx_autodoc_typehints")
 
-sys.path.insert(0, os.path.abspath('../src'))
+
+SRC_DIR = Path(__file__).resolve().parents[1] / "src"
+sys.path.insert(0, str(SRC_DIR))
+
 
 project = "GRouNdGAN"
-copyright = (
-    "2026, Milos Micik"
-)
+copyright = "2026, Milos Micik"
 author = "Milos Micik"
 version = release = "1.0"
 
@@ -94,7 +96,7 @@ intersphinx_mapping = {
 # napoleon_use_rtype = False  # sphinx.ext.napoleon setting
 # NOTE: napoleon_preprocess_types is kept off; its comma-splitting mangles generic type
 # annotations such as dict[str, float] and produces broken cross-references.
-napoleon_google_docstring = False # sphinx.ext.napoleon setting
+napoleon_google_docstring = False  # sphinx.ext.napoleon setting
 napoleon_type_aliases = {
     "Tensor": "torch.Tensor",
     "Module": "torch.nn.Module",
@@ -158,13 +160,13 @@ nitpick_ignore_regex = [
     (r"py:obj", r"training\.dicts\.Losses"),
 ]
 
-typehints_fully_qualified = False      # show unqualified type names
+typehints_fully_qualified = False  # show unqualified type names
 python_use_unqualified_type_names = True  # show unqualified type names
 typehints_use_signature = True  # show parameter types in signature
 typehints_use_signature_return = True  # show return type in signature
 always_document_param_types = True
 typehints_defaults = "comma"
-autodoc_typehints="none"
+autodoc_typehints = "none"
 
 autodoc_default_options = {
     "members": True,
@@ -272,6 +274,7 @@ def _skip_invalid_typed_dict_members(app, what, name, obj, skip, options):
 
 def setup(app):
     app.connect("autodoc-skip-member", _skip_invalid_typed_dict_members)
+
 
 favicons = [
     "logo.svg",

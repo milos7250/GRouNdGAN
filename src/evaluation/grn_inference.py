@@ -139,7 +139,7 @@ def get_fake_grn(
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         DataFrame representing the benchmark GRN. Columns include:
         - "TF": Source transcription factor
         - "target": Target gene

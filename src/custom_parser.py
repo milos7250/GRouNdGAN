@@ -71,7 +71,7 @@ def get_configparser() -> MyConfigParser:
 
     Returns
     -------
-    MyConfigParser.
+    MyConfigParser
     """
     return MyConfigParser(
         defaults=environ,
@@ -135,4 +135,4 @@ def click_options(func: Callable[..., Any]) -> Callable[..., Any]:
     return func
 
 
-__all__ = ["click_options", "get_configparser"]
+__all__ = ["MyConfigParser", "click_options", "get_configparser"]

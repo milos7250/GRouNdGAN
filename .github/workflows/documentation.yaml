@@ -1,20 +1,44 @@
 name: Docs
-on: [push, pull_request, workflow_dispatch]
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+    paths:
+      - docs/**
+      - src/**
+      - docker/Dockerfile
+      - requirements*.txt
+  workflow_dispatch:
 permissions:
+    actions: write
     contents: write
 jobs:
   docs:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - name: Install dependencies
-        run: |
-          pip install sphinx sphinx_book_theme sphinx_favicon sphinx_copybutton
-          
+      - uses: docker/setup-buildx-action@v3
+      - name: Build documentation image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: docs
+          tags: groundgan-docs:ci
+          load: true
+          cache-from: type=gha,scope=groundgan
+          cache-to: type=gha,mode=max,scope=groundgan
       - name: Sphinx build
         run: |
-          sphinx-build docs _build
+          docker run --rm \
+            --env PYTHONPATH=/groundgan/src \
+            --volume "${GITHUB_WORKSPACE}/docs:/groundgan/docs" \
+            groundgan-docs:ci \
+            -b html \
+            /groundgan/docs \
+            /groundgan/docs/_build/html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:

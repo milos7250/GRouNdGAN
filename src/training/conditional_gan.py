@@ -1,4 +1,5 @@
 from abc import ABC
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -7,8 +8,6 @@ from matplotlib import pyplot as plt
 from .gan import GANTrainer
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
 
@@ -21,11 +20,11 @@ class ConditionalGANTrainer(GANTrainer, ABC):
     def __init__(
         self,
         gan: "ConditionalGAN",
-        train_file: "Path",
-        valid_file: "Path",
+        train_file: Path,
+        valid_file: Path,
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
+        output_dir: Path,
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan

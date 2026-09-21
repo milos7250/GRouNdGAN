@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import torch
@@ -5,8 +6,6 @@ import torch
 from .conditional_gan import ConditionalGANTrainer
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from torch import Tensor
 
     from gans import ConditionalCatGAN
@@ -18,11 +17,11 @@ class ConditionalCatGANTrainer(ConditionalGANTrainer):
     def __init__(
         self,
         gan: "ConditionalCatGAN",
-        train_file: "Path",
-        valid_file: "Path",
+        train_file: Path,
+        valid_file: Path,
         training_args: "GANTrainingArgs",
         summary_args: "SummaryArgs",
-        output_dir: "Path",
+        output_dir: Path,
     ) -> None:
         super().__init__(gan, train_file, valid_file, training_args, summary_args, output_dir)
         self.gan = gan

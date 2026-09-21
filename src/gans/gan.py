@@ -190,7 +190,7 @@ class GAN:
 
         Returns
         -------
-        sc.AnnData
+        anndata.AnnData
             An AnnData object containing the generated cells.
         """
         generated_cells = self.generate_cells(

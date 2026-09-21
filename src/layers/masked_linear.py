@@ -25,6 +25,7 @@ class MaskedLinearFunction(torch.autograd.Function):
         bias: "Tensor | None" = None,
         mask: "Tensor | None" = None,
     ) -> "Tensor":
+        """Compute a masked linear transformation of the input."""
         if mask is not None:
             weight = weight * mask
         output = input.mm(weight.t())

@@ -46,32 +46,32 @@ suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
 
 # Mock heavy dependencies that are not installed in the docs build environment so autodoc
 # can still import the source modules and document their classes and functions.
-_CANDIDATE_MOCKED_IMPORTS = [
-    "arboreto",
-    "click",
-    "matplotlib",
-    "networkx",
-    "numpy",
-    "optuna",
-    "optunahub",
-    "pandas",
-    "ray",
-    "rich",
-    "rich_click",
-    "scanpy",
-    "scipy",
-    "seaborn",
-    "sklearn",
-    "sparselinear",
-    "torch",
-    "torch_scatter",
-    "torch_sparse",
-    "tqdm",
-    "umap",
-]
-autodoc_mock_imports = [
-    name for name in _CANDIDATE_MOCKED_IMPORTS if importlib.util.find_spec(name) is None
-]
+# _CANDIDATE_MOCKED_IMPORTS = [
+#     "arboreto",
+#     "click",
+#     "matplotlib",
+#     "networkx",
+#     "numpy",
+#     "optuna",
+#     "optunahub",
+#     "pandas",
+#     "ray",
+#     "rich",
+#     "rich_click",
+#     "scanpy",
+#     "scipy",
+#     "seaborn",
+#     "sklearn",
+#     "sparselinear",
+#     "torch",
+#     "torch_scatter",
+#     "torch_sparse",
+#     "tqdm",
+#     "umap",
+# ]
+# autodoc_mock_imports = [
+#     name for name in _CANDIDATE_MOCKED_IMPORTS if importlib.util.find_spec(name) is None
+# ]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.11", None),

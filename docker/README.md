@@ -46,9 +46,9 @@ a project directory containing `configs/`, `data/`, and `results/`:
 
 ```bash
 docker run --rm --gpus all \
-  -v "$PWD:/groundgan/src" \
+  -v "$PWD:/data" \
   milos7250/groundgan:latest \
-  --config /groundgan/src/configs/causal_gan.cfg \
+  --config /data/configs/causal_gan.cfg \
   --preprocess --create-grn --train --generate --evaluate
 ```
 
@@ -58,26 +58,26 @@ GPU:
 
 ```bash
 docker run --rm \
-  -v "$PWD:/groundgan/src" \
+  -v "$PWD:/data" \
   milos7250/groundgan:latest \
-  --config /groundgan/src/configs/gan.cfg --generate
+  --config /data/configs/gan.cfg --generate
 ```
 
 The CLI flags can be run separately or combined when the configuration file
 contains the required settings:
 
 ```bash
-docker run --rm --gpus all -v "$PWD:/groundgan/src" \
+docker run --rm --gpus all -v "$PWD:/data" \
   milos7250/groundgan:latest \
-  --config /groundgan/src/configs/causal_gan.cfg --preprocess
+  --config /data/configs/causal_gan.cfg --preprocess
 
-docker run --rm --gpus all -v "$PWD:/groundgan/src" \
+docker run --rm --gpus all -v "$PWD:/data" \
   milos7250/groundgan:latest \
-  --config /groundgan/src/configs/causal_gan.cfg --train
+  --config /data/configs/causal_gan.cfg --train
 
-docker run --rm --gpus all -v "$PWD:/groundgan/src" \
+docker run --rm --gpus all -v "$PWD:/data" \
   milos7250/groundgan:latest \
-  --config /groundgan/src/configs/causal_gan.cfg --generate --evaluate
+  --config /data/configs/causal_gan.cfg --generate --evaluate
 ```
 
 Available operations include `--preprocess`, `--create-grn`, `--train`,
@@ -92,7 +92,7 @@ needed:
 ```bash
 docker run --rm -it --gpus all \
   --entrypoint /bin/bash \
-  -v "$PWD:/groundgan/src" \
+  -v "$PWD:/data" \
   milos7250/groundgan:latest
 ```
 
@@ -111,8 +111,8 @@ Run the locally built image by replacing the Docker Hub image name with
 
 ```bash
 docker run --rm --gpus all \
-  -v "$PWD:/groundgan/src" \
-  groundgan --config /groundgan/src/configs/causal_gan.cfg --help
+  -v "$PWD:/data" \
+  groundgan --config /data/configs/causal_gan.cfg --help
 ```
 
 ## Data And Configuration

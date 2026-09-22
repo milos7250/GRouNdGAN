@@ -1,46 +1,71 @@
-FROM pytorch/pytorch:2.9.1-cuda13.0-cudnn9-runtime AS runtime
+FROM pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime AS runtime
 
+# Upgrade system packages
+# Also fix cmake wrapper bug
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y git g++ make && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean \
+    rm -rf /usr/local/bin/cmake \
+    && apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y git g++ make cmake python3-venv
+
+# Install dependencies into an isolated environment using the system Python.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m venv --system-site-packages /opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip setuptools wheel
 
 WORKDIR /groundgan
-COPY arboreto.patch requirements*.txt /groundgan/
 
 # Install dependencies from requirements.txt
-RUN python -m pip install --no-cache-dir --root-user-action ignore -r /groundgan/requirements.txt 
-RUN python -m pip install --no-cache-dir --no-build-isolation --root-user-action ignore -r /groundgan/requirements2.txt
+COPY requirements.txt /groundgan/
+RUN --mount=type=cache,target=/root/.cache/pip python -m pip install \
+    --root-user-action ignore \
+    -r /groundgan/requirements.txt
+
+COPY requirements2.txt /groundgan/
+RUN --mount=type=cache,target=/root/.cache/pip python -m pip install \
+    --root-user-action ignore \
+    --no-build-isolation \
+    -r /groundgan/requirements2.txt
 
 # Install development dependencies from requirements-dev.txt (optional, uncomment if needed)
-# RUN python -m pip install --no-cache-dir --root-user-action ignore -r /groundgan/requirements-dev.txt
+# COPY requirements-dev.txt /groundgan/
+# RUN --mount=type=cache,target=/root/.cache/pip python -m pip install --root-user-action ignore -r /groundgan/requirements-dev.txt
 
 # Clean up pip cache to reduce image size
 RUN rm -rf /root/.cache/pip || true
 
 # Patch arboreto bug
-RUN patch /opt/conda/lib/python3.11/site-packages/arboreto/core.py /groundgan/arboreto.patch
-
-
-FROM runtime AS final
-
-WORKDIR /groundgan/src
-COPY src /groundgan/src
-
-# Run the main Python script; runtime arguments replace the default help flag.
-ENTRYPOINT ["python", "/groundgan/src/main.py"]
-CMD ["--help"]
+COPY arboreto.patch /groundgan
+RUN patch "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/arboreto/core.py" /groundgan/arboreto.patch
 
 
 FROM runtime AS docs
 
 COPY requirements-dev.txt /groundgan/
 
-RUN python -m pip install --no-cache-dir \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
     --root-user-action ignore \
     -r /groundgan/requirements-dev.txt
 
-WORKDIR /groundgan/docs
+WORKDIR /groundgan/
 COPY src /groundgan/src
 COPY docs /groundgan/docs
 
-ENTRYPOINT ["sphinx-build"]
+ENTRYPOINT ["/opt/venv/bin/python -m sphinx-build"]
 CMD ["docs", "docs/_build"]
+
+
+FROM runtime AS final
+
+WORKDIR /groundgan/
+COPY src /groundgan/src
+
+# Run the main Python script; runtime arguments replace the default help flag.
+ENTRYPOINT ["/opt/venv/bin/python", "/groundgan/src/main.py"]
+CMD ["--help"]

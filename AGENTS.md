@@ -30,5 +30,5 @@
 
 - some `scripts/{preprocess,create-grn,train,benchmark}.sh` are Slurm/Apptainer workflows, not local wrappers. Override their machine-specific defaults with `CODE_ROOT` and `CONFIG`.
 - `scripts/common.sh` sets runtime/cache environment variables and optionally sources `$POSTGRES_DIR/.env`; hyperparameter optimization may therefore require the PostgreSQL job setup.
-- Build containers with `./docker/build-docker.sh` or `./docker/build-singularity.sh`. The container build depends on `arboreto.patch` and the two-phase PyTorch/sparse dependency installation.
+- Build containers with `./docker/build-docker.sh` or `./docker/build-apptainer.sh`. The container build depends on `arboreto.patch` and the two-phase PyTorch/sparse dependency installation.
 - Optional study/benchmark repositories are Git submodules; initialize them with `git submodule update --init --recursive` when working on those workflows.

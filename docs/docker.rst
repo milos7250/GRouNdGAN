@@ -35,7 +35,7 @@ Option B: Building Docker Image from Dockerfile
    $ ./docker/build-docker.sh
 
    This builds the local ``groundgan`` image from ``docker/Dockerfile``. The
-   image is based on PyTorch 2.9.1 with CUDA 13.0 and Python 3.11.
+   image is based on PyTorch 2.14.0 with CUDA 13.2 and Python 3.12.
 
    .. note::
         

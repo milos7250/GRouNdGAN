@@ -1,8 +1,8 @@
 # Conda environment to enable code checking in vscode. Does not have gpu support.
 # Create using `./conda-env-create.sh` to handle dependencies correctly.
-name: groundgan
+name: groundgan-v1.1.0
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.12
   - pip

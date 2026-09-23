@@ -57,7 +57,7 @@ WORKDIR /groundgan/
 COPY src /groundgan/src
 COPY docs /groundgan/docs
 
-ENTRYPOINT ["/opt/venv/bin/python -m sphinx-build"]
+ENTRYPOINT ["/opt/venv/bin/sphinx-build"]
 CMD ["docs", "docs/_build"]
 
 

@@ -11,9 +11,9 @@ dependencies installed.
 
 ## Image Details
 
-- PyTorch 2.9.1
-- CUDA 13.0 with cuDNN 9
-- Python 3.11
+- PyTorch 2.14.0
+- CUDA 13.2 with cuDNN 9
+- Python 3.12
 - GRouNdGAN CLI entrypoint: `/groundgan/src/main.py`
 
 The image does not include datasets, configuration files, model checkpoints,

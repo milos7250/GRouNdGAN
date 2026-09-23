@@ -2,6 +2,7 @@
 omit = ./tests/*
 branch = True
 concurrency = multiprocessing
+patch = subprocess
 sigterm = True
 source = ./src
 

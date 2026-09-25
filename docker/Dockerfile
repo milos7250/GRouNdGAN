@@ -18,44 +18,44 @@ ENV PATH="/opt/venv/bin:${PATH}"
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel
 
-WORKDIR /groundgan
+WORKDIR /groundscale
 
 # Install dependencies from requirements.txt
-COPY requirements.txt /groundgan/
+COPY requirements.txt /groundscale/
 RUN --mount=type=cache,target=/root/.cache/pip python -m pip install \
     --root-user-action ignore \
-    -r /groundgan/requirements.txt
+    -r /groundscale/requirements.txt
 
-COPY requirements2.txt /groundgan/
+COPY requirements2.txt /groundscale/
 RUN --mount=type=cache,target=/root/.cache/pip python -m pip install \
     --root-user-action ignore \
     --no-build-isolation \
-    -r /groundgan/requirements2.txt
+    -r /groundscale/requirements2.txt
 
 # Install development dependencies from requirements-dev.txt (optional, uncomment if needed)
-# COPY requirements-dev.txt /groundgan/
-# RUN --mount=type=cache,target=/root/.cache/pip python -m pip install --root-user-action ignore -r /groundgan/requirements-dev.txt
+# COPY requirements-dev.txt /groundscale/
+# RUN --mount=type=cache,target=/root/.cache/pip python -m pip install --root-user-action ignore -r /groundscale/requirements-dev.txt
 
 # Clean up pip cache to reduce image size
 RUN rm -rf /root/.cache/pip || true
 
 # Patch arboreto bug
-COPY arboreto.patch /groundgan
-RUN patch "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/arboreto/core.py" /groundgan/arboreto.patch
+COPY arboreto.patch /groundscale
+RUN patch "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/arboreto/core.py" /groundscale/arboreto.patch
 
 
 FROM runtime AS docs
 
-COPY requirements-dev.txt /groundgan/
+COPY requirements-dev.txt /groundscale/
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install \
     --root-user-action ignore \
-    -r /groundgan/requirements-dev.txt
+    -r /groundscale/requirements-dev.txt
 
-WORKDIR /groundgan/
-COPY src /groundgan/src
-COPY docs /groundgan/docs
+WORKDIR /groundscale/
+COPY src /groundscale/src
+COPY docs /groundscale/docs
 
 ENTRYPOINT ["/opt/venv/bin/sphinx-build"]
 CMD ["docs", "docs/_build"]
@@ -63,9 +63,9 @@ CMD ["docs", "docs/_build"]
 
 FROM runtime AS final
 
-WORKDIR /groundgan/
-COPY src /groundgan/src
+WORKDIR /groundscale/
+COPY src /groundscale/src
 
 # Run the main Python script; runtime arguments replace the default help flag.
-ENTRYPOINT ["/opt/venv/bin/python", "/groundgan/src/main.py"]
+ENTRYPOINT ["/opt/venv/bin/python", "/groundscale/src/main.py"]
 CMD ["--help"]

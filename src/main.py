@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from optuna import Trial
 
 # Setup logger
-logger = setup_logger("GRouNdGAN CLI")
+logger = setup_logger("GRouNdScale CLI")
 
 
 @overload

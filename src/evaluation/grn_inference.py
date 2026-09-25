@@ -31,7 +31,7 @@ def get_imposed_grn(
     """
     Load and process the imposed (ground-truth) GRN from a causal graph file.
 
-    This function reads the GRouNdGAN GRN and maps numeric gene indices to gene names
+    This function reads the GRouNdScale GRN and maps numeric gene indices to gene names
     and constructs a structured representation of the GRN.
 
     Parameters
@@ -70,7 +70,7 @@ def get_imposed_grn(
     with open(cfg.get("Data", "causal graph"), "rb") as fp:
         imposed_grn = pickle.load(fp)
 
-    # convert the GRN from GRouNdGAN format (based on gene number to gene name)
+    # convert the GRN from GRouNdScale format (based on gene number to gene name)
     imposed_edges = []
     to_save_edges = []
     for gene, tfs in imposed_grn.items():

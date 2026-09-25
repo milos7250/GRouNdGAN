@@ -24,19 +24,19 @@ jobs:
           context: .
           file: docker/Dockerfile
           target: docs
-          tags: groundgan-docs:ci
+          tags: groundscale-docs:ci
           load: true
-          cache-from: type=gha,scope=groundgan
-          cache-to: type=gha,mode=max,scope=groundgan
+          cache-from: type=gha,scope=groundscale
+          cache-to: type=gha,mode=max,scope=groundscale
       - name: Sphinx build
         run: |
           docker run --rm \
-            --env PYTHONPATH=/groundgan/src \
-            --volume "${GITHUB_WORKSPACE}/docs:/groundgan/docs" \
-            groundgan-docs:ci \
+            --env PYTHONPATH=/groundscale/src \
+            --volume "${GITHUB_WORKSPACE}/docs:/groundscale/docs" \
+            groundscale-docs:ci \
             -b html \
-            /groundgan/docs \
-            /groundgan/docs/_build/html
+            /groundscale/docs \
+            /groundscale/docs/_build/html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:

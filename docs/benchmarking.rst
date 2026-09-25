@@ -2,12 +2,12 @@ Benchmarking
 ============
 
 .. figure:: _static/workflow.svg
-   :alt: Benchmarking workflow using GRouNdGAN
+   :alt: Benchmarking workflow using GRouNdScale
    :width: 600
    :align: center
    :class: with-border
 
-   GRN inference benchmarking workflow using GRouNdGAN.
+   GRN inference benchmarking workflow using GRouNdScale.
 
 Simulated datasets
 ------------------
@@ -29,11 +29,11 @@ You need 2 elements to benchmark GRN inference methods:
    - Rows represent imposed edges directed from column 1: TF (regulators) to column 2: Gene (target).
 
 
-Here, we provide simulated scRNA-seq datasets (100k cells x 1000 genes (including TFs)) and their corresponding ground truth GRNs. The ground truth GRN is the GRN imposed onto GRouNdGAN to generate the simulated dataset. Each gene in the imposed GRN is regulated by 15 TFs (identified using GRNBoost2 (Moerman et al., 2018) on experimental data). 
+Here, we provide simulated scRNA-seq datasets (100k cells x 1000 genes (including TFs)) and their corresponding ground truth GRNs. The ground truth GRN is the GRN imposed onto GRouNdScale to generate the simulated dataset. Each gene in the imposed GRN is regulated by 15 TFs (identified using GRNBoost2 (Moerman et al., 2018) on experimental data). 
 
 .. note:: 
 
-    Although this (potentially non-causal) GRN is imposed by GRouNdGAN, it is imposed in a causal manner and represents the causal data generating graph of the simulated data.
+    Although this (potentially non-causal) GRN is imposed by GRouNdScale, it is imposed in a causal manner and represents the causal data generating graph of the simulated data.
 
 .. note:: 
     Feel free to reduce dataset size if you intend to use fewer cells for benchmarking.
@@ -103,11 +103,11 @@ Reference dataset: Dataset corresponding to cells labelled as "malignant" in the
 
 ------------
 
-.. admonition:: Help us expand this list: request GRouNdGAN training on new GRNs and reference datasets
+.. admonition:: Help us expand this list: request GRouNdScale training on new GRNs and reference datasets
 
-    We are eager to grow this list and welcome your contributions. If you would like us to train GRouNdGAN on a new reference dataset with different GRNs, please submit a request by opening an `issue <https://github.com/milos7250/GRouNdGAN/issues/new>`__ on our GitHub repository. Be sure to include a link to the reference dataset in your request.
+    We are eager to grow this list and welcome your contributions. If you would like us to train GRouNdScale on a new reference dataset with different GRNs, please submit a request by opening an `issue <https://github.com/milos7250/GRouNdScale/issues/new>`__ on our GitHub repository. Be sure to include a link to the reference dataset in your request.
 
-    If you have trained GRouNdGAN on a new dataset and would like to contribute to our collection, we encourage you to open a pull request.
+    If you have trained GRouNdScale on a new dataset and would like to contribute to our collection, we encourage you to open a pull request.
 
 
 

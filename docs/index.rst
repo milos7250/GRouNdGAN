@@ -1,20 +1,20 @@
-.. GRouNdGAN documentation master file, created by
+.. GRouNdScale documentation master file, created by
    sphinx-quickstart on Sun Jul 30 04:40:37 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-:github_url:  https://github.com/milos7250/GRouNdGAN
+:github_url:  https://github.com/milos7250/GRouNdScale
 
-Welcome to GRouNdGAN's documentation!
+Welcome to GRouNdScale's documentation!
 =====================================  
 
-This site documents the code released under **GRouNdGAN (GRN-guided simulation of single-cell RNA-seq data using causal generative adversarial networks)**. GRouNdGAN is a gene regulatory network (GRN)-guided causal implicit generative model for simulating single-cell RNA-seq data, in-silico perturbation experiments, and benchmarking GRN inference methods.
+This site documents the code released under **GRouNdScale (GRN-guided simulation of single-cell RNA-seq data using causal generative adversarial networks)**. GRouNdScale is a gene regulatory network (GRN)-guided causal implicit generative model for simulating single-cell RNA-seq data, in-silico perturbation experiments, and benchmarking GRN inference methods.
 
 .. epigraph::
 
-   To find out more details about GRouNdGAN, check out our paper: 
+   To find out more details about GRouNdScale, check out our paper: 
 
-      Zinati, Y., Takiddeen, A. & Emad, A. GRouNdGAN: GRN-guided simulation of single-cell RNA-seq data using causal generative adversarial networks. *Nat Commun* **15**, 4055 (2024). https://doi.org/10.1038/s41467-024-48516-6.
+      Zinati, Y., Takiddeen, A. & Emad, A. GRouNdScale: GRN-guided simulation of single-cell RNA-seq data using causal generative adversarial networks. *Nat Commun* **15**, 4055 (2024). https://doi.org/10.1038/s41467-024-48516-6.
 
 .. sidebar:: GRN inference benchmarking workflow
 
@@ -42,9 +42,9 @@ Contact
 
    **Reporting Bugs:**
    
-   If you encounter any issues, glitches, or unexpected behavior while using our software, please let us know. Reporting bugs helps us improve GRouNdGAN. 
+   If you encounter any issues, glitches, or unexpected behavior while using our software, please let us know. Reporting bugs helps us improve GRouNdScale. 
 
-   You can reach out to us by opening an `issue <https://github.com/milos7250/GRouNdGAN/issues/new>`__ on our GitHub repository.
+   You can reach out to us by opening an `issue <https://github.com/milos7250/GRouNdScale/issues/new>`__ on our GitHub repository.
 
 .. _Milos Micik: mailto:milos.micik@hutton.ac.uk
 

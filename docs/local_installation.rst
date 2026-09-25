@@ -5,26 +5,26 @@ Local Installation
 you plan to train on a GPU. The supported environment uses Python 3.11 and
 PyTorch 2.9.1.
 
-1. Clone the GRouNdGAN repository to a directory of your choice::
+1. Clone the GRouNdScale repository to a directory of your choice::
 
-   $ git clone https://github.com/milos7250/GRouNdGAN.git
+   $ git clone https://github.com/milos7250/GRouNdScale.git
    
    .. tip::
        You can optionally clone the scGAN, BEELINE, scDESIGN2, and SPARSim submodules to also get the specific version of repositories that we used in our study. 
         
        .. code-block:: sh
         
-           git clone --recurse-submodules https://github.com/milos7250/GRouNdGAN.git
+           git clone --recurse-submodules https://github.com/milos7250/GRouNdScale.git
            
 2. Navigate to the project directory::
 
-   $ cd GRouNdGAN
+   $ cd GRouNdScale
 
 3. Create the supported Conda environment and install the dependencies::
 
    $ ./conda-env-create.sh
 
-The setup script creates the ``groundgan`` environment from
+The setup script creates the ``groundscale`` environment from
 ``environment.yml``, installs PyTorch and the first dependency group from
 ``requirements.txt``, installs build-sensitive dependencies from
 ``requirements2.txt``, and applies the required ``arboreto.patch``. It asks
@@ -33,9 +33,9 @@ installed.
 
 4. Activate the environment::
 
-   $ conda activate groundgan
+   $ conda activate groundscale
 
-You're now ready to use GRouNdGAN locally. For CPU-only installations, edit
+You're now ready to use GRouNdScale locally. For CPU-only installations, edit
 the PyTorch installation command in ``conda-env-create.sh`` to use the CPU
 index instead of the CUDA 13 index.
 

@@ -6,35 +6,35 @@ Option A: Using Pre-built Docker Image (Recommended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 1. Pull the Docker image from Docker Hub::
 
-   $ docker pull milos7250/groundgan:latest
+   $ docker pull milos7250/groundscale:latest
 
-2. Run GRouNdGAN inside the Docker container and pass GPU devices::
+2. Run GRouNdScale inside the Docker container and pass GPU devices::
 
-   $ docker run --gpus all milos7250/groundgan:latest
+   $ docker run --gpus all milos7250/groundscale:latest
 
 * The ``--gpus all`` flag enables GPU support within the container. Omit if you intend to use CPU only.
 
 Alternatively, you can run the container with the ``--it`` flag to launch an interactive terminal session::
 
-   $ docker run -it --gpus all milos7250/groundgan:latest /bin/bash
+   $ docker run -it --gpus all milos7250/groundscale:latest /bin/bash
 
-You're now inside the Docker container with CUDA support, ready to use GRouNdGAN!
+You're now inside the Docker container with CUDA support, ready to use GRouNdScale!
 
 Option B: Building Docker Image from Dockerfile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-1. Clone the GRouNdGAN repository::
+1. Clone the GRouNdScale repository::
 
-   $ git clone https://github.com/milos7250/GRouNdGAN.git
+   $ git clone https://github.com/milos7250/GRouNdScale.git
 
 2. Navigate to the project directory::
 
-   $ cd GRouNdGAN
+   $ cd GRouNdScale
 
 3. Build the Docker image using the provided build script::
    
    $ ./docker/build-docker.sh
 
-   This builds the local ``groundgan`` image from ``docker/Dockerfile``. The
+   This builds the local ``groundscale`` image from ``docker/Dockerfile``. The
    image is based on PyTorch 2.14.0 with CUDA 13.2 and Python 3.12.
 
    .. note::
@@ -43,7 +43,7 @@ Option B: Building Docker Image from Dockerfile
 
 4. Run the Docker container and pass GPU devices::
 
-   $ docker run -itd --name yourusername/groundgan:custom --gpus all groundgan /bin/bash
+   $ docker run -itd --name yourusername/groundscale:custom --gpus all groundscale /bin/bash
 
 Verifying GPU Acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

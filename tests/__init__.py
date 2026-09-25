@@ -1,6 +1,6 @@
 import os
 
-os.environ["GROUNDGAN_LOGLEVEL"] = os.environ.get("GROUNDGAN_LOGLEVEL", "INFO")
+os.environ["GROUNDSCALE_LOGLEVEL"] = os.environ.get("GROUNDSCALE_LOGLEVEL", "INFO")
 
 import pytest
 

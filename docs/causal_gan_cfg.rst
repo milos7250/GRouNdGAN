@@ -1,7 +1,7 @@
 .. code-block:: ini
 
     [EXPERIMENT]
-    output directory = results/GRouNdGAN
+    output directory = results/GRouNdScale
     device = cuda ; we will let the program choose what is available
     checkpoint  ; set value to use a trained model
     compile modules = True ; use torch.compile for faster training

@@ -52,10 +52,10 @@ jobs:
         context: .
         file: docker/Dockerfile
         target: final
-        tags: groundgan:${{ steps.get_version.outputs.VERSION }}
+        tags: groundscale:${{ steps.get_version.outputs.VERSION }}
         load: true
-        cache-from: type=gha,scope=groundgan
-        cache-to: type=gha,mode=max,scope=groundgan
+        cache-from: type=gha,scope=groundscale
+        cache-to: type=gha,mode=max,scope=groundscale
 
     - name: Log in to Docker Hub
       if: steps.version.outputs.valid == 'true'
@@ -67,12 +67,12 @@ jobs:
     - name: Push Docker image
       if: steps.version.outputs.valid == 'true'
       run: |
-        image=milos7250/groundgan
+        image=milos7250/groundscale
         version=${{ steps.get_version.outputs.VERSION }}
-        docker tag groundgan:$version $image:latest
-        docker tag groundgan:$version $image:${{ steps.version.outputs.major }}
-        docker tag groundgan:$version $image:${{ steps.version.outputs.minor }}
-        docker tag groundgan:$version $image:$version
+        docker tag groundscale:$version $image:latest
+        docker tag groundscale:$version $image:${{ steps.version.outputs.major }}
+        docker tag groundscale:$version $image:${{ steps.version.outputs.minor }}
+        docker tag groundscale:$version $image:$version
         docker push $image:latest
         docker push $image:${{ steps.version.outputs.major }}
         docker push $image:${{ steps.version.outputs.minor }}

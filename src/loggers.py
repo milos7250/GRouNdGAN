@@ -86,7 +86,7 @@ def setup_logger(name: str | None = None) -> logging.Logger:
     logger = logging.getLogger(name)
 
     logger.propagate = True  # False messes up pytest caplog
-    logger.setLevel(os.environ.get("GROUNDGAN_LOGLEVEL", "INFO"))
+    logger.setLevel(os.environ.get("GROUNDSCALE_LOGLEVEL", "INFO"))
 
     if name is not None:
         for handler in logger.handlers:
@@ -132,7 +132,7 @@ def tqdm_logging_redirect(
     if tqdm_class is None:
         tqdm_class = std_tqdm
     try:
-        tqdm_kwargs["disable"] = os.environ.get("RANK", "0") != "0" or os.environ.get("GROUNDGAN_NO_TQDM", "0") == "1"
+        tqdm_kwargs["disable"] = os.environ.get("RANK", "0") != "0" or os.environ.get("GROUNDSCALE_NO_TQDM", "0") == "1"
         with tqdm_class(
             *tqdm_args,
             **tqdm_kwargs,

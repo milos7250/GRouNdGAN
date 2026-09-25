@@ -10,7 +10,7 @@
 #SBATCH --mem=32G
 
 set -euo pipefail
-CODE_ROOT="${CODE_ROOT:-/mnt/shared/scratch/mmicik/private/Geneformer/simulation/GRouNdGAN.worktrees/dedup}"
+CODE_ROOT="${CODE_ROOT:-/mnt/shared/scratch/mmicik/private/Geneformer/simulation/GRouNdScale.worktrees/dedup}"
 source "$CODE_ROOT/scripts/common.sh"
 
 # Find original output directory from config file
@@ -28,7 +28,7 @@ cp "$TRIAL_PATH/generated/simulated.h5ad" "$OUT_DIR/generated/simulated.h5ad"
 
 python "$CODE_ROOT/scripts/infer-grn.py" --cells "$OUT_DIR/generated/simulated.h5ad" --out "$OUT_DIR/generated/simulated-grn.csv"
 sed -i -E "s|^(output directory)[[:space:]]*=.*|\1 = $OUT_DIR|" "$CONFIG"
-apptainer exec --nv "$CODE_ROOT/docker/groundgan.sif" \
+apptainer exec --nv "$CODE_ROOT/docker/groundscale.sif" \
     python \
     "$CODE_ROOT/src/main.py" \
     --config "$CONFIG" \
@@ -46,7 +46,7 @@ tail -n+2 "$OUT_DIR/generated/ground truth GRN.csv" |cut -d',' -f1 |sort -u >> "
 
 python "$CODE_ROOT/scripts/infer-grn.py" --cells "$OUT_DIR/generated/simulated.h5ad" --out "$OUT_DIR/generated/simulated-grn.csv" --tfs "$OUT_DIR/generated/ground truth TFs.csv"
 sed -i -E "s|^(output directory)[[:space:]]*=.*|\1 = $OUT_DIR|" "$CONFIG"
-apptainer exec --nv "$CODE_ROOT/docker/groundgan.sif" \
+apptainer exec --nv "$CODE_ROOT/docker/groundscale.sif" \
     python \
     "$CODE_ROOT/src/main.py" \
     --config "$CONFIG" \
@@ -64,7 +64,7 @@ apptainer exec --writable-tmpfs "$CODE_ROOT/PIDC/PIDC.sif" \
     "$OUT_DIR/generated/simulated-grn.csv"
 
 sed -i -E "s|^(output directory)[[:space:]]*=.*|\1 = $OUT_DIR|" "$CONFIG"
-apptainer exec --nv "$CODE_ROOT/docker/groundgan.sif" \
+apptainer exec --nv "$CODE_ROOT/docker/groundscale.sif" \
     python \
     "$CODE_ROOT/src/main.py" \
     --config "$CONFIG" \

@@ -28,7 +28,7 @@ def unique_list(seq: Iterable[_T], /) -> list[_T]:
 
 def create_GRN(cfg: ConfigParser) -> None:
     """
-    Infers a GRN using GRNBoost2 and uses it to construct a causal graph to impose onto GRouNdGAN.
+    Infers a GRN using GRNBoost2 and uses it to construct a causal graph to impose onto GRouNdScale.
 
     Parameters
     ----------
@@ -42,9 +42,9 @@ def create_GRN(cfg: ConfigParser) -> None:
     real_cells_val = sc.read_h5ad(cfg.get("Data", "validation"))
     real_cells_test = sc.read_h5ad(cfg.get("Data", "test"))
     if (
-        real_cells.uns.get("GRouNdGAN_was_subsetted") is not None
-        or real_cells_val.uns.get("GRouNdGAN_was_subsetted") is not None
-        or real_cells_test.uns.get("GRouNdGAN_was_subsetted") is not None
+        real_cells.uns.get("GRouNdScale_was_subsetted") is not None
+        or real_cells_val.uns.get("GRouNdScale_was_subsetted") is not None
+        or real_cells_test.uns.get("GRouNdScale_was_subsetted") is not None
     ):
         raise ValueError(
             "The provided training dataset appears to have been subsetted by the create_GRN method "
@@ -143,9 +143,9 @@ def create_GRN(cfg: ConfigParser) -> None:
     if not genes == gene_names.to_list():
         # overwrite train, validation, and test datasets when some genes were excluded from the dataset
         real_cells = real_cells[:, genes]
-        real_cells.uns["GRouNdGAN_was_subsetted"] = True
-        real_cells_val.uns["GRouNdGAN_was_subsetted"] = True
-        real_cells_test.uns["GRouNdGAN_was_subsetted"] = True
+        real_cells.uns["GRouNdScale_was_subsetted"] = True
+        real_cells_val.uns["GRouNdScale_was_subsetted"] = True
+        real_cells_test.uns["GRouNdScale_was_subsetted"] = True
         real_cells.write_h5ad(cfg.get("Data", "train"))
         real_cells_val[:, genes].write_h5ad(cfg.get("Data", "validation"))
         real_cells_test[:, genes].write_h5ad(cfg.get("Data", "test"))
@@ -177,4 +177,4 @@ def create_GRN(cfg: ConfigParser) -> None:
     with open(cfg.get("Data", "causal graph"), "wb") as fp:
         pickle.dump(causal_graph, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-    logger.info(f"Successfully saved GRouNdGAN causal graph to {cfg.get('Data', 'causal graph')}")
+    logger.info(f"Successfully saved GRouNdScale causal graph to {cfg.get('Data', 'causal graph')}")

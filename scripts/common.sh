@@ -1,4 +1,4 @@
-CODE_ROOT="${CODE_ROOT:-/mnt/shared/scratch/mmicik/private/Geneformer/simulation/GRouNdGAN.worktrees/dedup}"
+CODE_ROOT="${CODE_ROOT:-/mnt/shared/scratch/mmicik/private/Geneformer/simulation/GRouNdScale.worktrees/dedup}"
 CONFIG="${CONFIG:-causal_gan.cfg}"
 POSTGRES_DIR="${POSTGRES_DIR:-$PWD/postgres}"
 
@@ -29,8 +29,8 @@ export TORCHINDUCTOR_CACHE_DIR="$TMPDIR/torchinductor_cache"
 export TORCHINDUCTOR_FX_GRAPH_CACHE=1 TORCHINDUCTOR_AUTOGRAD_CACHE=1 TRITON_CACHE_AUTOTUNING=1
 export TORCHINDUCTOR_FORCE_DISABLE_CACHES=0
 
-export GROUNDGAN_LOGLEVEL=${GROUNDGAN_LOGLEVEL:-INFO}
-export GROUNDGAN_NO_TQDM=${GROUNDGAN_NO_TQDM:-0}
+export GROUNDSCALE_LOGLEVEL=${GROUNDSCALE_LOGLEVEL:-INFO}
+export GROUNDSCALE_NO_TQDM=${GROUNDSCALE_NO_TQDM:-0}
 export LOGLEVEL=${LOGLEVEL:-WARNING}
 
 if [[ -f "$POSTGRES_DIR/.env" ]]; then

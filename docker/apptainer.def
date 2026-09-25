@@ -6,10 +6,10 @@ From: pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime
     export PATH="/opt/venv/bin:${PATH}"
 
 %files
-    requirements.txt /groundgan/requirements.txt
-    requirements2.txt /groundgan/requirements2.txt
-    src /groundgan/src
-    arboreto.patch /groundgan/arboreto.patch
+    requirements.txt /groundscale/requirements.txt
+    requirements2.txt /groundscale/requirements2.txt
+    src /groundscale/src
+    arboreto.patch /groundscale/arboreto.patch
 
 %post
     set -eu
@@ -23,7 +23,7 @@ From: pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime
         && rm -rf /var/lib/apt/lists/*
 
     # Create working directory
-    mkdir -p /groundgan
+    mkdir -p /groundscale
 
     # Install dependencies into an isolated environment using the system Python.
     python -m venv --system-site-packages /opt/venv
@@ -34,30 +34,30 @@ From: pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime
     python -m pip install \
         --root-user-action ignore \
         --no-cache-dir \
-        -r /groundgan/requirements.txt
+        -r /groundscale/requirements.txt
     python -m pip install \
         --root-user-action ignore \
         --no-cache-dir \
         --no-build-isolation \
-        -r /groundgan/requirements2.txt
+        -r /groundscale/requirements2.txt
 
     # Cleanup pip cache
     rm -rf /root/.cache/pip || true
 
     # Patch arboreto bug
-    patch "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/arboreto/core.py" /groundgan/arboreto.patch
+    patch "$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')/arboreto/core.py" /groundscale/arboreto.patch
 
 %runscript
     # If no args provided, default to --help to match Docker CMD
     if [ "$#" -eq 0 ]; then
       set -- --help
     fi
-    exec /opt/venv/bin/python /groundgan/src/main.py "$@"
+    exec /opt/venv/bin/python /groundscale/src/main.py "$@"
 
 %help
-    Apptainer image for GRouNdGAN based on pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime.
+    Apptainer image for GRouNdScale based on pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime.
     Provide arguments to run the main.py script, e.g.:
-    `apptainer run groundgan.sif --train --config gan.cfg`
+    `apptainer run groundscale.sif --train --config gan.cfg`
 
     Defaults to running:
-    `/opt/venv/bin/python /groundgan/src/main.py --help`
+    `/opt/venv/bin/python /groundscale/src/main.py --help`

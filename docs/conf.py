@@ -21,7 +21,7 @@ SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 
-project = "GRouNdGAN"
+project = "GRouNdScale"
 copyright = "2026, Milos Micik"
 author = "Milos Micik"
 version = release = "1.0"
@@ -208,7 +208,7 @@ html_static_path = ["_static"]
 html_context = {
     "display_github": True,
     "github_user": "Emad-COMBINE-lab",
-    "github_repo": "GRouNdGAN",
+    "github_repo": "GRouNdScale",
     "github_version": "master/",
     "conf_py_path": "docs/",  # Path in the checkout to the docs root
     "default_mode": "light",
@@ -219,7 +219,7 @@ html_logo = "_static/logo.svg"
 
 
 html_theme_options = {
-    "repository_url": "https://github.com/milos7250/GRouNdGAN",
+    "repository_url": "https://github.com/milos7250/GRouNdScale",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_source_button": True,
@@ -229,7 +229,7 @@ html_theme_options = {
     "use_download_button": True,
     # 'collapse_navigation': False,
     "logo": {
-        "alt_text": "GRouNdGAN - Home",
+        "alt_text": "GRouNdScale - Home",
         # "text": "",
     },
     # "show_navbar_depth": 4,
@@ -240,13 +240,13 @@ html_theme_options = {
         {
             # Label for this link
             "name": "GitHub",
-            "url": "https://github.com/milos7250/GRouNdGAN",
+            "url": "https://github.com/milos7250/GRouNdScale",
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
         },
         {
             "name": "Docker",
-            "url": "https://hub.docker.com/repository/docker/milos7250/groundgan/",
+            "url": "https://hub.docker.com/repository/docker/milos7250/groundscale/",
             "icon": "fa-brands fa-docker",
             "type": "fontawesome",
         },
@@ -259,8 +259,8 @@ html_theme_options = {
         },
         {
             "name": "Docs Build",
-            "url": "https://github.com/milos7250/GRouNdGAN/actions",
-            "icon": "https://github.com/milos7250/GRouNdGAN/actions/workflows/documentation.yaml/badge.svg?branch=master",
+            "url": "https://github.com/milos7250/GRouNdScale/actions",
+            "icon": "https://github.com/milos7250/GRouNdScale/actions/workflows/documentation.yaml/badge.svg?branch=master",
             "type": "url",
         },
     ],

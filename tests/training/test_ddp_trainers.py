@@ -165,8 +165,8 @@ class TestDDPTrainers:
     def test_causalgan(
         self, compile: bool, tmp_path: Path, make_gan_checkpoint: MakeGanCheckpoint, caplog: pytest.LogCaptureFixture
     ) -> None:
-        orig_loglevel = os.environ["GROUNDGAN_LOGLEVEL"]
-        os.environ["GROUNDGAN_LOGLEVEL"] = "ERROR"
+        orig_loglevel = os.environ["GROUNDSCALE_LOGLEVEL"]
+        os.environ["GROUNDSCALE_LOGLEVEL"] = "ERROR"
         from gans.gan import GAN
 
         cc_gan = GAN(
@@ -178,7 +178,7 @@ class TestDDPTrainers:
             device="cpu",
         )
         cc_gan_checkpoint = make_gan_checkpoint(cc_gan)
-        os.environ["GROUNDGAN_LOGLEVEL"] = orig_loglevel
+        os.environ["GROUNDSCALE_LOGLEVEL"] = orig_loglevel
 
         from torch.cuda import device_count, empty_cache
         from torch.multiprocessing.spawn import spawn

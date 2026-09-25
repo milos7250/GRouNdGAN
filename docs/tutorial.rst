@@ -4,13 +4,13 @@ Tutorial
 CLI
 ---
 
-GRouNdGAN comes with a command-line interface. This section outlines available commands and arguments.
+GRouNdScale comes with a command-line interface. This section outlines available commands and arguments.
 
 To use the CLI, run the ``src/main.py`` script with the desired command and any applicable options.
 
 .. note::
 
-    When using the Docker image, replace ``python src/main.py`` with ``docker run --gpus all milos7250/groundgan:latest`` in the commands below. Similarly, when using Apptainer, replace it with ``apptainer run --nv groundgan.sif``. See `Installation <installation.html>`_ for more details.
+    When using the Docker image, replace ``python src/main.py`` with ``docker run --gpus all milos7250/groundscale:latest`` in the commands below. Similarly, when using Apptainer, replace it with ``apptainer run --nv groundscale.sif``. See `Installation <installation.html>`_ for more details.
     
 The command requires a configuration file and accepts the following flags:
 
@@ -76,32 +76,32 @@ Logging and progress output are controlled with:
 
 .. code-block:: bash
 
-    export GROUNDGAN_LOGLEVEL=${GROUNDGAN_LOGLEVEL:-INFO}
-    export GROUNDGAN_NO_TQDM=${GROUNDGAN_NO_TQDM:-0}
+    export GROUNDSCALE_LOGLEVEL=${GROUNDSCALE_LOGLEVEL:-INFO}
+    export GROUNDSCALE_NO_TQDM=${GROUNDSCALE_NO_TQDM:-0}
     export LOGLEVEL=${LOGLEVEL:-WARNING}
 
-``GROUNDGAN_LOGLEVEL`` controls GRouNdGAN's application logs, ``GROUNDGAN_NO_TQDM=1`` disables progress bars, and ``LOGLEVEL`` controls general logger output.
+``GROUNDSCALE_LOGLEVEL`` controls GRouNdScale's application logs, ``GROUNDSCALE_NO_TQDM=1`` disables progress bars, and ``LOGLEVEL`` controls general logger output.
 
 Config Files
 ------------
 
-GRouNdGAN uses a configuration syntax similar to INI implemented by python's `configparser <https://docs.python.org/3/library/configparser.html#module-configparser>`_ module. 
+GRouNdScale uses a configuration syntax similar to INI implemented by python's `configparser <https://docs.python.org/3/library/configparser.html#module-configparser>`_ module. 
 
 We provide three sample config files in the ``configs/`` directory: 
 
-* ``causal_gan.cfg``: for GRouNdGAN
+* ``causal_gan.cfg``: for GRouNdScale
 * ``conditional_gan.cfg``: for cscGAN with projection conditioning (Marouf et al., 2020) and cWGAN. 
-* ``gan.cfg``:  for scGAN (Marouf et al., 2020) (we use this to train GRouNdGAN's causal controller)
+* ``gan.cfg``:  for scGAN (Marouf et al., 2020) (we use this to train GRouNdScale's causal controller)
 
-Most of the configuration file consists of hyperparameters. You mostly need to modify input and output parameters which we will go through in each section. GRouNdGAN isn't very sensitive to hyperparameters. However, it is still advisable to test different choices of hyperparameters using a validation set. 
+Most of the configuration file consists of hyperparameters. You mostly need to modify input and output parameters which we will go through in each section. GRouNdScale isn't very sensitive to hyperparameters. However, it is still advisable to test different choices of hyperparameters using a validation set. 
 
 Configuration values can reference environment variables using
-``${VARIABLE_NAME}`` syntax. GRouNdGAN uses ConfigParser interpolation, so the
+``${VARIABLE_NAME}`` syntax. GRouNdScale uses ConfigParser interpolation, so the
 environment is resolved when the configuration is read. For example:
 
 .. code-block:: ini
 
-    output directory = ${GROUNDGAN_OUTPUT_DIR}
+    output directory = ${GROUNDSCALE_OUTPUT_DIR}
     storage = postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PGHOST}:${PGPORT}/${POSTGRES_DB}
 
 When ``POSTGRES_USER``, ``POSTGRES_PASSWORD``, ``PGHOST``, ``PGPORT``, and
@@ -139,13 +139,13 @@ The schedule has three phases:
 Set ``holding percent = 1.0`` to disable decay and keep the maximum rate after
 warmup. ``warmup percent`` must not exceed ``holding percent``.
 
-Below is the demo ``causal_gan.cfg`` config file for training GRouNdGAN using the PBMC68k dataset:
+Below is the demo ``causal_gan.cfg`` config file for training GRouNdScale using the PBMC68k dataset:
 
 .. include:: causal_gan_cfg.rst
 
 Project outline
 ---------------
-GRouNdGAN is structured as follows:
+GRouNdScale is structured as follows:
 
 .. include:: tree.rst
 
@@ -170,7 +170,7 @@ Steps
 Preprocessing 
 ~~~~~~~~~~~~~
 .. attention:: 
-    Don't skip the preprocessing step, GRouNdGAN requires library-size normalized data as input. 
+    Don't skip the preprocessing step, GRouNdScale requires library-size normalized data as input. 
 
 To run our preprocessing pipeline, your config file should contain the following arguments: 
 
@@ -225,7 +225,7 @@ Once completed, you will see a success message. Train, validation, and test sets
                INFO     (preprocessing.preprocess) Train set (48189 cells, 15000 genes): data/Col0_0h_scVI_train.h5ad       preprocess.py:118
                INFO     (preprocessing.preprocess) Validation set (10326 cells, 15000 genes): data/Col0_0h_scVI_val.h5ad    preprocess.py:121
                INFO     (preprocessing.preprocess) Test set (10326 cells, 15000 genes): data/Col0_0h_scVI_test.h5ad         preprocess.py:122
-               INFO     (GRouNdGAN CLI) Finished                                                                                  main.py:141
+               INFO     (GRouNdScale CLI) Finished                                                                                  main.py:141
 
 GRN Creation 
 ~~~~~~~~~~~~
@@ -233,7 +233,7 @@ GRN Creation
 .. note:: 
     GRN creation isn't needed for scGAN, cscGAN, and cWGAN; you can skip the ``--create-grn`` command.
 
-This command uses GRNBoost2 (Moerman et al., 2018) to infer a GRN on the preprocessed train set. It then converts it into the a format that GRouNdGAN accepts.  
+This command uses GRNBoost2 (Moerman et al., 2018) to infer a GRN on the preprocessed train set. It then converts it into the a format that GRouNdScale accepts.  
 
 In addition to what was required in the previous step, you need to provide the following arguments:
 
@@ -258,13 +258,13 @@ By default, the top k most important regulating TFs of each gene will be include
 
 The ``TFs`` option is optional. When it is omitted, all genes in the
 preprocessed training data are passed to GRNBoost2 as candidate regulators.
-Because this produces genes in both regulator and target roles, GRouNdGAN
+Because this produces genes in both regulator and target roles, GRouNdScale
 compares each gene's total outgoing edge importance (where it is a ``TF``)
 with its total incoming edge importance (where it is a ``target``). A gene is
 selected as a TF when its outgoing importance is greater than its incoming
 importance. Only edges from selected TFs to non-TF targets are retained.
 
-If the file specified by ``Inferred GRN`` already exists, GRouNdGAN skips
+If the file specified by ``Inferred GRN`` already exists, GRouNdScale skips
 GRNBoost2 and reads the existing file instead. The file must contain the
 columns ``TF``, ``target``, and ``importance``. This makes it possible to
 reuse an inferred GRN or provide a GRN generated by another method.
@@ -308,8 +308,8 @@ Once done, you will see success messages and the properties of the created GRN.
                            Possible Edges 50262191
                             Imposed Edges   148889
                         GRN density Edges     0.3%
-               INFO     (preprocessing.grn_creation) Successfully saved GRouNdGAN causal graph to data/causal_graph.pkl                grn_creation.py:180
-               INFO     (GRouNdGAN CLI) Finished     
+               INFO     (preprocessing.grn_creation) Successfully saved GRouNdScale causal graph to data/causal_graph.pkl                grn_creation.py:180
+               INFO     (GRouNdScale CLI) Finished     
     
 The causal graph will be written to the path specified by ``[Data]/causal graph`` in the config file.
 
@@ -320,7 +320,7 @@ The causal graph will be written to the path specified by ``[Data]/causal graph`
 Imposing Custom GRNs 
 ^^^^^^^^^^^^^^^^^^^^
 
-It is possible to instead impose your own GRN onto GRouNdGAN. One way to do this is to provide a custom ``.csv`` file containing the GRN data, as mentioned in the previous section. It is also possible to provide the GRN as a Python dictionary, as described below.
+It is possible to instead impose your own GRN onto GRouNdScale. One way to do this is to provide a custom ``.csv`` file containing the GRN data, as mentioned in the previous section. It is also possible to provide the GRN as a Python dictionary, as described below.
 
 If you're opting for this option, skip the ``--create-grn`` command. Instead, create a python dictionary where keys are gene indices (``int``). For each key (gene index), the value is the set of indices ``set[int]`` coresponding to TFs that regulate the gene.
 
@@ -405,7 +405,7 @@ each script so it points to the directory where this repository is cloned:
 
 .. code-block:: bash
 
-    export CODE_ROOT=/path/to/GRouNdGAN
+    export CODE_ROOT=/path/to/GRouNdScale
 
 The scripts validate that ``CODE_ROOT`` exists before running. ``CONFIG`` can
 also be exported to select the configuration file passed to the workflow.
@@ -432,18 +432,18 @@ also be exported to select the configuration file passed to the workflow.
     Finished training after 500000 steps.
 
 .. note::
-    * Training time primarily depends on the number of target genes and the density of the imposed GRN. Expect roughly a day of training time and 10GB of GPU memory required for each 2000 HVGs. These estimations are based on training GRouNdGAN on a single NVIDIA A100 GPU with a TF to target gene ratio of 8%.
+    * Training time primarily depends on the number of target genes and the density of the imposed GRN. Expect roughly a day of training time and 10GB of GPU memory required for each 2000 HVGs. These estimations are based on training GRouNdScale on a single NVIDIA A100 GPU with a TF to target gene ratio of 8%.
 
-    * GRouNdGAN supports multi-GPU training, but we suggest sticking to a single GPU to avoid excess overhead. 
+    * GRouNdScale supports multi-GPU training, but we suggest sticking to a single GPU to avoid excess overhead. 
 
-    * GRouNdGAN trains for a 500000 steps by default.
+    * GRouNdScale trains for a 500000 steps by default.
 
     * You can resume training from a checkpoint by setting ``[EXPERIMENT]/checkpoint`` in the config file to the ``.pth`` checkpoint you wish to use.
 
 Hyperparameter Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GRouNdGAN can optimize configuration values with Optuna. Run optimization
+GRouNdScale can optimize configuration values with Optuna. Run optimization
 with a configuration containing a ``[Hyperparameter Optimization]`` section:
 
 .. code-block:: ini
@@ -486,7 +486,7 @@ By default, optimization uses a local SQLite database at
 
         storage = postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PGHOST}:${PGPORT}/${POSTGRES_DB}
 
-    If those environment variables are set before launching GRouNdGAN, ConfigParser
+    If those environment variables are set before launching GRouNdScale, ConfigParser
     interpolates them into the correct PostgreSQL URL.
 
 Generation, evaluation, benchmarking, and perturbation should be run in a
@@ -496,7 +496,7 @@ separate command after optimization completes.
     
     The ``<output directory>/optuna_stop.txt`` file can be
     used to request a graceful stop between trials. Simply uncomment the first line in this file
-    and GRouNdGAN will finish the running trials and stop.
+    and GRouNdScale will finish the running trials and stop.
 
 In-silico Single-Cell Simulation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -506,9 +506,9 @@ One training is done, populate the ``[EXPERIMENT]/checkpoint`` field with the pa
 .. code-block:: ini 
 
     [EXPERIMENT]
-    output directory = results/GRouNdGAN
+    output directory = results/GRouNdScale
     device = cuda ; we will let the program choose what is available
-    checkpoint = results/GRouNdGAN/checkpoints/step_1000000.pth 
+    checkpoint = results/GRouNdScale/checkpoints/step_1000000.pth 
 
 
 You can change the number of cells to simulate in the config file (10000 by default)
@@ -534,14 +534,14 @@ This will output a ``simulated.h5ad`` file to ``[EXPERIMENT]/output directory`` 
     [10:41:08] INFO     (randomness) Initial random seed: 129323924                                         randomness.py:11
                INFO     (randomness) Using seed 781759803 for Python and NumPy random number generation.    randomness.py:25
     [10:41:17] INFO     (randomness) Using seed 781759803 for PyTorch random number generation.             randomness.py:42
-               INFO     (GRouNdGAN CLI) Generating 10000 cells...                                                main.py:116
-    [10:41:44] INFO     (GRouNdGAN CLI) Simulated cells saved to results/generated/simulated.h5ad                main.py:123
-               INFO     (GRouNdGAN CLI) Finished                                                                 main.py:141
+               INFO     (GRouNdScale CLI) Generating 10000 cells...                                                main.py:116
+    [10:41:44] INFO     (GRouNdScale CLI) Simulated cells saved to results/generated/simulated.h5ad                main.py:123
+               INFO     (GRouNdScale CLI) Finished                                                                 main.py:141
 
 Evaluating Simulated Data Quality
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can evaluate the quality of GRouNdGAN simulations using the following quantitative and qualitative metrics:
+You can evaluate the quality of GRouNdScale simulations using the following quantitative and qualitative metrics:
 
 * UMAP plots of jointly embedded experimental and simulated cells.
 * Euclidean distance between the mean expression profiles of experimental and simulated cells.
@@ -596,7 +596,7 @@ To run the evaluation with the specified configuration, use the following comman
                INFO     (evaluate) MMD (control): 0.010092079639434814                                   data_quality.py:401
     [10:42:04] INFO     (evaluate) miLISI (real vs fake): 1.7733017691957873                             data_quality.py:426
                INFO     (evaluate) miLISI (control): 1.7122457821796437                                  data_quality.py:427
-               INFO     (GRouNdGAN CLI) Finished                                                                 main.py:141
+               INFO     (GRouNdScale CLI) Finished                                                                 main.py:141
 
 .. list-table::
    :widths: 50 50
@@ -616,7 +616,7 @@ To run the evaluation with the specified configuration, use the following comman
 Benchmarking Inferred GRNs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This command evaluates the reconstructed GRN (from GRouNdGAN-simulate data) against the ground truth GRN (used for simulation).
+This command evaluates the reconstructed GRN (from GRouNdScale-simulate data) against the ground truth GRN (used for simulation).
 
 Configuration file arguments:
 
@@ -679,7 +679,7 @@ Then run:
     [14:03:35] INFO     (evaluate) Inferred GRN AURPC: 0.36                                                                                                                             grn_inference.py:348
                INFO     (evaluate) Baseline AUPRC (random predictor): 0.23809523809523808                                                                                               grn_inference.py:349
                INFO     (evaluate) Saved PR curve at results/infer_grn_without_tfs/generated/PR_curve.png                                                                               grn_inference.py:354
-               INFO     (GRouNdGAN CLI) Finished                                                                                                                                                 main.py:141
+               INFO     (GRouNdScale CLI) Finished                                                                                                                                                 main.py:141
 
 .. list-table::
    :widths: 50 50
@@ -717,7 +717,7 @@ This can be useful for reference or external benchmarking tools.
 
 Perturbation Studies 
 ~~~~~~~~~~~~~~~~~~~~
-Once trained, GRouNdGAN can sample from interventional distributions and perform in-silico TF perturbation experiments. These perturbations are applied to the same batch of cells, enabling matched case-control comparisons.
+Once trained, GRouNdScale can sample from interventional distributions and perform in-silico TF perturbation experiments. These perturbations are applied to the same batch of cells, enabling matched case-control comparisons.
 
 To run a perturbation, simply specify the list of TFs to perturb (``[Perturbation]/tfs to perturb``) and the corresponding values to which they should be set (``[Perturbation]/perturbation values``). The below configuration knocks out IRF8 and sets CEBPA to the value 100.2. The items in the list are separated by a space.
 
@@ -744,7 +744,7 @@ Once the configuration file is ready, run:
 .. code-block:: text
 
     Loaded GAN
-    Using checkpoint at results/GRouNdGAN/checkpoints/step_1000000.pth
+    Using checkpoint at results/GRouNdScale/checkpoints/step_1000000.pth
     Saved cells before and after perturbation to data/generated/
 
 The cells before and after perturbation will be saved as ``after_perturbation.h5ad`` and ``before_perturbation.h5ad`` in the specified directory for secondary analysis.

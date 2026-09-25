@@ -9,10 +9,10 @@ Converting Docker Image to Apptainer
 
 .. code-block:: console
 
-   $ apptainer pull groundgan.sif docker://milos7250/groundgan:latest
+   $ apptainer pull groundscale.sif docker://milos7250/groundscale:latest
 
-This command will create an Apptainer image named ``groundgan.sif`` by pulling
-``milos7250/groundgan:latest`` from Docker Hub.
+This command will create an Apptainer image named ``groundscale.sif`` by pulling
+``milos7250/groundscale:latest`` from Docker Hub.
 
 Building locally
 ^^^^^^^^^^^^^^^^
@@ -22,20 +22,20 @@ pre-built image, run from the repository root::
 
    $ ./docker/build-apptainer.sh
 
-This writes ``docker/groundgan.sif`` using ``docker/apptainer.def``.
+This writes ``docker/groundscale.sif`` using ``docker/apptainer.def``.
 
 Running an Apptainer Container
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After converting the Docker image to an Apptainer image, you can run GRouNdGAN inside the Apptainer container::
+After converting the Docker image to an Apptainer image, you can run GRouNdScale inside the Apptainer container::
 
-   $ apptainer run --nv groundgan.sif --help
+   $ apptainer run --nv groundscale.sif --help
 
 To start an interactive shell session within the Apptainer container:
 
 .. code-block:: console
 
-   $ apptainer shell --nv groundgan.sif
+   $ apptainer shell --nv groundscale.sif
 
 * The ``--nv`` flag enables running CUDA application inside the container.
 

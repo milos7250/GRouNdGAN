@@ -126,7 +126,7 @@ def click_options(func: Callable[..., Any]) -> Callable[..., Any]:
             "--perturb",
             is_flag=True,
             default=False,
-            help="Perform a perturbation experiment using a trained GRouNdGAN model",
+            help="Perform a perturbation experiment using a trained GRouNdScale model",
         ),
     ]
 
